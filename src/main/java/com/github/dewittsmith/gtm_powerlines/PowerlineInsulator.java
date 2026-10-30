@@ -12,6 +12,7 @@ import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -28,15 +29,19 @@ public class PowerlineInsulator extends Block {
             Direction.EAST, box(0, 5, 5, 16, 11, 11));
 
     public static DirectionProperty DIRECTION = DirectionProperty.create("direction");
+    public static BooleanProperty IS_MULTIBLOCK_PART = BooleanProperty.create("is_multiblock_part");
 
     public PowerlineInsulator(Properties props) {
         super(props);
-        registerDefaultState(stateDefinition.any().setValue(DIRECTION, Direction.UP));
+        registerDefaultState(stateDefinition.any()
+                .setValue(DIRECTION, Direction.UP)
+                .setValue(IS_MULTIBLOCK_PART, false));
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(DIRECTION);
+        builder.add(IS_MULTIBLOCK_PART);
     }
 
     @Override

@@ -7,6 +7,7 @@ import com.gregtechceu.gtceu.api.data.RotationState;
 import com.gregtechceu.gtceu.api.data.chemical.ChemicalHelper;
 import com.gregtechceu.gtceu.api.data.tag.TagPrefix;
 import com.gregtechceu.gtceu.api.machine.MultiblockMachineDefinition;
+import com.gregtechceu.gtceu.api.machine.multiblock.MultiblockControllerMachine;
 import com.gregtechceu.gtceu.api.machine.multiblock.PartAbility;
 import com.gregtechceu.gtceu.api.pattern.FactoryBlockPattern;
 import com.gregtechceu.gtceu.api.pattern.MultiblockShapeInfo;
@@ -17,9 +18,11 @@ import com.tterrag.registrate.util.entry.BlockEntry;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SoundType;
+import net.minecraftforge.common.Tags;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Map;
 
 import static com.github.dewittsmith.gtm_powerlines.GTMPowerlines.POWERLINE_CREATIVE_TAB;
 import static com.github.dewittsmith.gtm_powerlines.GTMPowerlines.POWERLINE_REGISTRATE;
@@ -49,11 +52,11 @@ public class GTMPowerlinesMachines {
             .noRecipeModifier()
             .appearanceBlock(MACHINE_CASING_LV)
             .pattern(definition -> FactoryBlockPattern.start()
-                    .aisle("RCXCR", "RCXCR", "RCXCR", "*****")
-                    .aisle("#CFC#", "#CFC#", "#CFC#", "*I*I*")
-                    .aisle("RCPCR", "RCPCR", "RCPCR", "*****")
-                    .aisle("#CFC#", "#CFC#", "#CFC#", "*****")
-                    .aisle("RCXCR", "RCSCR", "RCXCR", "*****")
+                    .aisle("RCXCR", "RCXCR", "RCXCR", "I###I")
+                    .aisle("#CFC#", "#CFC#", "#CFC#", "#####")
+                    .aisle("RCPCR", "RCPCR", "RCPCR", "I###I")
+                    .aisle("#CFC#", "#CFC#", "#CFC#", "#####")
+                    .aisle("RCXCR", "RCSCR", "RCXCR", "I###I")
                     .where('S', controller(blocks(definition.get())))
                     .where('R', blocks(FIREBOX_STEEL.get()))
                     .where('C', heatingCoils())
@@ -62,28 +65,27 @@ public class GTMPowerlinesMachines {
                             .or(ability(PartAbility.MAINTENANCE).setExactLimit(1)))
                     .where('F', frames(GTMaterials.Steel))
                     .where('P', blocks(CASING_STEEL_PIPE.get()))
-                    .where('I', states(POWERLINE_INSULATOR.getDefaultState())
+                    .where('I', GTPatternMerger.track("insulators", POWERLINE_INSULATOR.getDefaultState(), PowerlineInsulator.DIRECTION)
                             .or(any()))
                     .where('#', air())
-                    .where('*', any())
                     .build())
             .shapeInfos(definition -> {
                 var shapeInfo = new ArrayList<MultiblockShapeInfo>();
                 var builder = MultiblockShapeInfo.builder()
-                        .aisle("RCTCR", "RCSCR", "RCMCR", "#####")
+                        .aisle("RCTCR", "RCSCR", "RCMCR", "I###I")
                         .aisle("#CFC#", "#CFC#", "#CFC#", "#####")
-                        .aisle("RCPCR", "RCPCR", "RCPCR", "#####")
-                        .aisle("#CFC#", "#CFC#", "#CFC#", "#I#I#")
-                        .aisle("RCXCR", "RCXCR", "RCXCR", "#####")
+                        .aisle("RCPCR", "RCPCR", "RCPCR", "I###I")
+                        .aisle("#CFC#", "#CFC#", "#CFC#", "#####")
+                        .aisle("RCXCR", "RCXCR", "RCXCR", "I###I")
                         .where('S', definition, Direction.NORTH)
-                        .where('R', FIREBOX_STEEL.get())
-                        .where('X', MACHINE_CASING_LV.get())
+                        .where('R', FIREBOX_STEEL)
+                        .where('X', MACHINE_CASING_LV)
                         .where('F', ChemicalHelper.getBlock(TagPrefix.frameGt, GTMaterials.Steel))
-                        .where('P', CASING_STEEL_PIPE.get())
+                        .where('P', CASING_STEEL_PIPE)
                         .where('T', GTMachines.ENERGY_INPUT_HATCH[GTValues.LV], Direction.NORTH)
                         .where('M', GTMachines.MAINTENANCE_HATCH, Direction.NORTH)
-                        .where('I', POWERLINE_INSULATOR.getDefaultState())
-                        .where('#', Blocks.AIR.defaultBlockState());
+                        .where('I', POWERLINE_INSULATOR)
+                        .where('#', Blocks.AIR);
                 GTCEuAPI.HEATING_COILS.entrySet().stream()
                         .sorted(Comparator.comparingInt(entry -> entry.getKey().getTier()))
                         .forEach(coil -> shapeInfo.add(builder.shallowCopy().where('C', coil.getValue().get()).build()));
@@ -92,6 +94,54 @@ public class GTMPowerlinesMachines {
             .workableCasingModel(
                     GTCEu.id("block/casings/voltage/lv/side"),
                     GTCEu.id("block/multiblock/implosion_compressor"))
+            .register();
+
+    private static final String[][][] POWERLINE_TOWER_PATTERNS = {
+            {
+                    {"*F*", "IFI", "FSF"},
+            },
+            {
+                    {"*F", "IF", "FS"},
+            }
+    };
+
+    public static final MultiblockMachineDefinition POWERLINE_TOWER = POWERLINE_REGISTRATE
+            .multiblock("powerline_tower", MultiblockControllerMachine::new)
+            .langValue("Powerline Tower")
+            .rotationState(RotationState.NON_Y_AXIS)
+            .recipeType(GTRecipeTypes.DUMMY_RECIPES)
+            .noRecipeModifier()
+            .appearanceBlock(MACHINE_CASING_LV)
+            .pattern(definition -> GTPatternMerger.merge(FactoryBlockPattern.start(),
+                            Map.of(
+                                    'S', controller(blocks(definition.get())),
+                                    'F', blockTag(Tags.Blocks.FENCES),
+                                    '*', any(),
+                                    'I', GTPatternMerger.track("insulators", POWERLINE_INSULATOR.getDefaultState().setValue(PowerlineInsulator.DIRECTION, Direction.DOWN), PowerlineInsulator.DIRECTION)
+                            ),
+                            POWERLINE_TOWER_PATTERNS)
+                    .build())
+            .shapeInfos(definition -> {
+                var shapeInfo = new ArrayList<MultiblockShapeInfo>();
+                for (String[][] pattern : POWERLINE_TOWER_PATTERNS) {
+                    var builder = MultiblockShapeInfo.builder()
+                            .where('F', Blocks.OAK_FENCE)
+                            .where('I', POWERLINE_INSULATOR.getDefaultState().setValue(PowerlineInsulator.DIRECTION, Direction.DOWN))
+                            .where('S', definition, Direction.NORTH)
+                            .where('*', Blocks.AIR);
+
+                    for (String[] aisle : pattern) {
+                        builder.aisle(aisle);
+                    }
+
+                    shapeInfo.add(builder.build());
+                }
+
+                return shapeInfo;
+            })
+            .workableCasingModel(
+                    GTCEu.id("block/casings/voltage/lv/side"),
+                    GTCEu.id("block/casings/voltage/lv/side"))
             .register();
 
     public static void init() {
