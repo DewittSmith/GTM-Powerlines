@@ -13,8 +13,8 @@ import java.util.stream.Collector;
 
 import static com.gregtechceu.gtceu.api.pattern.Predicates.custom;
 
-public class GTPatternMerger {
-    public static FactoryBlockPattern merge(FactoryBlockPattern blockPattern, Map<Character, TraceabilityPredicate> predicateMap, String[][]... patterns) {
+public class GTMPatternMerger {
+    public static FactoryBlockPattern merge(FactoryBlockPattern blockPattern, Map<Character, TraceabilityPredicate> predicateMap, List<String[][]> patterns) {
         var totalWidth = 0;
         var totalHeight = 0;
         var totalDepth = 0;

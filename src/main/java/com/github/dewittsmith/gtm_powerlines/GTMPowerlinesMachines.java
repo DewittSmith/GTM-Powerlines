@@ -65,7 +65,7 @@ public class GTMPowerlinesMachines {
                             .or(ability(PartAbility.MAINTENANCE).setExactLimit(1)))
                     .where('F', frames(GTMaterials.Steel))
                     .where('P', blocks(CASING_STEEL_PIPE.get()))
-                    .where('I', GTPatternMerger.track("insulators", POWERLINE_INSULATOR.getDefaultState(), PowerlineInsulator.DIRECTION)
+                    .where('I', GTMPatternMerger.track("insulators", POWERLINE_INSULATOR.getDefaultState(), PowerlineInsulator.DIRECTION)
                             .or(any()))
                     .where('#', air())
                     .build())
@@ -96,15 +96,6 @@ public class GTMPowerlinesMachines {
                     GTCEu.id("block/multiblock/implosion_compressor"))
             .register();
 
-    private static final String[][][] POWERLINE_TOWER_PATTERNS = {
-            {
-                    {"*F*", "IFI", "FSF"},
-            },
-            {
-                    {"*F", "IF", "FS"},
-            }
-    };
-
     public static final MultiblockMachineDefinition POWERLINE_TOWER = POWERLINE_REGISTRATE
             .multiblock("powerline_tower", MultiblockControllerMachine::new)
             .langValue("Powerline Tower")
@@ -112,18 +103,18 @@ public class GTMPowerlinesMachines {
             .recipeType(GTRecipeTypes.DUMMY_RECIPES)
             .noRecipeModifier()
             .appearanceBlock(MACHINE_CASING_LV)
-            .pattern(definition -> GTPatternMerger.merge(FactoryBlockPattern.start(),
+            .pattern(definition -> GTMPatternMerger.merge(FactoryBlockPattern.start(),
                             Map.of(
                                     'S', controller(blocks(definition.get())),
                                     'F', blockTag(Tags.Blocks.FENCES),
                                     '*', any(),
-                                    'I', GTPatternMerger.track("insulators", POWERLINE_INSULATOR.getDefaultState().setValue(PowerlineInsulator.DIRECTION, Direction.DOWN), PowerlineInsulator.DIRECTION)
+                                    'I', GTMPatternMerger.track("insulators", POWERLINE_INSULATOR.getDefaultState().setValue(PowerlineInsulator.DIRECTION, Direction.DOWN), PowerlineInsulator.DIRECTION)
                             ),
-                            POWERLINE_TOWER_PATTERNS)
+                            GTMPowerlineTowerPatterns.POWERLINE_TOWER_PATTERNS)
                     .build())
             .shapeInfos(definition -> {
                 var shapeInfo = new ArrayList<MultiblockShapeInfo>();
-                for (String[][] pattern : POWERLINE_TOWER_PATTERNS) {
+                for (String[][] pattern : GTMPowerlineTowerPatterns.POWERLINE_TOWER_PATTERNS) {
                     var builder = MultiblockShapeInfo.builder()
                             .where('F', Blocks.OAK_FENCE)
                             .where('I', POWERLINE_INSULATOR.getDefaultState().setValue(PowerlineInsulator.DIRECTION, Direction.DOWN))
