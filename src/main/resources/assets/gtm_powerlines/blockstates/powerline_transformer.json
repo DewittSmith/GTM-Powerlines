@@ -1,0 +1,8 @@
+﻿{
+  "variants": {
+    "facing=north": { "model": "gtm_powerlines:block/powerline_transformer" },
+    "facing=east":  { "model": "gtm_powerlines:block/powerline_transformer", "y": 90 },
+    "facing=south": { "model": "gtm_powerlines:block/powerline_transformer", "y": 180 },
+    "facing=west":  { "model": "gtm_powerlines:block/powerline_transformer", "y": 270 }
+  }
+}
