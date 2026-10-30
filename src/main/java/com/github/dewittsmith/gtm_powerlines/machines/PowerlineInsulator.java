@@ -30,8 +30,8 @@ public class PowerlineInsulator extends Block implements EntityBlock {
 
     public static DirectionProperty DIRECTION = DirectionProperty.create("direction");
 
-    public PowerlineInsulator(Properties props) {
-        super(props);
+    public PowerlineInsulator(Properties properties) {
+        super(properties);
         registerDefaultState(stateDefinition.any()
                 .setValue(DIRECTION, Direction.UP));
     }

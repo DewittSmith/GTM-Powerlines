@@ -41,7 +41,10 @@ public class GTMPowerlines {
             .register();
 
     public GTMPowerlines() {
-        IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
+        var context = FMLJavaModLoadingContext.get();
+        IEventBus modEventBus = context.getModEventBus();
+
+        ConfigHolder.init();
 
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(this::clientSetup);

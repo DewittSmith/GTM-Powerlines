@@ -1,8 +1,6 @@
 package com.github.dewittsmith.gtm_powerlines;
 
-import com.github.dewittsmith.gtm_powerlines.machines.PowerlineInsulator;
-import com.github.dewittsmith.gtm_powerlines.machines.PowerlineInsulatorBlockEntity;
-import com.github.dewittsmith.gtm_powerlines.machines.PowerlineTransformer;
+import com.github.dewittsmith.gtm_powerlines.machines.*;
 import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.api.GTCEuAPI;
 import com.gregtechceu.gtceu.api.GTValues;
@@ -48,6 +46,18 @@ public class GTMPowerlinesMachines {
     public static final BlockEntityEntry<PowerlineInsulatorBlockEntity> POWERLINE_INSULATOR_BLOCK_ENTITY = POWERLINE_REGISTRATE
             .blockEntity("powerline_insulator", PowerlineInsulatorBlockEntity::new)
             .validBlock(POWERLINE_INSULATOR)
+            .register();
+
+    public static final BlockEntry<PowerlineTower> POWERLINE_TOWER = POWERLINE_REGISTRATE
+            .block("powerline_tower", PowerlineTower::new)
+            .lang("Powerline Tower")
+            .initialProperties(() -> Blocks.IRON_BLOCK)
+            .simpleItem()
+            .register();
+
+    public static final BlockEntityEntry<PowerlineTowerBlockEntity> POWERLINE_TOWER_BLOCK_ENTITY = POWERLINE_REGISTRATE
+            .blockEntity("powerline_tower", PowerlineTowerBlockEntity::new)
+            .validBlock(POWERLINE_TOWER)
             .register();
 
     public static final MultiblockMachineDefinition POWERLINE_TRANSFORMER = POWERLINE_REGISTRATE
