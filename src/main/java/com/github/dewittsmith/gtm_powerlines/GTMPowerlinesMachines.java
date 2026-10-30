@@ -10,7 +10,6 @@ import com.gregtechceu.gtceu.api.machine.MultiblockMachineDefinition;
 import com.gregtechceu.gtceu.api.machine.multiblock.PartAbility;
 import com.gregtechceu.gtceu.api.pattern.FactoryBlockPattern;
 import com.gregtechceu.gtceu.api.pattern.MultiblockShapeInfo;
-import com.gregtechceu.gtceu.api.recipe.modifier.RecipeModifier;
 import com.gregtechceu.gtceu.common.data.GTMachines;
 import com.gregtechceu.gtceu.common.data.GTMaterials;
 import com.gregtechceu.gtceu.common.data.GTRecipeTypes;
@@ -47,7 +46,7 @@ public class GTMPowerlinesMachines {
             .langValue("Powerline Transformer")
             .rotationState(RotationState.NON_Y_AXIS)
             .recipeType(GTRecipeTypes.DUMMY_RECIPES)
-            .recipeModifier(RecipeModifier.NO_MODIFIER)
+            .noRecipeModifier()
             .appearanceBlock(MACHINE_CASING_LV)
             .pattern(definition -> FactoryBlockPattern.start()
                     .aisle("RCXCR", "RCXCR", "RCXCR", "*****")
