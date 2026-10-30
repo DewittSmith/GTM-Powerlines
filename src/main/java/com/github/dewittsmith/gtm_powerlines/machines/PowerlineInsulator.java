@@ -1,25 +1,25 @@
-package com.github.dewittsmith.gtm_powerlines;
+package com.github.dewittsmith.gtm_powerlines.machines;
 
+import com.github.dewittsmith.gtm_powerlines.GTMPowerlinesMachines;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.Mirror;
-import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.block.*;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 
-public class PowerlineInsulator extends Block {
+public class PowerlineInsulator extends Block implements EntityBlock {
     private static final Map<Direction, VoxelShape> SHAPES = Map.of(
             Direction.UP, box(5, 0, 5, 11, 16, 11),
             Direction.DOWN, box(5, 0, 5, 11, 16, 11),
@@ -29,19 +29,16 @@ public class PowerlineInsulator extends Block {
             Direction.EAST, box(0, 5, 5, 16, 11, 11));
 
     public static DirectionProperty DIRECTION = DirectionProperty.create("direction");
-    public static BooleanProperty IS_MULTIBLOCK_PART = BooleanProperty.create("is_multiblock_part");
 
     public PowerlineInsulator(Properties props) {
         super(props);
         registerDefaultState(stateDefinition.any()
-                .setValue(DIRECTION, Direction.UP)
-                .setValue(IS_MULTIBLOCK_PART, false));
+                .setValue(DIRECTION, Direction.UP));
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(DIRECTION);
-        builder.add(IS_MULTIBLOCK_PART);
     }
 
     @Override
@@ -85,5 +82,20 @@ public class PowerlineInsulator extends Block {
     @Override
     public BlockState mirror(BlockState state, Mirror mirror) {
         return state.setValue(DIRECTION, mirror.mirror(state.getValue(DIRECTION)));
+    }
+
+    @Override
+    public @Nullable BlockEntity newBlockEntity(BlockPos blockPos, BlockState blockState) {
+        return GTMPowerlinesMachines.POWERLINE_INSULATOR_BLOCK_ENTITY.get().create(blockPos, blockState);
+    }
+
+    @Override
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean moved) {
+        if (!state.is(newState.getBlock())
+                && !level.isClientSide
+                && level.getBlockEntity(pos) instanceof PowerlineInsulatorBlockEntity blockEntity) {
+            blockEntity.disconnectAll();
+        }
+        super.onRemove(state, level, pos, newState, moved);
     }
 }
