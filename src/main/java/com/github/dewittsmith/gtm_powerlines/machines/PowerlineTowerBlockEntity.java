@@ -16,7 +16,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
-public class PowerlineTowerBlockEntity extends BlockEntity {
+public class PowerlineTowerBlockEntity extends BlockEntity implements IMachineConnectionLimit {
     private static final int MAX_BLOCKS = 64;
 
     private final LongSet structureBlocks = new LongOpenHashSet();
@@ -124,22 +124,15 @@ public class PowerlineTowerBlockEntity extends BlockEntity {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
-        tag.putLongArray("structureBlocks", structureBlocks.toLongArray());
         tag.putLongArray("insulatorBlocks", insulatorBlocks.toLongArray());
-        tag.putInt("baseElevation", baseElevation);
     }
 
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
 
-        structureBlocks.clear();
-        structureBlocks.addAll(new LongOpenHashSet(tag.getLongArray("structureBlocks")));
-
         insulatorBlocks.clear();
         insulatorBlocks.addAll(new LongOpenHashSet(tag.getLongArray("insulatorBlocks")));
-
-        baseElevation = tag.getInt("baseElevation");
     }
 
     @Override
@@ -149,5 +142,10 @@ public class PowerlineTowerBlockEntity extends BlockEntity {
             PowerlineTowerTracker.update(level, worldPosition, structureBlocks);
             rescan();
         }
+    }
+
+    @Override
+    public int getMaxConnections() {
+        return 2;
     }
 }

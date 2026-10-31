@@ -1,5 +1,6 @@
 package com.github.dewittsmith.gtm_powerlines.machines;
 
+import com.gregtechceu.gtceu.api.blockentity.MetaMachineBlockEntity;
 import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -14,6 +15,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -42,12 +44,33 @@ public class PowerlineInsulatorBlockEntity extends BlockEntity {
         sync();
     }
 
-    public boolean connect(BlockPos target, ResourceLocation wire) {
-        if (target.equals(worldPosition)) return false;
-        if (connections.stream().anyMatch(c -> c.target().equals(target))) return false;
+    public boolean hasConnectionCapacity() {
+        if (level == null || controller == null) return false;
+        var entity = level.getBlockEntity(controller);
+
+        var maxConnections = 0;
+        if (entity instanceof IMachineConnectionLimit machineConnectionLimit) {
+            maxConnections = machineConnectionLimit.getMaxConnections();
+        } else if (entity instanceof MetaMachineBlockEntity metaBe) {
+            if (metaBe.metaMachine instanceof IMachineConnectionLimit connectionLimit) {
+                maxConnections = connectionLimit.getMaxConnections();
+            }
+        }
+
+        return connections.size() < maxConnections;
+    }
+
+    public WireConnectionResult connect(BlockPos target, ResourceLocation wire) {
+        if (target.equals(worldPosition)) return WireConnectionResult.SAME_BLOCK;
+        if (connections.stream().anyMatch(c -> c.target().equals(target)))
+            return WireConnectionResult.ALREADY_CONNECTED;
+
+        if (!hasConnectionCapacity())
+            return WireConnectionResult.TOO_MANY_CONNECTIONS;
+
         connections.add(new Connection(target.immutable(), wire));
         sync();
-        return true;
+        return WireConnectionResult.SUCCESS;
     }
 
     public void removeConnectionsTo(BlockPos target) {
@@ -101,6 +124,16 @@ public class PowerlineInsulatorBlockEntity extends BlockEntity {
         }
     }
 
+    @Override
+    public AABB getRenderBoundingBox() {
+        AABB box = new AABB(worldPosition);
+
+        for (var connection : connections) {
+            box = box.minmax(new AABB(connection.target()));
+        }
+
+        return box.inflate(1.0);
+    }
 
     @Override
     public CompoundTag getUpdateTag() {

@@ -10,7 +10,7 @@ import java.util.Collections;
 
 import static com.github.dewittsmith.gtm_powerlines.GTMPowerlinesMachines.POWERLINE_INSULATOR;
 
-public class PowerlineTransformer extends WorkableMultiblockMachine {
+public class PowerlineTransformer extends WorkableMultiblockMachine implements IMachineConnectionLimit {
     private Iterable<BlockPos> insulators = Collections.emptyList();
 
     public PowerlineTransformer(IMachineBlockEntity holder) {
@@ -44,5 +44,10 @@ public class PowerlineTransformer extends WorkableMultiblockMachine {
                 be.setController(connected ? getPos() : null);
             }
         }
+    }
+
+    @Override
+    public int getMaxConnections() {
+        return 1;
     }
 }

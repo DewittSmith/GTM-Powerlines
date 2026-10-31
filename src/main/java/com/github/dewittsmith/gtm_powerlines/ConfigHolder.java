@@ -38,6 +38,16 @@ public class ConfigHolder {
     public float minLoss = 0f;
 
     @Configurable
+    @Configurable.Comment({"Minimal wire block distance."})
+    @Configurable.DecimalRange(min = 0.0f, max = 256.0f)
+    public float minWireRange = 4f;
+
+    @Configurable
+    @Configurable.Comment({"Maximal wire block distance."})
+    @Configurable.DecimalRange(min = 0.0f, max = 256.0f)
+    public float maxWireRange = 128f;
+
+    @Configurable
     @Configurable.Comment({"Exponent applied to tower range."})
     @Configurable.DecimalRange(min = 0.0f, max = 8.0f)
     public float towerRangePower = 2f;
