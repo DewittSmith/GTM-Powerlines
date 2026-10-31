@@ -1,12 +1,11 @@
 {
   "required": true,
+  "minVersion": "0.8",
   "package": "com.github.dewittsmith.gtm_powerlines.mixin",
   "compatibilityLevel": "JAVA_17",
-  "minVersion": "0.8",
-  "mixins": [
-    "WorldgenRandomMixin"
-  ],
+  "refmap": "gtm_powerlines.refmap.json",
   "client": [
+    "CoilBlockMixin"
   ],
   "injectors": {
     "defaultRequire": 1

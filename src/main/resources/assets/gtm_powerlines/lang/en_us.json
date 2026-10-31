@@ -2,7 +2,7 @@
   "itemGroup.gtm_powerlines.creative_tab": "GTM Powerlines",
   "block.gtm_powerlines.powerline_insulator": "Powerline Insulator",
   "block.gtm_powerlines.powerline_tower": "Powerline Tower",
-  "gtceu.machine.gtm_powerlines.powerline_transformer": "Powerline Transformer",
+  "block.gtm_powerlines.powerline_transformer": "Powerline Transformer",
   "message.gtm_powerlines.wire.cancelled": "Wire cancelled",
   "message.gtm_powerlines.wire.insulator_not_in_structure": "This insulator is not part of a structure",
   "message.gtm_powerlines.wire.too_many_connections": "Too many connections",
@@ -16,5 +16,7 @@
   "message.gtm_powerlines.cutter.all_wires_removed": "All wires removed",
   "message.gtm_powerlines.cutter.look_and_click": "Look at a wire and click to cut it",
   "message.gtm_powerlines.cutter.cancelled": "Cutting cancelled",
-  "message.gtm_powerlines.cutter.wire_cut": "Wire cut"
+  "message.gtm_powerlines.cutter.wire_cut": "Wire cut",
+  "tooltip.gtm_powerlines.coil_efficiency": "§8Powerline Transformer",
+  "tooltip.gtm_powerlines.coil_efficiency_value": "  §6Powerline Efficiency: §f%1$d%%"
 }
