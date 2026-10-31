@@ -1,6 +1,7 @@
-package com.github.dewittsmith.gtm_powerlines;
+package com.github.dewittsmith.gtm_powerlines.wire;
 
-import com.github.dewittsmith.gtm_powerlines.machines.PowerlineInsulatorBlockEntity;
+import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
+
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 
@@ -10,7 +11,7 @@ public final class WireTargeting {
     public record Hit(PowerlineInsulatorBlockEntity.Connection connection, Vec3 point) {
     }
 
-    private static final double MAX_DISTANCE = 0.35;   // how close the ray must pass to a wire
+    private static final double MAX_DISTANCE = 0.35;
     private static final double REACH = 12.0;
 
     public static @Nullable Hit find(PowerlineInsulatorBlockEntity be, Vec3 eye, Vec3 look) {
@@ -42,9 +43,6 @@ public final class WireTargeting {
         return best;
     }
 
-    /**
-     * Distance between a ray (o + s*u, s in [0, REACH]) and the segment p-q. Writes the point on the segment.
-     */
     private static double rayToSegment(Vec3 o, Vec3 u, Vec3 p, Vec3 q, Vec3[] outPoint) {
         Vec3 v = q.subtract(p), w = o.subtract(p);
         double b = u.dot(v), c = v.dot(v), d = u.dot(w), e = v.dot(w);

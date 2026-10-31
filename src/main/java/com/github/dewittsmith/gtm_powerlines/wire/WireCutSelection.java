@@ -1,4 +1,4 @@
-package com.github.dewittsmith.gtm_powerlines;
+package com.github.dewittsmith.gtm_powerlines.wire;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Player;

@@ -1,6 +1,8 @@
-package com.github.dewittsmith.gtm_powerlines.machines;
+package com.github.dewittsmith.gtm_powerlines.block;
 
-import com.github.dewittsmith.gtm_powerlines.GTMPowerlinesMachines;
+import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineTowerBlockEntity;
+import com.github.dewittsmith.gtm_powerlines.registry.GTMPowerlinesRegistries;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -9,14 +11,14 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
-public class PowerlineTower extends Block implements EntityBlock {
-    public PowerlineTower(Properties properties) {
+public class PowerlineTowerBlock extends Block implements EntityBlock {
+    public PowerlineTowerBlock(Properties properties) {
         super(properties);
     }
 
     @Override
     public @Nullable BlockEntity newBlockEntity(BlockPos blockPos, BlockState blockState) {
-        return GTMPowerlinesMachines.POWERLINE_TOWER_BLOCK_ENTITY.get().create(blockPos, blockState);
+        return GTMPowerlinesRegistries.POWERLINE_TOWER_BLOCK_ENTITY.get().create(blockPos, blockState);
     }
 
     @Override

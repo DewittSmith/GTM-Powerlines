@@ -1,4 +1,4 @@
-package com.github.dewittsmith.gtm_powerlines;
+package com.github.dewittsmith.gtm_powerlines.util;
 
 import com.gregtechceu.gtceu.api.pattern.TraceabilityPredicate;
 import com.lowdragmc.lowdraglib.utils.BlockInfo;
@@ -10,7 +10,7 @@ import java.util.ArrayList;
 
 import static com.gregtechceu.gtceu.api.pattern.Predicates.custom;
 
-public class GTMPowerlinesUtils {
+public class PowerlinePatternPredicates {
 
     public static TraceabilityPredicate track(String name, BlockState blockState, Property<?>... props) {
         return custom(state -> {

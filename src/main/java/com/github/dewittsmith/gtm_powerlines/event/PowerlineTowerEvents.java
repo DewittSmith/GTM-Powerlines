@@ -1,7 +1,8 @@
-package com.github.dewittsmith.gtm_powerlines.events;
+package com.github.dewittsmith.gtm_powerlines.event;
 
 import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
 import com.github.dewittsmith.gtm_powerlines.trackers.PowerlineTowerTracker;
+
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.event.TickEvent;

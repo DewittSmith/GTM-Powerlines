@@ -1,4 +1,4 @@
-package com.github.dewittsmith.gtm_powerlines.machines;
+package com.github.dewittsmith.gtm_powerlines.wire;
 
 public enum WireConnectionResult {
     SUCCESS,

@@ -1,5 +1,53 @@
-# GregTech Addon Template
-## Template for GregTech Modern addons on 1.20.1
+# GTM Powerlines
+
+A GregTech Modern addon for Minecraft 1.20.1 on Forge.
+
+## Project Layout
+
+Java packages are rooted at `com.github.dewittsmith.gtm_powerlines`:
+
+```text
+GTMPowerlines.java    Mod entry point and lifecycle setup
+block/               Minecraft blocks
+blockentity/         Minecraft block entities
+client/event/        Client-only Forge and mod-bus subscribers
+client/renderer/     Client-only block entity rendering
+config/              Mod configuration
+event/               Common Forge event subscribers
+integration/gtceu/   GregTech addon integration
+machines/            GregTech multiblock machines
+mixin/               Mixin implementations
+registry/            Content registration
+trackers/            World structure tracking
+util/                Shared multiblock utilities
+wire/                Shared wire geometry, targeting, and connection state
+```
+
+Resources retain Forge's standard layout: client assets under
+`src/main/resources/assets/gtm_powerlines`, generated assets and data under
+`src/generated/resources`, and mod metadata under `src/main/resources/META-INF`.
+Registry IDs and resource namespaces are independent of Java package names.
+Client event subscribers remain restricted to `Dist.CLIENT`; common code does
+not depend on the client renderer.
+
+## Class Naming
+
+Mod-wide entry points use the `GTMPowerlines` prefix: `GTMPowerlines`,
+`GTMPowerlinesAddon`, `GTMPowerlinesConfig`, and `GTMPowerlinesRegistries`.
+The registry contains blocks, block entities, and GregTech machines.
+
+Minecraft blocks use the `Block` suffix, block entities use `BlockEntity`,
+and GregTech machines use `Machine`, such as `PowerlineTowerBlock`,
+`PowerlineTowerBlockEntity`, and `PowerlineTransformerMachine`.
+Event subscribers describe their work: `PowerlineTowerEvents`,
+`PowerlineWireEvents`, `WireCutterEvents`, `WirePreviewEvents`, and
+`PowerlineRendererEvents`. `WireConnectionLimit` exposes connection capacity,
+and `PowerlinePatternPredicates` builds tracked multiblock pattern predicates.
+`WorldgenRandomMixin` names its target class and remains a no-op template mixin.
+
+## Template Provenance
+
+Based on the GregTech Modern addon template for Minecraft 1.20.1.
 
  Original template by [screret](https://github.com/screret), maintained by [JuiceyBeans](https://github.com/JuiceyBeans)
 

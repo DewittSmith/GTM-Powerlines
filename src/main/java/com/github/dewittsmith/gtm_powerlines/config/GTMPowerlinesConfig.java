@@ -1,4 +1,6 @@
-package com.github.dewittsmith.gtm_powerlines;
+package com.github.dewittsmith.gtm_powerlines.config;
+
+import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
 
 import dev.toma.configuration.Configuration;
 import dev.toma.configuration.config.Config;
@@ -15,14 +17,14 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Config(id = GTMPowerlines.MOD_ID)
-public class ConfigHolder {
-    public static ConfigHolder INSTANCE;
+public class GTMPowerlinesConfig {
+    public static GTMPowerlinesConfig INSTANCE;
     private static final Object LOCK = new Object();
 
     public static void init() {
         synchronized (LOCK) {
             if (INSTANCE == null) {
-                INSTANCE = Configuration.registerConfig(ConfigHolder.class, ConfigFormats.yaml()).getConfigInstance();
+                INSTANCE = Configuration.registerConfig(GTMPowerlinesConfig.class, ConfigFormats.yaml()).getConfigInstance();
             }
         }
     }

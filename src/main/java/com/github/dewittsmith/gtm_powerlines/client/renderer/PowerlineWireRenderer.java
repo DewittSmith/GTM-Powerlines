@@ -1,7 +1,9 @@
-package com.github.dewittsmith.gtm_powerlines;
+package com.github.dewittsmith.gtm_powerlines.client.renderer;
 
-import com.github.dewittsmith.gtm_powerlines.machines.PowerlineInsulatorBlockEntity;
-import com.gregtechceu.gtceu.api.data.chemical.ChemicalHelper;
+import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
+import com.github.dewittsmith.gtm_powerlines.wire.WireColor;
+import com.github.dewittsmith.gtm_powerlines.wire.WireGeometry;
+
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -9,11 +11,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.Items;
-import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.registries.ForgeRegistries;
 
 public class PowerlineWireRenderer implements BlockEntityRenderer<PowerlineInsulatorBlockEntity> {
     public static void renderWire(PoseStack poseStack, VertexConsumer consumer, Vec3 start, Vec3 end, int argb) {
@@ -40,19 +38,6 @@ public class PowerlineWireRenderer implements BlockEntityRenderer<PowerlineInsul
             prev = pos;
         }
     }
-
-    public static int wireColor(ItemLike item) {
-        if (item == null || item == Items.AIR) return DEFAULT_COLOR;
-        var stack = ChemicalHelper.getMaterialEntry(item).material();
-        return 0xFF000000 | stack.getMaterialRGB();
-    }
-
-    public static int wireColor(ResourceLocation wireId) {
-        var item = ForgeRegistries.ITEMS.getValue(wireId);
-        return wireColor(item);
-    }
-
-    private static final int DEFAULT_COLOR = 0xFF000000;
 
     public PowerlineWireRenderer(BlockEntityRendererProvider.Context context) {
     }
@@ -85,7 +70,7 @@ public class PowerlineWireRenderer implements BlockEntityRenderer<PowerlineInsul
             start = start.subtract(Vec3.atLowerCornerOf(origin));
             end = end.subtract(Vec3.atLowerCornerOf(origin));
 
-            renderWire(poseStack, consumer, start, end, wireColor(connection.wire()));
+            renderWire(poseStack, consumer, start, end, WireColor.wireColor(connection.wire()));
         }
     }
 }

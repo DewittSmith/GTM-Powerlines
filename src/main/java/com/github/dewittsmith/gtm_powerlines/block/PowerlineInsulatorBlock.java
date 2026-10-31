@@ -1,6 +1,8 @@
-package com.github.dewittsmith.gtm_powerlines.machines;
+package com.github.dewittsmith.gtm_powerlines.block;
 
-import com.github.dewittsmith.gtm_powerlines.GTMPowerlinesMachines;
+import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
+import com.github.dewittsmith.gtm_powerlines.registry.GTMPowerlinesRegistries;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -19,7 +21,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 
-public class PowerlineInsulator extends Block implements EntityBlock {
+public class PowerlineInsulatorBlock extends Block implements EntityBlock {
     private static final Map<Direction, VoxelShape> SHAPES = Map.of(
             Direction.UP, box(5, 0, 5, 11, 16, 11),
             Direction.DOWN, box(5, 0, 5, 11, 16, 11),
@@ -30,7 +32,7 @@ public class PowerlineInsulator extends Block implements EntityBlock {
 
     public static DirectionProperty DIRECTION = DirectionProperty.create("direction");
 
-    public PowerlineInsulator(Properties properties) {
+    public PowerlineInsulatorBlock(Properties properties) {
         super(properties);
         registerDefaultState(stateDefinition.any()
                 .setValue(DIRECTION, Direction.UP));
@@ -86,7 +88,7 @@ public class PowerlineInsulator extends Block implements EntityBlock {
 
     @Override
     public @Nullable BlockEntity newBlockEntity(BlockPos blockPos, BlockState blockState) {
-        return GTMPowerlinesMachines.POWERLINE_INSULATOR_BLOCK_ENTITY.get().create(blockPos, blockState);
+        return GTMPowerlinesRegistries.POWERLINE_INSULATOR_BLOCK_ENTITY.get().create(blockPos, blockState);
     }
 
     @Override

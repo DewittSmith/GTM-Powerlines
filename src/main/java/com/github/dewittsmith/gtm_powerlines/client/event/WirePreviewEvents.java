@@ -1,7 +1,13 @@
-package com.github.dewittsmith.gtm_powerlines.events;
+package com.github.dewittsmith.gtm_powerlines.client.event;
 
-import com.github.dewittsmith.gtm_powerlines.*;
-import com.github.dewittsmith.gtm_powerlines.machines.PowerlineInsulatorBlockEntity;
+import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
+import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
+import com.github.dewittsmith.gtm_powerlines.client.renderer.PowerlineWireRenderer;
+import com.github.dewittsmith.gtm_powerlines.wire.WireAttachment;
+import com.github.dewittsmith.gtm_powerlines.wire.WireCutSelection;
+import com.github.dewittsmith.gtm_powerlines.wire.WireGeometry;
+import com.github.dewittsmith.gtm_powerlines.wire.WireTargeting;
+
 import com.gregtechceu.gtceu.data.recipe.CustomTags;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -20,7 +26,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber(modid = GTMPowerlines.MOD_ID, value = Dist.CLIENT)
-public class ClientForgeEvents {
+public class WirePreviewEvents {
     @SubscribeEvent
     public static void onRenderLevel(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_ENTITIES) {

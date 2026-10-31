@@ -1,6 +1,7 @@
-package com.github.dewittsmith.gtm_powerlines;
+package com.github.dewittsmith.gtm_powerlines.wire;
 
-import com.github.dewittsmith.gtm_powerlines.machines.PowerlineInsulator;
+import com.github.dewittsmith.gtm_powerlines.block.PowerlineInsulatorBlock;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
@@ -28,7 +29,7 @@ public final class WireGeometry {
 
         if (be == null) return Vec3.ZERO;
         var pos = be.getBlockPos().getCenter();
-        var dir = be.getBlockState().getValue(PowerlineInsulator.DIRECTION);
+        var dir = be.getBlockState().getValue(PowerlineInsulatorBlock.DIRECTION);
         return pos.add(dir.getStepX() * OFFSET, dir.getStepY() * OFFSET, dir.getStepZ() * OFFSET);
     }
 

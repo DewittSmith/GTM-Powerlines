@@ -1,8 +1,10 @@
-package com.github.dewittsmith.gtm_powerlines.machines;
+package com.github.dewittsmith.gtm_powerlines.blockentity;
 
-import com.github.dewittsmith.gtm_powerlines.ConfigHolder;
-import com.github.dewittsmith.gtm_powerlines.GTMPowerlinesMachines;
+import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
+import com.github.dewittsmith.gtm_powerlines.registry.GTMPowerlinesRegistries;
 import com.github.dewittsmith.gtm_powerlines.trackers.PowerlineTowerTracker;
+import com.github.dewittsmith.gtm_powerlines.wire.WireConnectionLimit;
+
 import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
@@ -16,7 +18,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
-public class PowerlineTowerBlockEntity extends BlockEntity implements IMachineConnectionLimit {
+public class PowerlineTowerBlockEntity extends BlockEntity implements WireConnectionLimit {
     private static final int MAX_BLOCKS = 64;
 
     private final LongSet structureBlocks = new LongOpenHashSet();
@@ -36,7 +38,7 @@ public class PowerlineTowerBlockEntity extends BlockEntity implements IMachineCo
     }
 
     private static boolean isStructure(BlockState s) {
-        for (TagKey<Block> tag : ConfigHolder.INSTANCE.towerTags()) {
+        for (TagKey<Block> tag : GTMPowerlinesConfig.INSTANCE.towerTags()) {
             if (s.is(tag)) {
                 return true;
             }
@@ -46,7 +48,7 @@ public class PowerlineTowerBlockEntity extends BlockEntity implements IMachineCo
     }
 
     private static boolean isInsulator(BlockState s) {
-        return s.is(GTMPowerlinesMachines.POWERLINE_INSULATOR.get());
+        return s.is(GTMPowerlinesRegistries.POWERLINE_INSULATOR.get());
     }
 
     public void attachInsulators() {

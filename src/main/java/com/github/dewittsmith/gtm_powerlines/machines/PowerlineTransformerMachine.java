@@ -1,5 +1,8 @@
 package com.github.dewittsmith.gtm_powerlines.machines;
 
+import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
+import com.github.dewittsmith.gtm_powerlines.wire.WireConnectionLimit;
+
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.multiblock.WorkableMultiblockMachine;
 import net.minecraft.core.BlockPos;
@@ -8,12 +11,12 @@ import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.Collections;
 
-import static com.github.dewittsmith.gtm_powerlines.GTMPowerlinesMachines.POWERLINE_INSULATOR;
+import static com.github.dewittsmith.gtm_powerlines.registry.GTMPowerlinesRegistries.POWERLINE_INSULATOR;
 
-public class PowerlineTransformer extends WorkableMultiblockMachine implements IMachineConnectionLimit {
+public class PowerlineTransformerMachine extends WorkableMultiblockMachine implements WireConnectionLimit {
     private Iterable<BlockPos> insulators = Collections.emptyList();
 
-    public PowerlineTransformer(IMachineBlockEntity holder) {
+    public PowerlineTransformerMachine(IMachineBlockEntity holder) {
         super(holder);
     }
 

@@ -1,6 +1,12 @@
-package com.github.dewittsmith.gtm_powerlines;
+package com.github.dewittsmith.gtm_powerlines.registry;
 
-import com.github.dewittsmith.gtm_powerlines.machines.*;
+import com.github.dewittsmith.gtm_powerlines.block.PowerlineInsulatorBlock;
+import com.github.dewittsmith.gtm_powerlines.block.PowerlineTowerBlock;
+import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
+import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineTowerBlockEntity;
+import com.github.dewittsmith.gtm_powerlines.machines.PowerlineTransformerMachine;
+import com.github.dewittsmith.gtm_powerlines.util.PowerlinePatternPredicates;
+
 import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.api.GTCEuAPI;
 import com.gregtechceu.gtceu.api.GTValues;
@@ -28,13 +34,13 @@ import static com.github.dewittsmith.gtm_powerlines.GTMPowerlines.POWERLINE_REGI
 import static com.gregtechceu.gtceu.api.pattern.Predicates.*;
 import static com.gregtechceu.gtceu.common.data.GTBlocks.*;
 
-public class GTMPowerlinesMachines {
+public class GTMPowerlinesRegistries {
     static {
         POWERLINE_REGISTRATE.creativeModeTab(() -> POWERLINE_CREATIVE_TAB);
     }
 
-    public static final BlockEntry<PowerlineInsulator> POWERLINE_INSULATOR = POWERLINE_REGISTRATE
-            .block("powerline_insulator", PowerlineInsulator::new)
+    public static final BlockEntry<PowerlineInsulatorBlock> POWERLINE_INSULATOR = POWERLINE_REGISTRATE
+            .block("powerline_insulator", PowerlineInsulatorBlock::new)
             .lang("Powerline Insulator")
             .initialProperties(() -> Blocks.IRON_BLOCK)
             .properties(p -> p.noOcclusion().strength(1.5f, 6f).sound(SoundType.GLASS))
@@ -48,8 +54,8 @@ public class GTMPowerlinesMachines {
             .validBlock(POWERLINE_INSULATOR)
             .register();
 
-    public static final BlockEntry<PowerlineTower> POWERLINE_TOWER = POWERLINE_REGISTRATE
-            .block("powerline_tower", PowerlineTower::new)
+    public static final BlockEntry<PowerlineTowerBlock> POWERLINE_TOWER = POWERLINE_REGISTRATE
+            .block("powerline_tower", PowerlineTowerBlock::new)
             .lang("Powerline Tower")
             .initialProperties(() -> Blocks.IRON_BLOCK)
             .simpleItem()
@@ -61,7 +67,7 @@ public class GTMPowerlinesMachines {
             .register();
 
     public static final MultiblockMachineDefinition POWERLINE_TRANSFORMER = POWERLINE_REGISTRATE
-            .multiblock("powerline_transformer", PowerlineTransformer::new)
+            .multiblock("powerline_transformer", PowerlineTransformerMachine::new)
             .langValue("Powerline Transformer")
             .rotationState(RotationState.NON_Y_AXIS)
             .recipeType(GTRecipeTypes.DUMMY_RECIPES)
@@ -81,7 +87,7 @@ public class GTMPowerlinesMachines {
                             .or(ability(PartAbility.MAINTENANCE).setExactLimit(1)))
                     .where('F', frames(GTMaterials.Steel))
                     .where('P', blocks(CASING_STEEL_PIPE.get()))
-                    .where('I', GTMPowerlinesUtils.track("insulators", POWERLINE_INSULATOR.getDefaultState(), PowerlineInsulator.DIRECTION)
+                    .where('I', PowerlinePatternPredicates.track("insulators", POWERLINE_INSULATOR.getDefaultState(), PowerlineInsulatorBlock.DIRECTION)
                             .or(any()))
                     .where('#', air())
                     .build())

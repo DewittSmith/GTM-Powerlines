@@ -1,9 +1,11 @@
-package com.github.dewittsmith.gtm_powerlines.events;
+package com.github.dewittsmith.gtm_powerlines.event;
 
-import com.github.dewittsmith.gtm_powerlines.ConfigHolder;
 import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
-import com.github.dewittsmith.gtm_powerlines.PowerlineWireRenderer;
-import com.github.dewittsmith.gtm_powerlines.machines.PowerlineInsulatorBlockEntity;
+import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
+import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
+import com.github.dewittsmith.gtm_powerlines.wire.WireAttachment;
+import com.github.dewittsmith.gtm_powerlines.wire.WireColor;
+
 import com.gregtechceu.gtceu.api.data.chemical.ChemicalHelper;
 import com.gregtechceu.gtceu.api.data.tag.TagPrefix;
 import net.minecraft.core.BlockPos;
@@ -26,7 +28,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @Mod.EventBusSubscriber(modid = GTMPowerlines.MOD_ID)
-public class PowerlineWiresEvents {
+public class PowerlineWireEvents {
     private static final Map<UUID, Long> PLAYER_TICKS = new HashMap<>();
 
     @SubscribeEvent
@@ -39,7 +41,7 @@ public class PowerlineWiresEvents {
         if (!isPowerlineWire(held)) return;
 
         var wireItem = held.getItem();
-        var wireColor = PowerlineWireRenderer.wireColor(wireItem);
+        var wireColor = WireColor.wireColor(wireItem);
 
         BlockPos pos = event.getPos();
         var clickedBe = level.getBlockEntity(pos) instanceof PowerlineInsulatorBlockEntity be ? be : null;
@@ -49,48 +51,51 @@ public class PowerlineWiresEvents {
         var lastTime = PLAYER_TICKS.put(player.getUUID(), time);
         if (lastTime != null && lastTime == time) return;
 
-        // 3. RMB elsewhere with an attach position: cancel
         if (clickedBe == null) {
             if (attach != null) {
                 WireAttachment.clear(player);
                 message(player, "Wire cancelled");
+                    message(player, "message.gtm_powerlines.wire.cancelled");
                 finish(event);
             }
             return;
         }
 
-        // 1. No attach position yet: remember this insulator
         if (attach == null || !attach.dimension().equals(level.dimension())) {
             if (clickedBe.getController() == null) {
                 message(player, "This insulator is not part of a structure");
+                    message(player, "message.gtm_powerlines.wire.insulator_not_in_structure");
                 finish(event);
                 return;
             }
 
             if (!clickedBe.hasConnectionCapacity()) {
                 message(player, "Too many connections");
+                    message(player, "message.gtm_powerlines.wire.too_many_connections");
                 finish(event);
                 return;
             }
 
             WireAttachment.set(player, level, pos, wireItem, wireColor);
             message(player, "Wire attached, click another insulator");
+                message(player, "message.gtm_powerlines.wire.attached_click_another");
             finish(event);
             return;
         }
 
-        // 2. Attach position exists and an insulator was clicked
-        if (attach.pos().equals(pos)) {                      // same insulator: unselect
+        if (attach.pos().equals(pos)) {
             WireAttachment.clear(player);
             message(player, "Wire cancelled");
+                message(player, "message.gtm_powerlines.wire.cancelled");
             finish(event);
             return;
         }
 
         if (!(level.getBlockEntity(attach.pos()) instanceof PowerlineInsulatorBlockEntity fromBe)
                 || fromBe.getController() == null) {
-            WireAttachment.clear(player);                    // the start insulator disappeared
+            WireAttachment.clear(player);
             message(player, "Start insulator is gone");
+                message(player, "message.gtm_powerlines.wire.start_insulator_gone");
             finish(event);
             return;
         }
@@ -99,26 +104,29 @@ public class PowerlineWiresEvents {
         BlockPos toController = clickedBe.getController();
         if (toController == null) {
             message(player, "This insulator is not part of a structure");
+                message(player, "message.gtm_powerlines.wire.insulator_not_in_structure");
             finish(event);
             return;
         }
 
-        if (fromController.equals(toController)) {           // same machine: move the attach position instead
+        if (fromController.equals(toController)) {
             WireAttachment.set(player, level, pos, wireItem, wireColor);
             message(player, "Wire attached, click another insulator");
+                message(player, "message.gtm_powerlines.wire.attached_click_another");
             finish(event);
             return;
         }
 
-        // distance between the two insulators
         double distance = Math.sqrt(attach.pos().distSqr(pos));
-        if (distance < ConfigHolder.INSTANCE.minWireRange) {
-            message(player, String.format("Wire too short (%.1f / min %.1f)", distance, ConfigHolder.INSTANCE.minWireRange));
+        if (distance < GTMPowerlinesConfig.INSTANCE.minWireRange) {
+            message(player, String.format("Wire too short (%.1f / min %.1f)", distance, GTMPowerlinesConfig.INSTANCE.minWireRange));
+                message(player, "message.gtm_powerlines.wire.too_short", distance, GTMPowerlinesConfig.INSTANCE.minWireRange);
             finish(event);
             return;
         }
-        if (distance > ConfigHolder.INSTANCE.maxWireRange) {
-            message(player, String.format("Wire too long (%.1f / max %.1f)", distance, ConfigHolder.INSTANCE.maxWireRange));
+        if (distance > GTMPowerlinesConfig.INSTANCE.maxWireRange) {
+            message(player, String.format("Wire too long (%.1f / max %.1f)", distance, GTMPowerlinesConfig.INSTANCE.maxWireRange));
+                message(player, "message.gtm_powerlines.wire.too_long", distance, GTMPowerlinesConfig.INSTANCE.maxWireRange);
             finish(event);
             return;
         }
@@ -129,13 +137,14 @@ public class PowerlineWiresEvents {
                 clickedBe.connect(attach.pos(), wire);
 
                 if (!player.getAbilities().instabuild) held.shrink(1);
-                WireAttachment.set(player, level, pos, wireItem, wireColor);              // chain: continue from the new insulator
+                WireAttachment.set(player, level, pos, wireItem, wireColor);
                 message(player, "Connected");
+                    message(player, "message.gtm_powerlines.wire.connected");
                 finish(event);
             }
             case SAME_BLOCK -> message(player, "Same block selected");
-            case ALREADY_CONNECTED -> message(player, "Already connected");
-            case TOO_MANY_CONNECTIONS -> message(player, "Too many connections");
+                case ALREADY_CONNECTED -> message(player, "message.gtm_powerlines.wire.already_connected");
+                case TOO_MANY_CONNECTIONS -> message(player, "message.gtm_powerlines.wire.too_many_connections");
         }
     }
 
@@ -155,6 +164,7 @@ public class PowerlineWiresEvents {
 
         WireAttachment.clear(event.getEntity());
         message(event.getEntity(), "Wire cancelled");
+            message(event.getEntity(), "message.gtm_powerlines.wire.cancelled");
     }
 
     @SubscribeEvent
@@ -166,10 +176,10 @@ public class PowerlineWiresEvents {
         if (attach == null) return;
 
         ItemStack now = event.getTo();
-        if (attach.wire().equals(now.getItem())) return;       // same item, e.g. the stack count changed
+        if (attach.wire().equals(now.getItem())) return;
 
         WireAttachment.clear(player);
-        player.displayClientMessage(Component.literal("Wire cancelled"), true);
+        player.displayClientMessage(Component.translatable("message.gtm_powerlines.wire.cancelled"), true);
     }
 
     private static boolean isPowerlineWire(ItemStack stack) {
@@ -177,8 +187,8 @@ public class PowerlineWiresEvents {
         return ChemicalHelper.getPrefix(stack.getItem()) == TagPrefix.wireFine;
     }
 
-    private static void message(Player p, String text) {
-        p.displayClientMessage(Component.literal(text), true);   // action bar above the hotbar
+    private static void message(Player p, String key, Object... args) {
+        p.displayClientMessage(Component.translatable(key, args), true);
     }
 
     private static void finish(PlayerInteractEvent.RightClickBlock event) {

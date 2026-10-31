@@ -1,6 +1,7 @@
 package com.github.dewittsmith.gtm_powerlines.trackers;
 
-import com.github.dewittsmith.gtm_powerlines.machines.PowerlineTowerBlockEntity;
+import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineTowerBlockEntity;
+
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
