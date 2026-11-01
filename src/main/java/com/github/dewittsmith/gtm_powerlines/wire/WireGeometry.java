@@ -41,6 +41,7 @@ public final class WireGeometry {
     }
 
     public static Vec3 getAttachmentPoint(Level level, BlockPos pos) {
+        if (!level.isLoaded(pos)) return pos.getCenter();
         var be = level.getBlockEntity(pos);
         return WireGeometry.getAttachmentPoint(be);
     }

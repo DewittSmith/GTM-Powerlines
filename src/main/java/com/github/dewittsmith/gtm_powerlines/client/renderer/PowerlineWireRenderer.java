@@ -1,23 +1,18 @@
 package com.github.dewittsmith.gtm_powerlines.client.renderer;
 
-import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
-import com.github.dewittsmith.gtm_powerlines.wire.WireColor;
 import com.github.dewittsmith.gtm_powerlines.wire.WireGeometry;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
-import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
 
-public class PowerlineWireRenderer implements BlockEntityRenderer<PowerlineInsulatorBlockEntity> {
+public class PowerlineWireRenderer {
     private static final ResourceLocation WIRE_TEXTURE = new ResourceLocation("gtceu", "block/cable/insulation_5");
 
     private static final float BLOCK_PIXEL_SIZE = 16;
@@ -25,8 +20,12 @@ public class PowerlineWireRenderer implements BlockEntityRenderer<PowerlineInsul
     private static final float BLOCK_SIZE = PIXEL_SIZE / BLOCK_PIXEL_SIZE;
     private static final float HALF = BLOCK_SIZE / 2;
 
+    public static RenderType wireRenderType() {
+        return RenderType.entityCutoutNoCull(TextureAtlas.LOCATION_BLOCKS);
+    }
+
     public static void renderWire(PoseStack poseStack, MultiBufferSource buffers, Vec3 start, Vec3 end, int argb, int light) {
-        VertexConsumer consumer = buffers.getBuffer(RenderType.entityCutoutNoCull(TextureAtlas.LOCATION_BLOCKS));
+        VertexConsumer consumer = buffers.getBuffer(wireRenderType());
         TextureAtlasSprite sprite = Minecraft.getInstance().getTextureAtlas(TextureAtlas.LOCATION_BLOCKS).apply(WIRE_TEXTURE);
         PoseStack.Pose pose = poseStack.last();
 
@@ -44,7 +43,10 @@ public class PowerlineWireRenderer implements BlockEntityRenderer<PowerlineInsul
         float u0 = sprite.getU0(), v0 = sprite.getV0(), u1 = sprite.getU1(), v1 = sprite.getV1();
         float w = u1 - u0, h = v1 - v0;
         float tw = w / BLOCK_PIXEL_SIZE, th = h / BLOCK_PIXEL_SIZE;
-        u0 += tw; v0 += th; u1 = u0 + tw * PIXEL_SIZE; v1 -= th;
+        u0 += tw;
+        v0 += th;
+        u1 = u0 + tw * PIXEL_SIZE;
+        v1 -= th;
 
         for (int i = 1; i < samples; i++) {
             double t = i / (samples - 1.0);
@@ -97,39 +99,5 @@ public class PowerlineWireRenderer implements BlockEntityRenderer<PowerlineInsul
                 .uv2(light)
                 .normal(pose.normal(), (float) n.x, (float) n.y, (float) n.z)
                 .endVertex();
-    }
-
-    public PowerlineWireRenderer(BlockEntityRendererProvider.Context context) {
-    }
-
-    @Override
-    public boolean shouldRender(PowerlineInsulatorBlockEntity blockEntity, Vec3 cameraPos) {
-        return true;
-    }
-
-    @Override
-    public boolean shouldRenderOffScreen(PowerlineInsulatorBlockEntity blockEntity) {
-        return true;
-    }
-
-    @Override
-    public void render(PowerlineInsulatorBlockEntity insulatorBlock, float partialTick, PoseStack poseStack, MultiBufferSource multiBufferSource, int light, int overlay) {
-        BlockPos origin = insulatorBlock.getBlockPos();
-
-        var level = insulatorBlock.getLevel();
-        if (level == null) return;
-
-        for (PowerlineInsulatorBlockEntity.Connection connection : insulatorBlock.getConnections()) {
-            var target = connection.target();
-            if (origin.compareTo(target) >= 0) continue;
-
-            var start = WireGeometry.getAttachmentPoint(insulatorBlock);
-            var end = WireGeometry.getAttachmentPoint(level, target);
-
-            start = start.subtract(Vec3.atLowerCornerOf(origin));
-            end = end.subtract(Vec3.atLowerCornerOf(origin));
-
-            renderWire(poseStack, multiBufferSource, start, end, WireColor.wireColor(connection.wire()), light);
-        }
     }
 }

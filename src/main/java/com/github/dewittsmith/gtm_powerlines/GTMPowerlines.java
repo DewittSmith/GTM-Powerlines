@@ -1,8 +1,8 @@
 package com.github.dewittsmith.gtm_powerlines;
 
 import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
+import com.github.dewittsmith.gtm_powerlines.network.Net;
 import com.github.dewittsmith.gtm_powerlines.registry.GTMPowerlinesRegistries;
-
 import com.gregtechceu.gtceu.api.GTCEuAPI;
 import com.gregtechceu.gtceu.api.data.chemical.material.event.MaterialEvent;
 import com.gregtechceu.gtceu.api.data.chemical.material.event.MaterialRegistryEvent;
@@ -52,6 +52,7 @@ public class GTMPowerlines {
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(this::clientSetup);
 
+        modEventBus.addListener((FMLCommonSetupEvent e) -> e.enqueueWork(Net::init));
         modEventBus.addListener(this::addMaterialRegistries);
         modEventBus.addListener(this::addMaterials);
         modEventBus.addListener(this::modifyMaterials);

@@ -3,10 +3,7 @@ package com.github.dewittsmith.gtm_powerlines.client.event;
 import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
 import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
 import com.github.dewittsmith.gtm_powerlines.client.renderer.PowerlineWireRenderer;
-import com.github.dewittsmith.gtm_powerlines.wire.WireAttachment;
-import com.github.dewittsmith.gtm_powerlines.wire.WireCutSelection;
-import com.github.dewittsmith.gtm_powerlines.wire.WireGeometry;
-import com.github.dewittsmith.gtm_powerlines.wire.WireTargeting;
+import com.github.dewittsmith.gtm_powerlines.wire.*;
 import com.gregtechceu.gtceu.data.recipe.CustomTags;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
@@ -83,9 +80,9 @@ public class WirePreviewEvents {
             LevelRenderer.renderLineBox(pose, buffer, box, 1f, 1f, 0f, 1f);
         }
 
-        var hit = WireTargeting.find(be, player.getEyePosition(event.getPartialTick()), player.getViewVector(event.getPartialTick()));
+        var hit = WireTargeting.find(sel.pos(), ClientWires.at(sel.pos()), player.getEyePosition(event.getPartialTick()), player.getViewVector(event.getPartialTick()));
         if (hit != null) {
-            AABB dot = new AABB(hit.point(), hit.point()).inflate(0.07).move(-cam.x, -cam.y, -cam.z);
+            AABB dot = new AABB(hit.point(), hit.point()).inflate(0.1).move(-cam.x, -cam.y, -cam.z);
             LevelRenderer.renderLineBox(pose, buffer, dot, 1f, 1f, 0f, 1f);
         }
 

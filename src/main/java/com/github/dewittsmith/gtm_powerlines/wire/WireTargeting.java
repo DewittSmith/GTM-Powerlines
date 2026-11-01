@@ -1,29 +1,32 @@
 package com.github.dewittsmith.gtm_powerlines.wire;
 
 import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
-
+import com.github.dewittsmith.gtm_powerlines.network.PowerlineNetwork;
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 
 import javax.annotation.Nullable;
+import java.util.Collection;
 
 public final class WireTargeting {
-    public record Hit(PowerlineInsulatorBlockEntity.Connection connection, Vec3 point) {
+    public record Hit(PowerlineNetwork.Edge edge, Vec3 point) {
     }
 
     private static final double MAX_DISTANCE = 0.35;
     private static final double REACH = 12.0;
 
-    public static @Nullable Hit find(PowerlineInsulatorBlockEntity be, Vec3 eye, Vec3 look) {
-        var level = be.getLevel();
+    public static @Nullable Hit find(BlockPos origin, Collection<PowerlineNetwork.Edge> edges, Vec3 eye, Vec3 look) {
+        var level = Minecraft.getInstance().level;
         if (level == null) return null;
 
-        Vec3 from = WireGeometry.getAttachmentPoint(be);
+        Vec3 from = WireGeometry.getAttachmentPoint(level, origin);
         Hit best = null;
         double bestDist = MAX_DISTANCE;
 
-        for (var c : be.getConnections()) {
-            Vec3 to = WireGeometry.getAttachmentPoint(level.getBlockEntity(c.target()));
+        for (var edge : edges) {
+            var to = WireGeometry.getAttachmentPoint(level, edge.other(origin));
             double length = from.distanceTo(to);
             double sag = WireGeometry.sag(length);
             int n = WireGeometry.samples(length);
@@ -35,7 +38,7 @@ public final class WireTargeting {
                 double d = rayToSegment(eye, look, prev, next, closest);
                 if (d < bestDist) {
                     bestDist = d;
-                    best = new Hit(c, closest[0]);
+                    best = new Hit(edge, closest[0]);
                 }
                 prev = next;
             }
