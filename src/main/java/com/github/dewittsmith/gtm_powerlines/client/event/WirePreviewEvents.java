@@ -9,10 +9,10 @@ import com.github.dewittsmith.gtm_powerlines.wire.WireGeometry;
 import com.github.dewittsmith.gtm_powerlines.wire.WireTargeting;
 import com.gregtechceu.gtceu.data.recipe.CustomTags;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.LevelRenderer;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
@@ -58,11 +58,9 @@ public class WirePreviewEvents {
         Vec3 localEnd = end.subtract(cameraPos);
 
         PoseStack poseStack = event.getPoseStack();
-        VertexConsumer consumer = mc.renderBuffers().bufferSource().getBuffer(RenderType.lines());
-
-        PowerlineWireRenderer.renderWire(poseStack, consumer, localStart, localEnd, attachment.argb());
-
-        mc.renderBuffers().bufferSource().endBatch(RenderType.lines());
+        var bufferSource = mc.renderBuffers().bufferSource();
+        PowerlineWireRenderer.renderWire(poseStack, bufferSource, localStart, localEnd, attachment.argb(), LightTexture.FULL_BRIGHT);
+        bufferSource.endLastBatch();
     }
 
     private static void renderCutPreview(RenderLevelStageEvent event, Minecraft mc, LocalPlayer player, Level level) {
