@@ -29,6 +29,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -47,7 +48,7 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine imple
     @Getter
     private long maxVoltage;
     private IO energyIO = null;
-    private Iterable<BlockPos> insulators = Collections.emptyList();
+    private Collection<BlockPos> insulators = Collections.emptyList();
 
     public PowerlineTransformerMachine(IMachineBlockEntity holder) {
         super(holder);
@@ -102,7 +103,7 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine imple
         maxVoltage = mixed ? 0 : total;
     }
 
-    private void setInsulatorsConnected(Iterable<BlockPos> positions, boolean connected) {
+    private void setInsulatorsConnected(Collection<BlockPos> positions, boolean connected) {
         Level level = getLevel();
         if (level == null || level.isClientSide) return;
         for (BlockPos pos : positions) {

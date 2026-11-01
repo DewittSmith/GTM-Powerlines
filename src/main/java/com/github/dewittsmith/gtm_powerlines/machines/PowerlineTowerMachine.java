@@ -1,35 +1,34 @@
-package com.github.dewittsmith.gtm_powerlines.blockentity;
+package com.github.dewittsmith.gtm_powerlines.machines;
 
+import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
 import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
 import com.github.dewittsmith.gtm_powerlines.registry.GTMPowerlinesRegistries;
-import com.github.dewittsmith.gtm_powerlines.trackers.PowerlineTowerTracker;
 import com.github.dewittsmith.gtm_powerlines.wire.IWireMachine;
+import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
+import com.gregtechceu.gtceu.api.machine.feature.IInteractedMachine;
+import com.gregtechceu.gtceu.api.machine.multiblock.MultiblockControllerMachine;
 import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import it.unimi.dsi.fastutil.longs.LongSets;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
-public class PowerlineTowerBlockEntity extends BlockEntity implements IWireMachine {
+public class PowerlineTowerMachine extends MultiblockControllerMachine implements IWireMachine, IInteractedMachine {
     private static final int MAX_BLOCKS = 64;
 
-    private final LongSet structureBlocks = new LongOpenHashSet();
     private final LongSet insulatorBlocks = new LongOpenHashSet();
     private int baseElevation = 0;
 
-    public PowerlineTowerBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState blockState) {
-        super(type, pos, blockState);
+    public PowerlineTowerMachine(IMachineBlockEntity machineBlockEntity) {
+        super(machineBlockEntity);
     }
 
     public LongSet getStructureBlocks() {
-        return LongSets.unmodifiable(structureBlocks);
+        return LongSets.unmodifiable(getMultiblockState().cache);
     }
 
     public LongSet getInsulatorBlocks() {
@@ -50,15 +49,16 @@ public class PowerlineTowerBlockEntity extends BlockEntity implements IWireMachi
         return s.is(GTMPowerlinesRegistries.POWERLINE_INSULATOR.get());
     }
 
-    public void attachInsulators() {
+    private void attachInsulators() {
         setInsulatorsConnected(insulatorBlocks, true);
     }
 
-    public void detachInsulators() {
+    private void detachInsulators() {
         setInsulatorsConnected(insulatorBlocks, false);
     }
 
     private void setInsulatorsConnected(LongSet positions, boolean connected) {
+        var level = getLevel();
         if (level == null || level.isClientSide) return;
 
         BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
@@ -66,22 +66,23 @@ public class PowerlineTowerBlockEntity extends BlockEntity implements IWireMachi
             cursor.set(BlockPos.getX(current), BlockPos.getY(current), BlockPos.getZ(current));
 
             if (level.getBlockEntity(cursor) instanceof PowerlineInsulatorBlockEntity insulator) {
-                insulator.setController(connected ? worldPosition : null);
+                insulator.setController(connected ? getPos() : null);
             }
         }
     }
 
-    public boolean rescan() {
+    private boolean rescan() {
+        var level = getLevel();
         if (level == null || level.isClientSide) return false;
 
         LongSet found = new LongOpenHashSet();
         LongSet insulators = new LongOpenHashSet();
         LongArrayFIFOQueue queue = new LongArrayFIFOQueue();
 
-        queue.enqueue(worldPosition.asLong());
+        queue.enqueue(getPos().asLong());
         BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
 
-        var minElevation = worldPosition.getY();
+        var minElevation = getPos().getY();
         while (!queue.isEmpty()) {
             long current = queue.dequeueLong();
             if (!found.add(current)) continue;
@@ -103,12 +104,18 @@ public class PowerlineTowerBlockEntity extends BlockEntity implements IWireMachi
                     if (cursor.getY() < minElevation) minElevation = cursor.getY();
                 }
 
-                if (found.size() > MAX_BLOCKS) return false;
+                if (found.size() > MAX_BLOCKS) {
+                    detachInsulators();
+                    insulatorBlocks.clear();
+                    return false;
+                }
             }
         }
 
-        structureBlocks.clear();
-        structureBlocks.addAll(found);
+        var multiblockState = getMultiblockState();
+
+        multiblockState.clean();
+        multiblockState.cache.addAll(found);
 
         detachInsulators();
         insulatorBlocks.clear();
@@ -116,33 +123,12 @@ public class PowerlineTowerBlockEntity extends BlockEntity implements IWireMachi
         attachInsulators();
 
         baseElevation = minElevation;
-
-        setChanged();
-        PowerlineTowerTracker.update(level, worldPosition, structureBlocks);
         return true;
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
-        tag.putLongArray("insulatorBlocks", insulatorBlocks.toLongArray());
-    }
-
-    @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
-
-        insulatorBlocks.clear();
-        insulatorBlocks.addAll(new LongOpenHashSet(tag.getLongArray("insulatorBlocks")));
-    }
-
-    @Override
-    public void onLoad() {
-        super.onLoad();
-        if (level != null && !level.isClientSide) {
-            PowerlineTowerTracker.update(level, worldPosition, structureBlocks);
-            rescan();
-        }
+    public boolean checkPattern() {
+        return rescan() && !insulatorBlocks.isEmpty();
     }
 
     @Override

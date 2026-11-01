@@ -5,11 +5,19 @@ import com.gregtechceu.gtceu.api.machine.multiblock.PartAbility;
 import com.gregtechceu.gtceu.api.pattern.TraceabilityPredicate;
 import com.gregtechceu.gtceu.api.pattern.error.PatternStringError;
 import com.lowdragmc.lowdraglib.utils.BlockInfo;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.Property;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.stream.Stream;
+
+import static com.gregtechceu.gtceu.api.pattern.Predicates.custom;
 
 public final class PowerlinePredicates {
     private static final PartAbility[] INPUTS = {PartAbility.INPUT_ENERGY, PartAbility.SUBSTATION_INPUT_ENERGY};
@@ -43,5 +51,28 @@ public final class PowerlinePredicates {
     private static boolean isAny(PartAbility[] abilities, Block block) {
         for (PartAbility a : abilities) if (a.isApplicable(block)) return true;
         return false;
+    }
+
+    public static TraceabilityPredicate track(String name, BlockState blockState, Property<?>... props) {
+        return custom(state -> {
+            var bs = state.getBlockState();
+            if (!bs.is(blockState.getBlock())) return false;
+            for (Property<?> prop : props) {
+                if (!bs.hasProperty(prop)) {
+                    return false;
+                }
+
+                if (bs.getValue(prop) != blockState.getValue(prop)) {
+                    return false;
+                }
+            }
+
+            state.getMatchContext().getOrCreate(name, () -> new ArrayList<BlockPos>()).add(state.getPos());
+            return true;
+        }, () -> new BlockInfo[]{new BlockInfo(blockState)});
+    }
+
+    public static TraceabilityPredicate blockTags(Collection<TagKey<Block>> tags) {
+        return new TraceabilityPredicate(new PredicateBlockTags(tags));
     }
 }

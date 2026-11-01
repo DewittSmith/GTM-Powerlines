@@ -1,12 +1,11 @@
 package com.github.dewittsmith.gtm_powerlines.registry;
 
 import com.github.dewittsmith.gtm_powerlines.block.PowerlineInsulatorBlock;
-import com.github.dewittsmith.gtm_powerlines.block.PowerlineTowerBlock;
 import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
-import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineTowerBlockEntity;
+import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
+import com.github.dewittsmith.gtm_powerlines.machines.PowerlineTowerMachine;
 import com.github.dewittsmith.gtm_powerlines.machines.PowerlineTransformerMachine;
 import com.github.dewittsmith.gtm_powerlines.util.CoilEfficiency;
-import com.github.dewittsmith.gtm_powerlines.util.PowerlinePatternPredicates;
 import com.github.dewittsmith.gtm_powerlines.util.PowerlinePredicates;
 import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.api.GTCEuAPI;
@@ -14,6 +13,7 @@ import com.gregtechceu.gtceu.api.GTValues;
 import com.gregtechceu.gtceu.api.data.RotationState;
 import com.gregtechceu.gtceu.api.data.chemical.ChemicalHelper;
 import com.gregtechceu.gtceu.api.data.tag.TagPrefix;
+import com.gregtechceu.gtceu.api.machine.MachineDefinition;
 import com.gregtechceu.gtceu.api.machine.MultiblockMachineDefinition;
 import com.gregtechceu.gtceu.api.pattern.FactoryBlockPattern;
 import com.gregtechceu.gtceu.api.pattern.MultiblockShapeInfo;
@@ -56,16 +56,85 @@ public class GTMPowerlinesRegistries {
             .validBlock(POWERLINE_INSULATOR)
             .register();
 
-    public static final BlockEntry<PowerlineTowerBlock> POWERLINE_TOWER = POWERLINE_REGISTRATE
-            .block("powerline_tower", PowerlineTowerBlock::new)
-            .lang("Powerline Tower")
-            .initialProperties(() -> Blocks.IRON_BLOCK)
-            .simpleItem()
-            .register();
-
-    public static final BlockEntityEntry<PowerlineTowerBlockEntity> POWERLINE_TOWER_BLOCK_ENTITY = POWERLINE_REGISTRATE
-            .blockEntity("powerline_tower", PowerlineTowerBlockEntity::new)
-            .validBlock(POWERLINE_TOWER)
+    public static final MachineDefinition POWERLINE_TOWER = POWERLINE_REGISTRATE
+            .multiblock("powerline_tower", PowerlineTowerMachine::new)
+            .langValue("Powerline Tower")
+            .rotationState(RotationState.NON_Y_AXIS)
+            .recipeType(GTRecipeTypes.DUMMY_RECIPES)
+            .noRecipeModifier()
+            .appearanceBlock(MACHINE_CASING_LV)
+            .pattern(definition -> FactoryBlockPattern.start()
+                    .aisle("S", "F", "I")
+                    .where('S', controller(blocks(definition.get())))
+                    .where('F', PowerlinePredicates.blockTags(GTMPowerlinesConfig.INSTANCE.towerTags()))
+                    .where('I', PowerlinePredicates.track("insulators", POWERLINE_INSULATOR.getDefaultState()).setMinGlobalLimited(1))
+                    .build())
+            .shapeInfos(definition -> {
+                var shapeInfo = new ArrayList<MultiblockShapeInfo>();
+                shapeInfo.add(MultiblockShapeInfo.builder()
+                        .aisle("S", "F", "I")
+                        .where('S', definition, Direction.NORTH)
+                        .where('F', Blocks.SPRUCE_FENCE)
+                        .where('I', POWERLINE_INSULATOR)
+                        .build());
+                shapeInfo.add(MultiblockShapeInfo.builder()
+                        .aisle("S", "D", "D", "F", "F", "F", "I")
+                        .where('S', definition, Direction.NORTH)
+                        .where('F', Blocks.SPRUCE_FENCE)
+                        .where('I', POWERLINE_INSULATOR)
+                        .where('D', Blocks.POLISHED_DEEPSLATE_WALL)
+                        .build());
+                shapeInfo.add(MultiblockShapeInfo.builder()
+                        .aisle("S#", "D#", "D#", "F#", "F#", "FI", "LL")
+                        .where('S', definition, Direction.NORTH)
+                        .where('F', Blocks.SPRUCE_FENCE)
+                        .where('I', POWERLINE_INSULATOR.getDefaultState().setValue(PowerlineInsulatorBlock.DIRECTION, Direction.DOWN))
+                        .where('D', Blocks.POLISHED_DEEPSLATE_WALL)
+                        .where('L', Blocks.SPRUCE_SLAB)
+                        .where('#', Blocks.AIR)
+                        .build());
+                shapeInfo.add(MultiblockShapeInfo.builder()
+                        .aisle("#S#", "#D#", "#D#", "#F#", "#F#", "FFF", "IFI")
+                        .where('S', definition, Direction.NORTH)
+                        .where('F', Blocks.SPRUCE_FENCE)
+                        .where('I', POWERLINE_INSULATOR)
+                        .where('D', Blocks.POLISHED_DEEPSLATE_WALL)
+                        .where('#', Blocks.AIR)
+                        .build());
+                shapeInfo.add(MultiblockShapeInfo.builder()
+                        .aisle("##C#####C##",
+                                "##D#####D##",
+                                "##D#####D##",
+                                "##D#####D##",
+                                "##F#####F##",
+                                "##FGF#FGF##",
+                                "##F#FOF#F##",
+                                "##D##F##D##",
+                                "##F##F##F##",
+                                "##FGFFFGF##",
+                                "##F#####F##",
+                                "##F#####F##",
+                                "I#F##I##F#I",
+                                "F#F##F##F#F",
+                                "SSPSSSSSPSS",
+                                "##F#####F##",
+                                "##J#####J##")
+                        .where('O', definition, Direction.NORTH)
+                        .where('F', Blocks.SPRUCE_FENCE)
+                        .where('I', POWERLINE_INSULATOR.getDefaultState().setValue(PowerlineInsulatorBlock.DIRECTION, Direction.DOWN))
+                        .where('D', Blocks.POLISHED_DEEPSLATE_WALL)
+                        .where('#', Blocks.AIR)
+                        .where('C', MACHINE_CASING_LV)
+                        .where('G', Blocks.SPRUCE_FENCE_GATE)
+                        .where('S', Blocks.SPRUCE_SLAB)
+                        .where('P', Blocks.SPRUCE_PLANKS)
+                        .where('J', POWERLINE_INSULATOR)
+                        .build());
+                return shapeInfo;
+            })
+            .workableCasingModel(
+                    GTCEu.id("block/casings/voltage/lv/side"),
+                    GTCEu.id("block/multiblock/large_miner"))
             .register();
 
     public static final MultiblockMachineDefinition POWERLINE_TRANSFORMER = POWERLINE_REGISTRATE
@@ -89,7 +158,7 @@ public class GTMPowerlinesRegistries {
                             .or(autoAbilities(true, false, false)))
                     .where('F', frames(GTMaterials.Steel))
                     .where('P', blocks(CASING_STEEL_PIPE.get()))
-                    .where('I', PowerlinePatternPredicates.track("insulators", POWERLINE_INSULATOR.getDefaultState(), PowerlineInsulatorBlock.DIRECTION)
+                    .where('I', PowerlinePredicates.track("insulators", POWERLINE_INSULATOR.getDefaultState(), PowerlineInsulatorBlock.DIRECTION)
                             .or(any()))
                     .where('#', air())
                     .build())

@@ -2,6 +2,7 @@ package com.github.dewittsmith.gtm_powerlines.blockentity;
 
 import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
 import com.github.dewittsmith.gtm_powerlines.network.PowerlineNetwork;
+import com.github.dewittsmith.gtm_powerlines.util.BlockUtils;
 import com.github.dewittsmith.gtm_powerlines.wire.IWireMachine;
 import com.github.dewittsmith.gtm_powerlines.wire.WireConnectionResult;
 import com.gregtechceu.gtceu.api.blockentity.MetaMachineBlockEntity;
@@ -51,28 +52,15 @@ public class PowerlineInsulatorBlockEntity extends BlockEntity {
 
     public float maxConnectionRange() {
         if (controller == null) return 0f;
-        var entity = level.getBlockEntity(controller);
-
-        var wireDistance = 0f;
-        if (entity instanceof IWireMachine wireMachine) {
-            wireDistance = wireMachine.getWireDistanceFor(worldPosition);
-        } else if (entity instanceof MetaMachineBlockEntity metaBe && metaBe.metaMachine instanceof IWireMachine wireMachine) {
-            wireDistance = wireMachine.getWireDistanceFor(worldPosition);
-        }
-
+        var wireMachine = BlockUtils.instanceOf(level, controller, IWireMachine.class);
+        var wireDistance = wireMachine.isEmpty() ? 0f : wireMachine.get().getWireDistanceFor(worldPosition);
         return Mth.clamp(wireDistance, GTMPowerlinesConfig.INSTANCE.minWireRange, GTMPowerlinesConfig.INSTANCE.maxWireRange);
     }
 
     public boolean hasConnectionCapacity() {
         if (!isServer() || controller == null) return false;
-        var entity = level.getBlockEntity(controller);
-
-        var maxConnections = 0;
-        if (entity instanceof IWireMachine wireMachine) {
-            maxConnections = wireMachine.getMaxConnections();
-        } else if (entity instanceof MetaMachineBlockEntity metaBe && metaBe.metaMachine instanceof IWireMachine wireMachine) {
-            maxConnections = wireMachine.getMaxConnections();
-        }
+        var wireMachine = BlockUtils.instanceOf(level, controller, IWireMachine.class);
+        var maxConnections = wireMachine.isEmpty() ? 0 : wireMachine.get().getMaxConnections();
         return connectionCount() < maxConnections;
     }
 
