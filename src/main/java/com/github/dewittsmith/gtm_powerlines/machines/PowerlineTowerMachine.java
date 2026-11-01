@@ -2,6 +2,8 @@ package com.github.dewittsmith.gtm_powerlines.machines;
 
 import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
 import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
+import com.github.dewittsmith.gtm_powerlines.network.Net;
+import com.github.dewittsmith.gtm_powerlines.network.TowerHighlightPacket;
 import com.github.dewittsmith.gtm_powerlines.registry.GTMPowerlinesRegistries;
 import com.github.dewittsmith.gtm_powerlines.wire.IWireMachine;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
@@ -13,12 +15,23 @@ import it.unimi.dsi.fastutil.longs.LongSet;
 import it.unimi.dsi.fastutil.longs.LongSets;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.TagKey;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.BlockHitResult;
+
+import java.util.HashSet;
+import java.util.Set;
 
 public class PowerlineTowerMachine extends MultiblockControllerMachine implements IWireMachine, IInteractedMachine {
     private static final int MAX_BLOCKS = 64;
+
+    public static final Set<PowerlineTowerMachine> RENDERED_TOWERS = new HashSet<>();
 
     private final LongSet insulatorBlocks = new LongOpenHashSet();
     private int baseElevation = 0;
@@ -124,6 +137,17 @@ public class PowerlineTowerMachine extends MultiblockControllerMachine implement
 
         baseElevation = minElevation;
         return true;
+    }
+
+    @Override
+    public InteractionResult onUse(BlockState state, Level level, BlockPos pos, Player player,
+                                   InteractionHand hand, BlockHitResult hit) {
+        if (hand != InteractionHand.MAIN_HAND) return InteractionResult.PASS;
+        if (level.isClientSide) return InteractionResult.SUCCESS;
+        if (!(player instanceof ServerPlayer sp)) return InteractionResult.PASS;
+        if (!sp.getMainHandItem().isEmpty()) return InteractionResult.PASS;
+        Net.sendToPlayer(sp, new TowerHighlightPacket(level.dimension(), getStructureBlocks().toLongArray(), insulatorBlocks.toLongArray(), 200));
+        return InteractionResult.CONSUME;
     }
 
     @Override

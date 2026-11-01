@@ -1,4 +1,4 @@
-package com.github.dewittsmith.gtm_powerlines.client.event;
+package com.github.dewittsmith.gtm_powerlines.event;
 
 import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
 import com.github.dewittsmith.gtm_powerlines.wire.ClientWires;

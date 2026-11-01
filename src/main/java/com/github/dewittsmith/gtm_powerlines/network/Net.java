@@ -20,9 +20,6 @@ public final class Net {
 
     private static boolean registered = false;
 
-    /**
-     * Call once from common setup.
-     */
     public static synchronized void init() {
         if (registered) return;
         registered = true;
@@ -33,6 +30,9 @@ public final class Net {
                 Optional.of(NetworkDirection.PLAY_TO_CLIENT));
         CHANNEL.registerMessage(id++, WireDeltaPacket.class,
                 WireDeltaPacket::encode, WireDeltaPacket::decode, WireDeltaPacket::handle,
+                Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+        CHANNEL.registerMessage(id++, TowerHighlightPacket.class,
+                TowerHighlightPacket::encode, TowerHighlightPacket::decode, TowerHighlightPacket::handle,
                 Optional.of(NetworkDirection.PLAY_TO_CLIENT));
     }
 

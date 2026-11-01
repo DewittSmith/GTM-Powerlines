@@ -1,7 +1,6 @@
-package com.github.dewittsmith.gtm_powerlines.event;
+package com.github.dewittsmith.gtm_powerlines.renderer;
 
 import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
-import com.github.dewittsmith.gtm_powerlines.client.renderer.PowerlineWireRenderer;
 import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
 import com.github.dewittsmith.gtm_powerlines.network.PowerlineNetwork;
 import com.github.dewittsmith.gtm_powerlines.wire.ClientWires;

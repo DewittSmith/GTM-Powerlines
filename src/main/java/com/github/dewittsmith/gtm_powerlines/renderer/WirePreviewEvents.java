@@ -1,8 +1,7 @@
-package com.github.dewittsmith.gtm_powerlines.client.event;
+package com.github.dewittsmith.gtm_powerlines.renderer;
 
 import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
 import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
-import com.github.dewittsmith.gtm_powerlines.client.renderer.PowerlineWireRenderer;
 import com.github.dewittsmith.gtm_powerlines.wire.*;
 import com.gregtechceu.gtceu.data.recipe.CustomTags;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -25,17 +24,13 @@ import net.minecraftforge.fml.common.Mod;
 public class WirePreviewEvents {
     @SubscribeEvent
     public static void onRenderLevel(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_ENTITIES) {
-            return;
-        }
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_ENTITIES) return;
 
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
         Level level = mc.level;
 
-        if (player == null || level == null) {
-            return;
-        }
+        if (player == null || level == null) return;
 
         renderCutPreview(event, mc, player, level);
         renderDraggingWire(event, mc, player, level);
@@ -43,9 +38,7 @@ public class WirePreviewEvents {
 
     private static void renderDraggingWire(RenderLevelStageEvent event, Minecraft mc, LocalPlayer player, Level level) {
         var attachment = WireAttachment.get(player);
-        if (attachment == null) {
-            return;
-        }
+        if (attachment == null) return;
 
         Vec3 start = WireGeometry.getAttachmentPoint(level, attachment.pos());
         Vec3 end = getPlayerHandPosition(player, event.getPartialTick());
@@ -60,13 +53,18 @@ public class WirePreviewEvents {
         bufferSource.endLastBatch();
     }
 
+    private static Vec3 getPlayerHandPosition(Player player, float partialTick) {
+        Vec3 playerPos = player.getPosition(partialTick);
+        Vec3 look = player.getViewVector(partialTick);
+        return playerPos.add(0, player.getBbHeight() * 0.75, 0).add(look.scale(0.25));
+    }
+
     private static void renderCutPreview(RenderLevelStageEvent event, Minecraft mc, LocalPlayer player, Level level) {
         if (!player.getMainHandItem().is(CustomTags.WIRE_CUTTERS)) return;
         var sel = WireCutSelection.get(player);
-        if (sel == null || !(level.getBlockEntity(sel.pos()) instanceof PowerlineInsulatorBlockEntity be)) return;
+        if (sel == null || !(level.getBlockEntity(sel.pos()) instanceof PowerlineInsulatorBlockEntity)) return;
 
         var pose = event.getPoseStack();
-
         Vec3 cam = event.getCamera().getPosition();
         var bs = mc.renderBuffers().bufferSource();
         var buffer = bs.getBuffer(RenderType.LINES);
@@ -74,9 +72,8 @@ public class WirePreviewEvents {
         var pos = sel.pos();
         var state = level.getBlockState(pos);
         if (!state.isAir()) {
-            AABB box = state.getShape(level, pos, CollisionContext.empty()).bounds()
+            var box = state.getShape(level, pos, CollisionContext.empty()).bounds()
                     .move(pos.getX() - cam.x, pos.getY() - cam.y, pos.getZ() - cam.z);
-
             LevelRenderer.renderLineBox(pose, buffer, box, 1f, 1f, 0f, 1f);
         }
 
@@ -87,11 +84,5 @@ public class WirePreviewEvents {
         }
 
         bs.endBatch(RenderType.lines());
-    }
-
-    private static Vec3 getPlayerHandPosition(Player player, float partialTick) {
-        Vec3 playerPos = player.getPosition(partialTick);
-        Vec3 look = player.getViewVector(partialTick);
-        return playerPos.add(0, player.getBbHeight() * 0.75, 0).add(look.scale(0.25));
     }
 }

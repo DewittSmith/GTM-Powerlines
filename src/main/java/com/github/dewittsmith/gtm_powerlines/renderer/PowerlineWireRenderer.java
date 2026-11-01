@@ -1,4 +1,4 @@
-package com.github.dewittsmith.gtm_powerlines.client.renderer;
+package com.github.dewittsmith.gtm_powerlines.renderer;
 
 import com.github.dewittsmith.gtm_powerlines.wire.WireGeometry;
 import com.mojang.blaze3d.vertex.PoseStack;
