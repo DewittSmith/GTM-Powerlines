@@ -1,7 +1,7 @@
 package com.github.dewittsmith.gtm_powerlines.config;
 
 import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
-
+import com.github.dewittsmith.gtm_powerlines.renderer.WireLOD;
 import dev.toma.configuration.Configuration;
 import dev.toma.configuration.config.Config;
 import dev.toma.configuration.config.Configurable;
@@ -58,6 +58,18 @@ public class GTMPowerlinesConfig {
     @Configurable.Comment({"Block tags that count as tower structure, e.g. \"minecraft:fences\"."})
     @Configurable.ValueUpdateCallback(method = "onTagsChanged")
     public String[] towerStructureTags = new String[]{"minecraft:fences", "minecraft:walls", "minecraft:fence_gates", "minecraft:planks", "minecraft:slabs"};
+
+    @Configurable
+    @Configurable.Comment({"Whether to use billboards to render wires."})
+    public boolean useFlatWires = false;
+
+    @Configurable
+    @Configurable.Comment({"Tube LOD distance."})
+    public float tubeWireLODDistance = 16;
+
+    @Configurable
+    @Configurable.Comment({"Billboard LOD distance."})
+    public float billboardLODDistance = 128;
 
     private transient Set<TagKey<Block>> resolvedTags;
 

@@ -8,13 +8,16 @@ import com.github.dewittsmith.gtm_powerlines.wire.WireTargeting;
 import com.gregtechceu.gtceu.data.recipe.CustomTags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
+import net.minecraftforge.event.entity.living.LivingEquipmentChangeEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -71,6 +74,17 @@ public class WireCutterEvents {
         if (!event.getItemStack().is(CustomTags.WIRE_CUTTERS)) return;
         if (alreadyHandled(player, level)) return;
         tryCut(player, level);
+    }
+
+    @SubscribeEvent
+    public static void onEquipmentChange(LivingEquipmentChangeEvent event) {
+        if (!(event.getEntity() instanceof ServerPlayer player)) return;
+        if (event.getSlot() != EquipmentSlot.MAINHAND) return;
+        var sel = WireCutSelection.get(player);
+        if (sel == null) return;
+
+        WireCutSelection.clear(player);
+        message(player, "message.gtm_powerlines.cutter.cancelled");
     }
 
     private static boolean tryCut(Player player, Level level) {

@@ -1,7 +1,6 @@
 package com.github.dewittsmith.gtm_powerlines.renderer;
 
 import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
-import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
 import com.github.dewittsmith.gtm_powerlines.network.PowerlineNetwork;
 import com.github.dewittsmith.gtm_powerlines.wire.ClientWires;
 import com.github.dewittsmith.gtm_powerlines.wire.WireColor;
@@ -34,19 +33,22 @@ public final class ClientWireRenderer {
         var buffers = mc.renderBuffers().bufferSource();
         Frustum frustum = event.getFrustum();
 
-        var maxWireRangeSq = GTMPowerlinesConfig.INSTANCE.maxWireRange * GTMPowerlinesConfig.INSTANCE.maxWireRange;
         for (PowerlineNetwork.Edge e : ClientWires.all()) {
             Vec3 a = WireGeometry.getAttachmentPoint(level, e.a()), b = WireGeometry.getAttachmentPoint(level, e.b());
-            Vec3 mid = a.add(b).scale(0.5);
-
-            if (mid.distanceToSqr(cam) > maxWireRangeSq + a.distanceToSqr(b)) continue;
             if (!frustum.isVisible(new AABB(a, b).inflate(1.0))) continue;
 
-            int light = LevelRenderer.getLightColor(level, BlockPos.containing(mid));
+            var distance = WireGeometry.distanceToSegment(cam, a, b);
+            var lod = WireLOD.getLOD(distance);
+            int light = LevelRenderer.getLightColor(level, BlockPos.containing(a.add(b).scale(0.5)));
 
             pose.pushPose();
             pose.translate(-cam.x, -cam.y, -cam.z);
-            PowerlineWireRenderer.renderWire(pose, buffers, a, b, WireColor.wireColor(e.wire()), light);
+
+            switch (lod) {
+                case TUBE -> PowerlineWireRenderer.renderTube(pose, buffers, a, b, WireColor.wireColor(e.wire()), light, PowerlineWireRenderer.Caps.NONE);
+                case BILLBOARD -> PowerlineWireRenderer.renderBillboard(pose, buffers, a, b, WireColor.wireColor(e.wire()), light, cam);
+            }
+
             pose.popPose();
         }
         buffers.endBatch(PowerlineWireRenderer.wireRenderType());

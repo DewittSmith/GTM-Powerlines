@@ -2,6 +2,7 @@ package com.github.dewittsmith.gtm_powerlines.renderer;
 
 import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
 import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
+import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
 import com.github.dewittsmith.gtm_powerlines.wire.*;
 import com.gregtechceu.gtceu.data.recipe.CustomTags;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -41,7 +42,7 @@ public class WirePreviewEvents {
         if (attachment == null) return;
 
         Vec3 start = WireGeometry.getAttachmentPoint(level, attachment.pos());
-        Vec3 end = getPlayerHandPosition(player, event.getPartialTick());
+        Vec3 end = player.getRopeHoldPosition(event.getPartialTick());
         Vec3 cameraPos = event.getCamera().getPosition();
 
         Vec3 localStart = start.subtract(cameraPos);
@@ -49,14 +50,10 @@ public class WirePreviewEvents {
 
         PoseStack poseStack = event.getPoseStack();
         var bufferSource = mc.renderBuffers().bufferSource();
-        PowerlineWireRenderer.renderWire(poseStack, bufferSource, localStart, localEnd, attachment.argb(), LightTexture.FULL_BRIGHT);
-        bufferSource.endLastBatch();
-    }
 
-    private static Vec3 getPlayerHandPosition(Player player, float partialTick) {
-        Vec3 playerPos = player.getPosition(partialTick);
-        Vec3 look = player.getViewVector(partialTick);
-        return playerPos.add(0, player.getBbHeight() * 0.75, 0).add(look.scale(0.25));
+        if (GTMPowerlinesConfig.INSTANCE.useFlatWires) PowerlineWireRenderer.renderBillboard(poseStack, bufferSource, localStart, localEnd, attachment.argb(), LightTexture.FULL_BRIGHT, cameraPos);
+        else PowerlineWireRenderer.renderTube(poseStack, bufferSource, localStart, localEnd, attachment.argb(), LightTexture.FULL_BRIGHT, PowerlineWireRenderer.Caps.END);
+        bufferSource.endLastBatch();
     }
 
     private static void renderCutPreview(RenderLevelStageEvent event, Minecraft mc, LocalPlayer player, Level level) {

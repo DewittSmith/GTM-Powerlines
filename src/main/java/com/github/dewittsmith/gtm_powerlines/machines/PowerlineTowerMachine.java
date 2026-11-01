@@ -146,6 +146,7 @@ public class PowerlineTowerMachine extends MultiblockControllerMachine implement
         if (level.isClientSide) return InteractionResult.SUCCESS;
         if (!(player instanceof ServerPlayer sp)) return InteractionResult.PASS;
         if (!sp.getMainHandItem().isEmpty()) return InteractionResult.PASS;
+        rescan();
         Net.sendToPlayer(sp, new TowerHighlightPacket(level.dimension(), getStructureBlocks().toLongArray(), insulatorBlocks.toLongArray(), 200));
         return InteractionResult.CONSUME;
     }
