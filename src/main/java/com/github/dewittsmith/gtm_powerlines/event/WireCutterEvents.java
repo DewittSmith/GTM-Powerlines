@@ -4,9 +4,7 @@ import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
 import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
 import com.github.dewittsmith.gtm_powerlines.wire.WireCutSelection;
 import com.github.dewittsmith.gtm_powerlines.wire.WireTargeting;
-
 import com.gregtechceu.gtceu.data.recipe.CustomTags;
-import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -26,7 +24,16 @@ import java.util.UUID;
 
 @Mod.EventBusSubscriber(modid = GTMPowerlines.MOD_ID)
 public class WireCutterEvents {
-    private static final Map<UUID, Long> PLAYER_TICKS = new HashMap<>();
+    private static final Map<UUID, Long> HANDLED = new HashMap<>();
+
+    private static boolean alreadyHandled(Player p, Level l) {
+        Long t = HANDLED.get(p.getUUID());
+        return t != null && t == l.getGameTime();
+    }
+
+    private static void markHandled(Player p, Level l) {
+        HANDLED.put(p.getUUID(), l.getGameTime());
+    }
 
     @SubscribeEvent
     public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
@@ -34,22 +41,18 @@ public class WireCutterEvents {
         if (level.isClientSide() || event.getHand() != InteractionHand.MAIN_HAND) return;
         Player player = event.getEntity();
         if (!event.getItemStack().is(CustomTags.WIRE_CUTTERS)) return;
-
-        var time = level.getGameTime();
-        var lastTime = PLAYER_TICKS.put(player.getUUID(), time);
-        if (lastTime != null && lastTime == time) return;
+        if (alreadyHandled(player, level)) return;
 
         if (level.getBlockEntity(event.getPos()) instanceof PowerlineInsulatorBlockEntity be) {
+            markHandled(player, level);
             if (player.isShiftKeyDown()) {
                 refundAll(player, be);
                 be.disconnectAll();
                 WireCutSelection.clear(player);
-                message(player, "All wires removed");
-                    message(player, "message.gtm_powerlines.cutter.all_wires_removed");
+                message(player, "message.gtm_powerlines.cutter.all_wires_removed");
             } else {
                 WireCutSelection.set(player, event.getPos());
-                message(player, "Look at a wire and click to cut it");
-                    message(player, "message.gtm_powerlines.cutter.look_and_click");
+                message(player, "message.gtm_powerlines.cutter.look_and_click");
             }
             finish(event);
             return;
@@ -57,20 +60,21 @@ public class WireCutterEvents {
         if (tryCut(player, level)) finish(event);
     }
 
+
     @SubscribeEvent
     public static void onRightClickAir(PlayerInteractEvent.RightClickItem event) {
-        if (event.getLevel().isClientSide() || event.getHand() != InteractionHand.MAIN_HAND) return;
+        Level level = event.getLevel();
+        if (level.isClientSide() || event.getHand() != InteractionHand.MAIN_HAND) return;
+        Player player = event.getEntity();
         if (!event.getItemStack().is(CustomTags.WIRE_CUTTERS)) return;
-        tryCut(event.getEntity(), event.getLevel());
+        if (alreadyHandled(player, level)) return;
+        tryCut(player, level);
     }
 
     private static boolean tryCut(Player player, Level level) {
-        var time = level.getGameTime();
-        var lastTime = PLAYER_TICKS.put(player.getUUID(), time);
-        if (lastTime != null && lastTime == time) return false;
-
         var sel = WireCutSelection.get(player);
         if (sel == null) return false;
+        markHandled(player, level);
 
         if (!(level.getBlockEntity(sel.pos()) instanceof PowerlineInsulatorBlockEntity be)) {
             WireCutSelection.clear(player);
@@ -80,19 +84,15 @@ public class WireCutterEvents {
         var hit = WireTargeting.find(be, player.getEyePosition(), player.getViewVector(1f));
         if (hit == null) {
             WireCutSelection.clear(player);
-            message(player, "Cutting cancelled");
-                message(player, "message.gtm_powerlines.cutter.cancelled");
+            message(player, "message.gtm_powerlines.cutter.cancelled");
             return true;
         }
 
-        BlockPos target = hit.connection().target();
-        refund(player, hit.connection());
-        be.removeConnectionsTo(target);
-        if (level.getBlockEntity(target) instanceof PowerlineInsulatorBlockEntity other) {
-            other.removeConnectionsTo(be.getBlockPos());
-        }
-        message(player, "Wire cut");
+        var connection = hit.connection();
+        if (be.disconnectFrom(connection.target())) {
+            refund(player, connection);
             message(player, "message.gtm_powerlines.cutter.wire_cut");
+        }
         if (be.getConnections().isEmpty()) WireCutSelection.clear(player);
         return true;
     }

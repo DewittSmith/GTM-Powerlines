@@ -5,13 +5,13 @@ import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlock
 import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
 import com.github.dewittsmith.gtm_powerlines.wire.WireAttachment;
 import com.github.dewittsmith.gtm_powerlines.wire.WireColor;
-
 import com.gregtechceu.gtceu.api.data.chemical.ChemicalHelper;
 import com.gregtechceu.gtceu.api.data.tag.TagPrefix;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -54,8 +54,7 @@ public class PowerlineWireEvents {
         if (clickedBe == null) {
             if (attach != null) {
                 WireAttachment.clear(player);
-                message(player, "Wire cancelled");
-                    message(player, "message.gtm_powerlines.wire.cancelled");
+                message(player, "message.gtm_powerlines.wire.cancelled");
                 finish(event);
             }
             return;
@@ -63,39 +62,33 @@ public class PowerlineWireEvents {
 
         if (attach == null || !attach.dimension().equals(level.dimension())) {
             if (clickedBe.getController() == null) {
-                message(player, "This insulator is not part of a structure");
-                    message(player, "message.gtm_powerlines.wire.insulator_not_in_structure");
+                message(player, "message.gtm_powerlines.wire.insulator_not_in_structure");
                 finish(event);
                 return;
             }
 
             if (!clickedBe.hasConnectionCapacity()) {
-                message(player, "Too many connections");
-                    message(player, "message.gtm_powerlines.wire.too_many_connections");
+                message(player, "message.gtm_powerlines.wire.too_many_connections");
                 finish(event);
                 return;
             }
 
             WireAttachment.set(player, level, pos, wireItem, wireColor);
-            message(player, "Wire attached, click another insulator");
-                message(player, "message.gtm_powerlines.wire.attached_click_another");
+            message(player, "message.gtm_powerlines.wire.attached_click_another");
             finish(event);
             return;
         }
 
         if (attach.pos().equals(pos)) {
             WireAttachment.clear(player);
-            message(player, "Wire cancelled");
-                message(player, "message.gtm_powerlines.wire.cancelled");
+            message(player, "message.gtm_powerlines.wire.cancelled");
             finish(event);
             return;
         }
 
-        if (!(level.getBlockEntity(attach.pos()) instanceof PowerlineInsulatorBlockEntity fromBe)
-                || fromBe.getController() == null) {
+        if (!(level.getBlockEntity(attach.pos()) instanceof PowerlineInsulatorBlockEntity fromBe) || fromBe.getController() == null) {
             WireAttachment.clear(player);
-            message(player, "Start insulator is gone");
-                message(player, "message.gtm_powerlines.wire.start_insulator_gone");
+            message(player, "message.gtm_powerlines.wire.start_insulator_gone");
             finish(event);
             return;
         }
@@ -103,30 +96,28 @@ public class PowerlineWireEvents {
         BlockPos fromController = fromBe.getController();
         BlockPos toController = clickedBe.getController();
         if (toController == null) {
-            message(player, "This insulator is not part of a structure");
-                message(player, "message.gtm_powerlines.wire.insulator_not_in_structure");
+            message(player, "message.gtm_powerlines.wire.insulator_not_in_structure");
             finish(event);
             return;
         }
 
         if (fromController.equals(toController)) {
             WireAttachment.set(player, level, pos, wireItem, wireColor);
-            message(player, "Wire attached, click another insulator");
-                message(player, "message.gtm_powerlines.wire.attached_click_another");
+            message(player, "message.gtm_powerlines.wire.attached_click_another");
             finish(event);
             return;
         }
 
-        double distance = Math.sqrt(attach.pos().distSqr(pos));
+        var distance = Math.sqrt(attach.pos().distSqr(pos));
         if (distance < GTMPowerlinesConfig.INSTANCE.minWireRange) {
-            message(player, String.format("Wire too short (%.1f / min %.1f)", distance, GTMPowerlinesConfig.INSTANCE.minWireRange));
-                message(player, "message.gtm_powerlines.wire.too_short", distance, GTMPowerlinesConfig.INSTANCE.minWireRange);
+            message(player, "message.gtm_powerlines.wire.too_short", Mth.floor(distance), Mth.ceil(GTMPowerlinesConfig.INSTANCE.minWireRange));
             finish(event);
             return;
         }
-        if (distance > GTMPowerlinesConfig.INSTANCE.maxWireRange) {
-            message(player, String.format("Wire too long (%.1f / max %.1f)", distance, GTMPowerlinesConfig.INSTANCE.maxWireRange));
-                message(player, "message.gtm_powerlines.wire.too_long", distance, GTMPowerlinesConfig.INSTANCE.maxWireRange);
+
+        var maxDistance = Math.max(clickedBe.maxConnectionRange(), fromBe.maxConnectionRange());
+        if (distance > maxDistance) {
+            message(player, "message.gtm_powerlines.wire.too_long", Mth.ceil(distance), Mth.floor(maxDistance));
             finish(event);
             return;
         }
@@ -138,13 +129,12 @@ public class PowerlineWireEvents {
 
                 if (!player.getAbilities().instabuild) held.shrink(1);
                 WireAttachment.set(player, level, pos, wireItem, wireColor);
-                message(player, "Connected");
-                    message(player, "message.gtm_powerlines.wire.connected");
+                message(player, "message.gtm_powerlines.wire.connected");
                 finish(event);
             }
-            case SAME_BLOCK -> message(player, "Same block selected");
-                case ALREADY_CONNECTED -> message(player, "message.gtm_powerlines.wire.already_connected");
-                case TOO_MANY_CONNECTIONS -> message(player, "message.gtm_powerlines.wire.too_many_connections");
+            case SAME_BLOCK -> message(player, "message.gtm_powerlines.wire.same_block_selected");
+            case ALREADY_CONNECTED -> message(player, "message.gtm_powerlines.wire.already_connected");
+            case TOO_MANY_CONNECTIONS -> message(player, "message.gtm_powerlines.wire.too_many_connections");
         }
     }
 
@@ -163,8 +153,7 @@ public class PowerlineWireEvents {
         if (lastTime == time) return;
 
         WireAttachment.clear(event.getEntity());
-        message(event.getEntity(), "Wire cancelled");
-            message(event.getEntity(), "message.gtm_powerlines.wire.cancelled");
+        message(event.getEntity(), "message.gtm_powerlines.wire.cancelled");
     }
 
     @SubscribeEvent

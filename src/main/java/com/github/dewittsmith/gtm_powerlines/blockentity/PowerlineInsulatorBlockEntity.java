@@ -1,8 +1,8 @@
 package com.github.dewittsmith.gtm_powerlines.blockentity;
 
+import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
 import com.github.dewittsmith.gtm_powerlines.wire.WireConnectionLimit;
 import com.github.dewittsmith.gtm_powerlines.wire.WireConnectionResult;
-
 import com.gregtechceu.gtceu.api.blockentity.MetaMachineBlockEntity;
 import lombok.Getter;
 import net.minecraft.core.BlockPos;
@@ -14,6 +14,7 @@ import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -47,6 +48,12 @@ public class PowerlineInsulatorBlockEntity extends BlockEntity {
         sync();
     }
 
+    public float maxConnectionRange() {
+        if (controller == null) return 0f;
+        var towerRange = Math.pow(controller.getY() - worldPosition.getY(), GTMPowerlinesConfig.INSTANCE.towerRangePower);
+        return (float) Mth.clamp(towerRange, GTMPowerlinesConfig.INSTANCE.minWireRange, GTMPowerlinesConfig.INSTANCE.maxWireRange);
+    }
+
     public boolean hasConnectionCapacity() {
         if (level == null || controller == null) return false;
         var entity = level.getBlockEntity(controller);
@@ -78,6 +85,19 @@ public class PowerlineInsulatorBlockEntity extends BlockEntity {
 
     public void removeConnectionsTo(BlockPos target) {
         if (connections.removeIf(c -> c.target().equals(target))) sync();
+    }
+
+    public boolean disconnectFrom(BlockPos target) {
+        if (level == null || level.isClientSide) return false;
+
+        boolean removed = connections.removeIf(c -> c.target().equals(target));
+        if (removed) sync();
+
+        if (level.isLoaded(target)
+                && level.getBlockEntity(target) instanceof PowerlineInsulatorBlockEntity other) {
+            other.removeConnectionsTo(worldPosition);
+        }
+        return removed;
     }
 
     public void disconnectAll() {

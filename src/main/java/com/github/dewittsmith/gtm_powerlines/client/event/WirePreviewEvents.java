@@ -7,7 +7,6 @@ import com.github.dewittsmith.gtm_powerlines.wire.WireAttachment;
 import com.github.dewittsmith.gtm_powerlines.wire.WireCutSelection;
 import com.github.dewittsmith.gtm_powerlines.wire.WireGeometry;
 import com.github.dewittsmith.gtm_powerlines.wire.WireTargeting;
-
 import com.gregtechceu.gtceu.data.recipe.CustomTags;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -81,8 +80,7 @@ public class WirePreviewEvents {
         var state = level.getBlockState(pos);
         if (!state.isAir()) {
             AABB box = state.getShape(level, pos, CollisionContext.empty()).bounds()
-                    .move(pos.getX() - cam.x, pos.getY() - cam.y, pos.getZ() - cam.z)
-                    .inflate(0.002);
+                    .move(pos.getX() - cam.x, pos.getY() - cam.y, pos.getZ() - cam.z);
 
             LevelRenderer.renderLineBox(pose, buffer, box, 1f, 1f, 0f, 1f);
         }
