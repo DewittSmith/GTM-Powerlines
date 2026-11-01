@@ -3,8 +3,7 @@ package com.github.dewittsmith.gtm_powerlines.blockentity;
 import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
 import com.github.dewittsmith.gtm_powerlines.registry.GTMPowerlinesRegistries;
 import com.github.dewittsmith.gtm_powerlines.trackers.PowerlineTowerTracker;
-import com.github.dewittsmith.gtm_powerlines.wire.IWireConnectionLimit;
-
+import com.github.dewittsmith.gtm_powerlines.wire.IWireMachine;
 import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
@@ -18,7 +17,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
-public class PowerlineTowerBlockEntity extends BlockEntity implements IWireConnectionLimit {
+public class PowerlineTowerBlockEntity extends BlockEntity implements IWireMachine {
     private static final int MAX_BLOCKS = 64;
 
     private final LongSet structureBlocks = new LongOpenHashSet();
@@ -149,5 +148,10 @@ public class PowerlineTowerBlockEntity extends BlockEntity implements IWireConne
     @Override
     public int getMaxConnections() {
         return 2;
+    }
+
+    @Override
+    public float getWireDistanceFor(BlockPos block) {
+        return (float) Math.pow(block.getY() - baseElevation, GTMPowerlinesConfig.INSTANCE.towerRangePower);
     }
 }

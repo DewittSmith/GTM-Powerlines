@@ -1,7 +1,7 @@
 package com.github.dewittsmith.gtm_powerlines.machines;
 
 import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
-import com.github.dewittsmith.gtm_powerlines.wire.IWireConnectionLimit;
+import com.github.dewittsmith.gtm_powerlines.wire.IWireMachine;
 import com.gregtechceu.gtceu.api.block.ICoilType;
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
 import com.gregtechceu.gtceu.api.gui.GuiTextures;
@@ -36,7 +36,7 @@ import java.util.Objects;
 import static com.github.dewittsmith.gtm_powerlines.registry.GTMPowerlinesRegistries.POWERLINE_INSULATOR;
 
 public class PowerlineTransformerMachine extends WorkableMultiblockMachine implements IFancyUIMachine,
-        IDisplayUIMachine, IWireConnectionLimit, ITieredMachine {
+        IDisplayUIMachine, IWireMachine, ITieredMachine {
 
     @Getter
     private ICoilType coilType = CoilBlock.CoilType.CUPRONICKEL;
@@ -161,5 +161,10 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine imple
     @Override
     public int getMaxConnections() {
         return 1;
+    }
+
+    @Override
+    public float getWireDistanceFor(BlockPos block) {
+        return 16;
     }
 }

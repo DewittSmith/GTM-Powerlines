@@ -2,7 +2,7 @@ package com.github.dewittsmith.gtm_powerlines.blockentity;
 
 import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
 import com.github.dewittsmith.gtm_powerlines.network.PowerlineNetwork;
-import com.github.dewittsmith.gtm_powerlines.wire.IWireConnectionLimit;
+import com.github.dewittsmith.gtm_powerlines.wire.IWireMachine;
 import com.github.dewittsmith.gtm_powerlines.wire.WireConnectionResult;
 import com.gregtechceu.gtceu.api.blockentity.MetaMachineBlockEntity;
 import lombok.Getter;
@@ -51,20 +51,27 @@ public class PowerlineInsulatorBlockEntity extends BlockEntity {
 
     public float maxConnectionRange() {
         if (controller == null) return 0f;
-        var towerRange = Math.pow(controller.getY() - worldPosition.getY(), GTMPowerlinesConfig.INSTANCE.towerRangePower);
-        return (float) Mth.clamp(towerRange, GTMPowerlinesConfig.INSTANCE.minWireRange, GTMPowerlinesConfig.INSTANCE.maxWireRange);
+        var entity = level.getBlockEntity(controller);
+
+        var wireDistance = 0f;
+        if (entity instanceof IWireMachine wireMachine) {
+            wireDistance = wireMachine.getWireDistanceFor(worldPosition);
+        } else if (entity instanceof MetaMachineBlockEntity metaBe && metaBe.metaMachine instanceof IWireMachine wireMachine) {
+            wireDistance = wireMachine.getWireDistanceFor(worldPosition);
+        }
+
+        return Mth.clamp(wireDistance, GTMPowerlinesConfig.INSTANCE.minWireRange, GTMPowerlinesConfig.INSTANCE.maxWireRange);
     }
 
     public boolean hasConnectionCapacity() {
         if (!isServer() || controller == null) return false;
         var entity = level.getBlockEntity(controller);
 
-        int maxConnections = 0;
-        if (entity instanceof IWireConnectionLimit limit) {
-            maxConnections = limit.getMaxConnections();
-        } else if (entity instanceof MetaMachineBlockEntity metaBe
-                && metaBe.metaMachine instanceof IWireConnectionLimit limit) {
-            maxConnections = limit.getMaxConnections();
+        var maxConnections = 0;
+        if (entity instanceof IWireMachine wireMachine) {
+            maxConnections = wireMachine.getMaxConnections();
+        } else if (entity instanceof MetaMachineBlockEntity metaBe && metaBe.metaMachine instanceof IWireMachine wireMachine) {
+            maxConnections = wireMachine.getMaxConnections();
         }
         return connectionCount() < maxConnections;
     }
