@@ -1,5 +1,5 @@
 package com.github.dewittsmith.gtm_powerlines.wire;
 
-public interface WireConnectionLimit {
+public interface IWireConnectionLimit {
     int getMaxConnections();
 }

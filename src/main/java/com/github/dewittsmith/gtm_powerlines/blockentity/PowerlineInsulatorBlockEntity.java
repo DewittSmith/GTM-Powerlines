@@ -1,7 +1,7 @@
 package com.github.dewittsmith.gtm_powerlines.blockentity;
 
 import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
-import com.github.dewittsmith.gtm_powerlines.wire.WireConnectionLimit;
+import com.github.dewittsmith.gtm_powerlines.wire.IWireConnectionLimit;
 import com.github.dewittsmith.gtm_powerlines.wire.WireConnectionResult;
 import com.gregtechceu.gtceu.api.blockentity.MetaMachineBlockEntity;
 import lombok.Getter;
@@ -59,10 +59,10 @@ public class PowerlineInsulatorBlockEntity extends BlockEntity {
         var entity = level.getBlockEntity(controller);
 
         var maxConnections = 0;
-        if (entity instanceof WireConnectionLimit machineConnectionLimit) {
+        if (entity instanceof IWireConnectionLimit machineConnectionLimit) {
             maxConnections = machineConnectionLimit.getMaxConnections();
         } else if (entity instanceof MetaMachineBlockEntity metaBe) {
-            if (metaBe.metaMachine instanceof WireConnectionLimit connectionLimit) {
+            if (metaBe.metaMachine instanceof IWireConnectionLimit connectionLimit) {
                 maxConnections = connectionLimit.getMaxConnections();
             }
         }

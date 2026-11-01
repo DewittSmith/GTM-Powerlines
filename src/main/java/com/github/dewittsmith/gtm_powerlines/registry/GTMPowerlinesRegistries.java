@@ -5,8 +5,9 @@ import com.github.dewittsmith.gtm_powerlines.block.PowerlineTowerBlock;
 import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
 import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineTowerBlockEntity;
 import com.github.dewittsmith.gtm_powerlines.machines.PowerlineTransformerMachine;
+import com.github.dewittsmith.gtm_powerlines.util.CoilEfficiency;
 import com.github.dewittsmith.gtm_powerlines.util.PowerlinePatternPredicates;
-
+import com.github.dewittsmith.gtm_powerlines.util.PowerlinePredicates;
 import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.api.GTCEuAPI;
 import com.gregtechceu.gtceu.api.GTValues;
@@ -14,7 +15,6 @@ import com.gregtechceu.gtceu.api.data.RotationState;
 import com.gregtechceu.gtceu.api.data.chemical.ChemicalHelper;
 import com.gregtechceu.gtceu.api.data.tag.TagPrefix;
 import com.gregtechceu.gtceu.api.machine.MultiblockMachineDefinition;
-import com.gregtechceu.gtceu.api.machine.multiblock.PartAbility;
 import com.gregtechceu.gtceu.api.pattern.FactoryBlockPattern;
 import com.gregtechceu.gtceu.api.pattern.MultiblockShapeInfo;
 import com.gregtechceu.gtceu.common.data.GTMachines;
@@ -23,6 +23,8 @@ import com.gregtechceu.gtceu.common.data.GTRecipeTypes;
 import com.tterrag.registrate.util.entry.BlockEntityEntry;
 import com.tterrag.registrate.util.entry.BlockEntry;
 import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
+import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SoundType;
 
@@ -83,8 +85,8 @@ public class GTMPowerlinesRegistries {
                     .where('R', blocks(FIREBOX_STEEL.get()))
                     .where('C', heatingCoils())
                     .where('X', blocks(MACHINE_CASING_LV.get())
-                            .or(abilities(PartAbility.INPUT_ENERGY, PartAbility.OUTPUT_ENERGY).setExactLimit(1))
-                            .or(ability(PartAbility.MAINTENANCE).setExactLimit(1)))
+                            .or(PowerlinePredicates.powerlineHatch().setMinGlobalLimited(1))
+                            .or(autoAbilities(true, false, false)))
                     .where('F', frames(GTMaterials.Steel))
                     .where('P', blocks(CASING_STEEL_PIPE.get()))
                     .where('I', PowerlinePatternPredicates.track("insulators", POWERLINE_INSULATOR.getDefaultState(), PowerlineInsulatorBlock.DIRECTION)
@@ -116,6 +118,15 @@ public class GTMPowerlinesRegistries {
             .workableCasingModel(
                     GTCEu.id("block/casings/voltage/lv/side"),
                     GTCEu.id("block/multiblock/implosion_compressor"))
+            .additionalDisplay((controller, components) -> {
+                if (!(controller instanceof PowerlineTransformerMachine transformerMachine) || !transformerMachine.isFormed()) {
+                    return;
+                }
+
+                components.add(Component.translatable("multiblock.gtm_powerlines.powerline_transformer.powerline_efficiency", Mth.floor(100 * CoilEfficiency.of(transformerMachine.getCoilType()))));
+                components.add(Component.translatable("multiblock.gtm_powerlines.powerline_transformer.powerline_tier", GTValues.VNF[transformerMachine.getTier()]));
+
+            })
             .register();
 
     public static void init() {
