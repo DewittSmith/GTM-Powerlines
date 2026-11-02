@@ -3,8 +3,8 @@ package com.github.dewittsmith.gtm_powerlines.renderer;
 import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
 import com.github.dewittsmith.gtm_powerlines.network.PowerlineNetwork;
 import com.github.dewittsmith.gtm_powerlines.wire.ClientWires;
-import com.github.dewittsmith.gtm_powerlines.wire.WireInfo;
 import com.github.dewittsmith.gtm_powerlines.wire.WireGeometry;
+import com.github.dewittsmith.gtm_powerlines.wire.WireInfo;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
@@ -37,6 +37,10 @@ public final class ClientWireRenderer {
             Vec3 a = WireGeometry.getAttachmentPoint(level, e.a()), b = WireGeometry.getAttachmentPoint(level, e.b());
             if (!frustum.isVisible(new AABB(a, b).inflate(1.0))) continue;
 
+            var wireInfoOpt = WireInfo.getInfo(e.wire());
+            if (wireInfoOpt.isEmpty()) continue;
+            var wireInfo = wireInfoOpt.get();
+
             var distance = WireGeometry.distanceToSegment(cam, a, b);
             var lod = WireLOD.getLOD(distance);
             int light = LevelRenderer.getLightColor(level, BlockPos.containing(a.add(b).scale(0.5)));
@@ -45,8 +49,10 @@ public final class ClientWireRenderer {
             pose.translate(-cam.x, -cam.y, -cam.z);
 
             switch (lod) {
-                case TUBE -> PowerlineWireRenderer.renderTube(pose, buffers, a, b, WireInfo.getColor(e.wire()), light, PowerlineWireRenderer.Caps.NONE);
-                case BILLBOARD -> PowerlineWireRenderer.renderBillboard(pose, buffers, a, b, WireInfo.getColor(e.wire()), light, cam);
+                case TUBE ->
+                        PowerlineWireRenderer.renderTube(pose, buffers, a, b, wireInfo.color(), light, PowerlineWireRenderer.Caps.NONE);
+                case BILLBOARD ->
+                        PowerlineWireRenderer.renderBillboard(pose, buffers, a, b, wireInfo.color(), light, cam);
             }
 
             pose.popPose();

@@ -54,14 +54,14 @@ public class PowerlineInsulatorBlockEntity extends BlockEntity {
     public float maxConnectionRange() {
         if (controller == null) return 0f;
         var wireMachine = BlockUtils.instanceOf(level, controller, IWireMachine.class);
-        var wireDistance = wireMachine.isEmpty() ? 0f : wireMachine.get().getWireDistanceFor(worldPosition);
+        var wireDistance = wireMachine.map(iWireMachine -> iWireMachine.getWireDistanceFor(worldPosition)).orElse(0f);
         return Mth.clamp(wireDistance, GTMPowerlinesConfig.INSTANCE.minWireRange, GTMPowerlinesConfig.INSTANCE.maxWireRange);
     }
 
     public boolean hasConnectionCapacity() {
         if (!isServer() || controller == null) return false;
         var wireMachine = BlockUtils.instanceOf(level, controller, IWireMachine.class);
-        var maxConnections = wireMachine.isEmpty() ? 0 : wireMachine.get().getMaxConnections();
+        var maxConnections = wireMachine.map(IWireMachine::getMaxConnections).orElse(0);
         return connectionCount() < maxConnections;
     }
 
@@ -71,18 +71,21 @@ public class PowerlineInsulatorBlockEntity extends BlockEntity {
         if (transformer.isPresent()) return transformer.get().getTier();
         var connections = getConnections();
         if (connections.isEmpty()) return -1;
-        return WireInfo.getTier(connections.get(0).wire());
+        var wireInfoOpt = WireInfo.getInfo(connections.get(0).wire());
+        return wireInfoOpt.map(WireInfo::tier).orElse(-1);
     }
 
     public WireConnectionResult connect(BlockPos target, ResourceLocation wire) {
-        if (!isServer()) return WireConnectionResult.SAME_BLOCK;
+        if (!isServer()) return WireConnectionResult.TOO_MANY_CONNECTIONS;
         if (target.equals(worldPosition)) return WireConnectionResult.SAME_BLOCK;
         if (getConnections().stream().anyMatch(e -> e.other(worldPosition).equals(target)))
             return WireConnectionResult.ALREADY_CONNECTED;
         if (!hasConnectionCapacity()) return WireConnectionResult.TOO_MANY_CONNECTIONS;
 
         var tier = getWireTier();
-        if (tier != -1 && tier != WireInfo.getTier(wire)) return WireConnectionResult.incompatibleTier(tier);
+        var wireInfoOpt = WireInfo.getInfo(wire);
+        if (wireInfoOpt.isEmpty()) return WireConnectionResult.TOO_MANY_CONNECTIONS;
+        if (tier != -1 && tier != wireInfoOpt.get().tier()) return WireConnectionResult.incompatibleTier(tier);
 
         return network().connect((ServerLevel) level, worldPosition, target, wire)
                 ? WireConnectionResult.SUCCESS

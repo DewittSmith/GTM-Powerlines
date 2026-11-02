@@ -25,6 +25,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 @Mod.EventBusSubscriber(modid = GTMPowerlines.MOD_ID)
@@ -38,12 +39,11 @@ public class PowerlineWireEvents {
 
         Player player = event.getEntity();
         ItemStack held = event.getItemStack();
-        if (!isPowerlineWire(held)) return;
-
         var wireItem = held.getItem();
+        var wireInfoOpt = getWireInfo(held);
+        if (wireInfoOpt.isEmpty()) return;
+        var wireInfo = wireInfoOpt.get();
         var wire = ForgeRegistries.ITEMS.getKey(wireItem);
-        var wireTier = WireInfo.getTier(wire);
-        var wireColor = WireInfo.getColor(wireItem);
 
         BlockPos pos = event.getPos();
         var clickedBe = level.getBlockEntity(pos) instanceof PowerlineInsulatorBlockEntity be ? be : null;
@@ -76,13 +76,13 @@ public class PowerlineWireEvents {
             }
 
             var tier = clickedBe.getWireTier();
-            if (tier != -1 && wireTier != -1 && tier != wireTier) {
-                message(player, "message.gtm_powerlines.wire.incompatible_tier", GTValues.VNF[tier], GTValues.VNF[wireTier]);
+            if (tier != -1 && wireInfo.tier() != -1 && tier != wireInfo.tier()) {
+                message(player, "message.gtm_powerlines.wire.incompatible_tier", GTValues.VNF[tier], GTValues.VNF[wireInfo.tier()]);
                 finish(event);
                 return;
             }
 
-            WireAttachment.set(player, level, pos, wireItem, wireColor);
+            WireAttachment.set(player, level, pos, wireItem, wireInfo.color());
             message(player, "message.gtm_powerlines.wire.attached_click_another");
             finish(event);
             return;
@@ -112,13 +112,13 @@ public class PowerlineWireEvents {
 
         if (fromController.equals(toController)) {
             var tier = clickedBe.getWireTier();
-            if (tier != -1 && wireTier != -1 && tier != wireTier) {
-                message(player, "message.gtm_powerlines.wire.incompatible_tier", GTValues.VNF[tier], GTValues.VNF[wireTier]);
+            if (tier != -1 && tier != wireInfo.tier()) {
+                message(player, "message.gtm_powerlines.wire.incompatible_tier", GTValues.VNF[tier], GTValues.VNF[wireInfo.tier()]);
                 finish(event);
                 return;
             }
 
-            WireAttachment.set(player, level, pos, wireItem, wireColor);
+            WireAttachment.set(player, level, pos, wireItem, wireInfo.color());
             message(player, "message.gtm_powerlines.wire.attached_click_another");
             finish(event);
             return;
@@ -144,7 +144,7 @@ public class PowerlineWireEvents {
                 clickedBe.connect(attach.pos(), wire);
 
                 if (!player.getAbilities().instabuild) held.shrink(1);
-                WireAttachment.set(player, level, pos, wireItem, wireColor);
+                WireAttachment.set(player, level, pos, wireItem, wireInfo.color());
                 message(player, "message.gtm_powerlines.wire.connected");
                 finish(event);
             }
@@ -152,7 +152,7 @@ public class PowerlineWireEvents {
             case ALREADY_CONNECTED -> message(player, "message.gtm_powerlines.wire.already_connected");
             case TOO_MANY_CONNECTIONS -> message(player, "message.gtm_powerlines.wire.too_many_connections");
             case INCOMPATIBLE_TIER ->
-                    message(player, "message.gtm_powerlines.wire.incompatible_tier", GTValues.VNF[connectResult.value()], GTValues.VNF[wireTier]);
+                    message(player, "message.gtm_powerlines.wire.incompatible_tier", GTValues.VNF[connectResult.value()], GTValues.VNF[wireInfo.tier()]);
         }
     }
 
@@ -160,7 +160,7 @@ public class PowerlineWireEvents {
     public static void onRightClickAir(PlayerInteractEvent.RightClickItem event) {
         var level = event.getLevel();
         if (level.isClientSide() || event.getHand() != InteractionHand.MAIN_HAND) return;
-        if (!isPowerlineWire(event.getItemStack())) return;
+        if (getWireInfo(event.getItemStack()).isEmpty()) return;
 
         var attach = WireAttachment.get(event.getEntity());
         if (attach == null) return;
@@ -189,9 +189,10 @@ public class PowerlineWireEvents {
         player.displayClientMessage(Component.translatable("message.gtm_powerlines.wire.cancelled"), true);
     }
 
-    private static boolean isPowerlineWire(ItemStack stack) {
-        if (stack.isEmpty()) return false;
-        return ChemicalHelper.getPrefix(stack.getItem()) == TagPrefix.wireFine;
+    private static Optional<WireInfo> getWireInfo(ItemStack stack) {
+        if (stack.isEmpty()) return Optional.empty();
+        if (ChemicalHelper.getPrefix(stack.getItem()) != TagPrefix.wireFine) return Optional.empty();
+        return WireInfo.getInfo(stack.getItem());
     }
 
     private static void message(Player p, String key, Object... args) {
