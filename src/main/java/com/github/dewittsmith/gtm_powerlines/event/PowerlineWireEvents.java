@@ -192,7 +192,7 @@ public class PowerlineWireEvents {
     private static Optional<WireInfo> getWireInfo(ItemStack stack) {
         if (stack.isEmpty()) return Optional.empty();
         if (ChemicalHelper.getPrefix(stack.getItem()) != TagPrefix.wireFine) return Optional.empty();
-        return WireInfo.getInfo(stack.getItem());
+        return WireInfo.of(stack.getItem());
     }
 
     private static void message(Player p, String key, Object... args) {

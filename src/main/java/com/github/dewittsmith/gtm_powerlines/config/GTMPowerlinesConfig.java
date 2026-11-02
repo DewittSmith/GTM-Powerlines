@@ -30,12 +30,12 @@ public class GTMPowerlinesConfig {
     }
 
     @Configurable
-    @Configurable.Comment({"Base energy loss per block multiplier."})
+    @Configurable.Comment({"Base energy lossPerBlock per block multiplier."})
     @Configurable.DecimalRange(min = 0.0f, max = 1.0f)
     public float baseLossMult = 0.5f;
 
     @Configurable
-    @Configurable.Comment({"Minimal energy loss per block."})
+    @Configurable.Comment({"Minimal energy lossPerBlock per block."})
     @Configurable.DecimalRange(min = 0.0f)
     public float minLoss = 0f;
 

@@ -8,7 +8,7 @@ import java.util.Optional;
 
 public final class BlockUtils {
     public static <T> Optional<T> instanceOf(Level level, BlockPos pos, Class<T> type) {
-        if (level == null) return Optional.empty();
+        if (level == null || pos == null) return Optional.empty();
         var entity = level.getBlockEntity(pos);
         if (type.isInstance(entity)) return Optional.of(type.cast(entity));
         if (entity instanceof MetaMachineBlockEntity meta && type.isInstance(meta.metaMachine))

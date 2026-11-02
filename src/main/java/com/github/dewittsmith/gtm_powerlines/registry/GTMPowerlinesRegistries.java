@@ -158,7 +158,7 @@ public class GTMPowerlinesRegistries {
                             .or(autoAbilities(true, false, false)))
                     .where('F', frames(GTMaterials.Steel))
                     .where('P', blocks(CASING_STEEL_PIPE.get()))
-                    .where('I', PowerlinePredicates.track("insulators", POWERLINE_INSULATOR.getDefaultState(), PowerlineInsulatorBlock.DIRECTION)
+                    .where('I', PowerlinePredicates.track("insulators", POWERLINE_INSULATOR.getDefaultState(), PowerlineInsulatorBlock.DIRECTION).setMinGlobalLimited(1)
                             .or(any()))
                     .where('#', air())
                     .build())
@@ -192,8 +192,18 @@ public class GTMPowerlinesRegistries {
                     return;
                 }
 
-                components.add(Component.translatable("multiblock.gtm_powerlines.powerline_transformer.powerline_efficiency", Mth.floor(100 * CoilEfficiency.of(transformerMachine.getCoilType()))));
                 components.add(Component.translatable("multiblock.gtm_powerlines.powerline_transformer.powerline_tier", GTValues.VNF[transformerMachine.getTier()]));
+                components.add(Component.translatable("multiblock.gtm_powerlines.powerline_transformer.powerline_efficiency", Mth.floor(100 * CoilEfficiency.of(transformerMachine.getCoilType()))));
+
+                if (transformerMachine.isInput()) {
+                    components.add(Component.translatable("multiblock.gtm_powerlines.powerline_transformer.mode_input"));
+                    components.add(Component.translatable("multiblock.gtm_powerlines.powerline_transformer.energy_output", transformerMachine.getEnergyOutputPerSec() / 20));
+                    components.add(Component.translatable("multiblock.gtm_powerlines.powerline_transformer.network_output", transformerMachine.getNetworkOutputPerSec() / 20));
+                    components.add(Component.translatable("multiblock.gtm_powerlines.powerline_transformer.energy_loss", (transformerMachine.getEnergyOutputPerSec() - transformerMachine.getNetworkOutputPerSec()) / 20));
+                } else {
+                    components.add(Component.translatable("multiblock.gtm_powerlines.powerline_transformer.mode_output"));
+                    components.add(Component.translatable("multiblock.gtm_powerlines.powerline_transformer.energy_input", transformerMachine.getEnergyInput()));
+                }
 
             })
             .register();

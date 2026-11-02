@@ -71,7 +71,7 @@ public class PowerlineInsulatorBlockEntity extends BlockEntity {
         if (transformer.isPresent()) return transformer.get().getTier();
         var connections = getConnections();
         if (connections.isEmpty()) return -1;
-        var wireInfoOpt = WireInfo.getInfo(connections.get(0).wire());
+        var wireInfoOpt = WireInfo.of(connections.get(0).wire());
         return wireInfoOpt.map(WireInfo::tier).orElse(-1);
     }
 
@@ -83,7 +83,7 @@ public class PowerlineInsulatorBlockEntity extends BlockEntity {
         if (!hasConnectionCapacity()) return WireConnectionResult.TOO_MANY_CONNECTIONS;
 
         var tier = getWireTier();
-        var wireInfoOpt = WireInfo.getInfo(wire);
+        var wireInfoOpt = WireInfo.of(wire);
         if (wireInfoOpt.isEmpty()) return WireConnectionResult.TOO_MANY_CONNECTIONS;
         if (tier != -1 && tier != wireInfoOpt.get().tier()) return WireConnectionResult.incompatibleTier(tier);
 

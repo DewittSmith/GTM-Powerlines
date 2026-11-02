@@ -146,9 +146,14 @@ public class PowerlineTowerMachine extends MultiblockControllerMachine implement
         if (level.isClientSide) return InteractionResult.SUCCESS;
         if (!(player instanceof ServerPlayer sp)) return InteractionResult.PASS;
         if (!sp.getMainHandItem().isEmpty()) return InteractionResult.PASS;
-        rescan();
-        Net.sendToPlayer(sp, new TowerHighlightPacket(level.dimension(), getStructureBlocks().toLongArray(), insulatorBlocks.toLongArray(), 200));
-        return InteractionResult.CONSUME;
+
+        if (sp.isShiftKeyDown()) {
+            rescan();
+            Net.sendToPlayer(sp, new TowerHighlightPacket(level.dimension(), getStructureBlocks().toLongArray(), insulatorBlocks.toLongArray(), 200));
+            return InteractionResult.CONSUME;
+        }
+
+        return InteractionResult.PASS;
     }
 
     @Override
@@ -158,7 +163,7 @@ public class PowerlineTowerMachine extends MultiblockControllerMachine implement
 
     @Override
     public int getMaxConnections() {
-        return 2;
+        return 4;
     }
 
     @Override

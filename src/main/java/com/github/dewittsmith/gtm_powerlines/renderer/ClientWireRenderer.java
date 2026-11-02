@@ -37,7 +37,7 @@ public final class ClientWireRenderer {
             Vec3 a = WireGeometry.getAttachmentPoint(level, e.a()), b = WireGeometry.getAttachmentPoint(level, e.b());
             if (!frustum.isVisible(new AABB(a, b).inflate(1.0))) continue;
 
-            var wireInfoOpt = WireInfo.getInfo(e.wire());
+            var wireInfoOpt = WireInfo.of(e.wire());
             if (wireInfoOpt.isEmpty()) continue;
             var wireInfo = wireInfoOpt.get();
 

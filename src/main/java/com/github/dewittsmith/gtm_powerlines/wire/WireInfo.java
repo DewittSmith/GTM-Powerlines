@@ -9,13 +9,13 @@ import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.Optional;
 
-public record WireInfo(int color, int tier, int loss) {
-    public static Optional<WireInfo> getInfo(ResourceLocation wireId) {
+public record WireInfo(int color, int tier, int lossPerBlock) {
+    public static Optional<WireInfo> of(ResourceLocation wireId) {
         var item = ForgeRegistries.ITEMS.getValue(wireId);
-        return getInfo(item);
+        return of(item);
     }
 
-    public static Optional<WireInfo> getInfo(ItemLike item) {
+    public static Optional<WireInfo> of(ItemLike item) {
         if (item == null) return Optional.empty();
         var stack = ChemicalHelper.getMaterialStack(item);
         var wire = stack.material().getProperty(PropertyKey.WIRE);
