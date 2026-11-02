@@ -1,11 +1,12 @@
 package com.github.dewittsmith.gtm_powerlines.blockentity;
 
 import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
+import com.github.dewittsmith.gtm_powerlines.machines.PowerlineTransformerMachine;
 import com.github.dewittsmith.gtm_powerlines.network.PowerlineNetwork;
 import com.github.dewittsmith.gtm_powerlines.util.BlockUtils;
 import com.github.dewittsmith.gtm_powerlines.wire.IWireMachine;
 import com.github.dewittsmith.gtm_powerlines.wire.WireConnectionResult;
-import com.gregtechceu.gtceu.api.blockentity.MetaMachineBlockEntity;
+import com.github.dewittsmith.gtm_powerlines.wire.WireInfo;
 import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -64,12 +65,24 @@ public class PowerlineInsulatorBlockEntity extends BlockEntity {
         return connectionCount() < maxConnections;
     }
 
+    public int getWireTier() {
+        if (controller == null) return -1;
+        var transformer = BlockUtils.instanceOf(level, controller, PowerlineTransformerMachine.class);
+        if (transformer.isPresent()) return transformer.get().getTier();
+        var connections = getConnections();
+        if (connections.isEmpty()) return -1;
+        return WireInfo.getTier(connections.get(0).wire());
+    }
+
     public WireConnectionResult connect(BlockPos target, ResourceLocation wire) {
         if (!isServer()) return WireConnectionResult.SAME_BLOCK;
         if (target.equals(worldPosition)) return WireConnectionResult.SAME_BLOCK;
         if (getConnections().stream().anyMatch(e -> e.other(worldPosition).equals(target)))
             return WireConnectionResult.ALREADY_CONNECTED;
         if (!hasConnectionCapacity()) return WireConnectionResult.TOO_MANY_CONNECTIONS;
+
+        var tier = getWireTier();
+        if (tier != -1 && tier != WireInfo.getTier(wire)) return WireConnectionResult.incompatibleTier(tier);
 
         return network().connect((ServerLevel) level, worldPosition, target, wire)
                 ? WireConnectionResult.SUCCESS

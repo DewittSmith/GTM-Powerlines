@@ -4,12 +4,12 @@ import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
 import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
 import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
 import com.github.dewittsmith.gtm_powerlines.wire.WireAttachment;
-import com.github.dewittsmith.gtm_powerlines.wire.WireColor;
+import com.github.dewittsmith.gtm_powerlines.wire.WireInfo;
+import com.gregtechceu.gtceu.api.GTValues;
 import com.gregtechceu.gtceu.api.data.chemical.ChemicalHelper;
 import com.gregtechceu.gtceu.api.data.tag.TagPrefix;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
@@ -41,7 +41,9 @@ public class PowerlineWireEvents {
         if (!isPowerlineWire(held)) return;
 
         var wireItem = held.getItem();
-        var wireColor = WireColor.wireColor(wireItem);
+        var wire = ForgeRegistries.ITEMS.getKey(wireItem);
+        var wireTier = WireInfo.getTier(wire);
+        var wireColor = WireInfo.getColor(wireItem);
 
         BlockPos pos = event.getPos();
         var clickedBe = level.getBlockEntity(pos) instanceof PowerlineInsulatorBlockEntity be ? be : null;
@@ -69,6 +71,13 @@ public class PowerlineWireEvents {
 
             if (!clickedBe.hasConnectionCapacity()) {
                 message(player, "message.gtm_powerlines.wire.too_many_connections");
+                finish(event);
+                return;
+            }
+
+            var tier = clickedBe.getWireTier();
+            if (tier != -1 && wireTier != -1 && tier != wireTier) {
+                message(player, "message.gtm_powerlines.wire.incompatible_tier", GTValues.VNF[tier], GTValues.VNF[wireTier]);
                 finish(event);
                 return;
             }
@@ -102,6 +111,13 @@ public class PowerlineWireEvents {
         }
 
         if (fromController.equals(toController)) {
+            var tier = clickedBe.getWireTier();
+            if (tier != -1 && wireTier != -1 && tier != wireTier) {
+                message(player, "message.gtm_powerlines.wire.incompatible_tier", GTValues.VNF[tier], GTValues.VNF[wireTier]);
+                finish(event);
+                return;
+            }
+
             WireAttachment.set(player, level, pos, wireItem, wireColor);
             message(player, "message.gtm_powerlines.wire.attached_click_another");
             finish(event);
@@ -122,8 +138,8 @@ public class PowerlineWireEvents {
             return;
         }
 
-        ResourceLocation wire = ForgeRegistries.ITEMS.getKey(held.getItem());
-        switch (fromBe.connect(pos, wire)) {
+        var connectResult = fromBe.connect(pos, wire);
+        switch (connectResult.status()) {
             case SUCCESS -> {
                 clickedBe.connect(attach.pos(), wire);
 
@@ -135,6 +151,8 @@ public class PowerlineWireEvents {
             case SAME_BLOCK -> message(player, "message.gtm_powerlines.wire.same_block_selected");
             case ALREADY_CONNECTED -> message(player, "message.gtm_powerlines.wire.already_connected");
             case TOO_MANY_CONNECTIONS -> message(player, "message.gtm_powerlines.wire.too_many_connections");
+            case INCOMPATIBLE_TIER ->
+                    message(player, "message.gtm_powerlines.wire.incompatible_tier", GTValues.VNF[connectResult.value()], GTValues.VNF[wireTier]);
         }
     }
 
