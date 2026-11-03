@@ -64,13 +64,20 @@ repositories {
     }
     maven {
         // EMI
-		name = "TerraformersMC"
-		url = "https://maven.terraformersmc.com/"
-	}
+        name = "TerraformersMC"
+        url = "https://maven.terraformersmc.com/"
+    }
     maven {
         url = "https://thedarkcolour.github.io/KotlinForForge/"
     }
-
+    maven {
+        name 'Configuration'
+        url 'https://api.repsy.io/mvn/toma/public/'
+    }
+    maven {
+        name 'Configuration backup maven'
+        url 'https://repo.repsy.io/mvn/toma/public/'
+    }
 }
 
 version = mod_version
@@ -156,7 +163,7 @@ dependencies {
     modImplementation("com.gregtechceu.gtceu:gtceu-${minecraft_version}:${gtceu_version}:slim") { transitive = false }
     modImplementation("com.lowdragmc.ldlib:ldlib-forge-${minecraft_version}:${ldlib_version}") { transitive = false }
     modImplementation("com.tterrag.registrate:Registrate:${registrate_version}")
-    modImplementation("dev.toma.configuration:configuration-forge-${minecraft_version}:${configuration_version}")
+    modImplementation("dev.toma.configuration:configuration-${minecraft_version}:${configuration_version}-forge")
 
     // lombok
     compileOnly 'org.projectlombok:lombok:1.18.24'
@@ -170,15 +177,15 @@ mixin {
 
 tasks.named('processResources', ProcessResources).configure {
     var properties = [
-            "mod_license": mod_license,
-            "mod_id": mod_id,
-            "version": version,
-            "mod_name": mod_name,
-            "mod_url": mod_url,
-            "mod_author": mod_author,
-            "forge_version": forge_version.split("\\.")[0], // only specify major version of forge
+            "mod_license"      : mod_license,
+            "mod_id"           : mod_id,
+            "version"          : version,
+            "mod_name"         : mod_name,
+            "mod_url"          : mod_url,
+            "mod_author"       : mod_author,
+            "forge_version"    : forge_version.split("\\.")[0], // only specify major version of forge
             "minecraft_version": minecraft_version,
-            "gtceu_version": gtceu_version,
+            "gtceu_version"    : gtceu_version,
     ]
     inputs.properties(properties)
 

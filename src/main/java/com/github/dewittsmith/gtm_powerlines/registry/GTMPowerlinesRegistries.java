@@ -43,7 +43,6 @@ public class GTMPowerlinesRegistries {
 
     public static final BlockEntry<PowerlineInsulatorBlock> POWERLINE_INSULATOR = POWERLINE_REGISTRATE
             .block("powerline_insulator", PowerlineInsulatorBlock::new)
-            .lang("Powerline Insulator")
             .initialProperties(() -> Blocks.IRON_BLOCK)
             .properties(p -> p.noOcclusion().strength(1.5f, 6f).sound(SoundType.GLASS))
             .blockstate((ctx, prov) -> {
@@ -58,7 +57,6 @@ public class GTMPowerlinesRegistries {
 
     public static final MachineDefinition POWERLINE_TOWER = POWERLINE_REGISTRATE
             .multiblock("powerline_tower", PowerlineTowerMachine::new)
-            .langValue("Powerline Tower")
             .rotationState(RotationState.NON_Y_AXIS)
             .recipeType(GTRecipeTypes.DUMMY_RECIPES)
             .noRecipeModifier()
@@ -66,7 +64,7 @@ public class GTMPowerlinesRegistries {
             .pattern(definition -> FactoryBlockPattern.start()
                     .aisle("S", "F", "I")
                     .where('S', controller(blocks(definition.get())))
-                    .where('F', PowerlinePredicates.blockTags(GTMPowerlinesConfig.INSTANCE.towerTags()))
+                    .where('F', PowerlinePredicates.towerBlocks())
                     .where('I', PowerlinePredicates.track("insulators", POWERLINE_INSULATOR.getDefaultState()).setMinGlobalLimited(1))
                     .build())
             .shapeInfos(definition -> {
@@ -139,7 +137,6 @@ public class GTMPowerlinesRegistries {
 
     public static final MultiblockMachineDefinition POWERLINE_TRANSFORMER = POWERLINE_REGISTRATE
             .multiblock("powerline_transformer", PowerlineTransformerMachine::new)
-            .langValue("Powerline Transformer")
             .rotationState(RotationState.NON_Y_AXIS)
             .recipeType(GTRecipeTypes.DUMMY_RECIPES)
             .noRecipeModifier()

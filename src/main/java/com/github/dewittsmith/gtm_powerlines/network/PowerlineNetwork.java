@@ -1,6 +1,7 @@
 package com.github.dewittsmith.gtm_powerlines.network;
 
 import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
+import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
 import com.github.dewittsmith.gtm_powerlines.machines.PowerlineTowerMachine;
 import com.github.dewittsmith.gtm_powerlines.machines.PowerlineTransformerMachine;
 import com.github.dewittsmith.gtm_powerlines.util.BlockUtils;
@@ -182,7 +183,7 @@ public class PowerlineNetwork extends SavedData {
     private float edgeLoss(Edge edge) {
         var stats = WireInfo.of(edge.wire());
         if (stats.isEmpty()) return Float.MAX_VALUE;
-        return (float) Math.sqrt(edge.a.distSqr(edge.b)) * stats.get().lossPerBlock();
+        return (float) Math.sqrt(edge.a.distSqr(edge.b)) * Math.max(stats.get().lossPerBlock(), GTMPowerlinesConfig.INSTANCE.minLoss);
     }
 
     private void add(Edge e) {

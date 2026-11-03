@@ -1,19 +1,20 @@
 package com.github.dewittsmith.gtm_powerlines.config;
 
 import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
-import com.github.dewittsmith.gtm_powerlines.renderer.WireLOD;
+import com.gregtechceu.gtceu.utils.TagExprFilter;
 import dev.toma.configuration.Configuration;
 import dev.toma.configuration.config.Config;
 import dev.toma.configuration.config.Configurable;
 import dev.toma.configuration.config.format.ConfigFormats;
-import net.minecraft.core.registries.Registries;
+import dev.toma.configuration.config.validate.IValidationResult;
+import dev.toma.configuration.config.value.IConfigValueReadable;
+import it.unimi.dsi.fastutil.objects.Object2BooleanArrayMap;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.Arrays;
-import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Config(id = GTMPowerlines.MOD_ID)
@@ -24,69 +25,95 @@ public class GTMPowerlinesConfig {
     public static void init() {
         synchronized (LOCK) {
             if (INSTANCE == null) {
-                INSTANCE = Configuration.registerConfig(GTMPowerlinesConfig.class, ConfigFormats.yaml()).getConfigInstance();
+                var holder = Configuration.registerConfig(GTMPowerlinesConfig.class, ConfigFormats.YAML);
+                INSTANCE = holder.getConfigInstance();
+                holder.getConfigValue("towerStructureFilters", String[].class)
+                        .ifPresent(c -> c.addValidator(INSTANCE::onTagsChanged));
             }
         }
     }
 
     @Configurable
-    @Configurable.Comment({"Base energy lossPerBlock per block multiplier."})
-    @Configurable.DecimalRange(min = 0.0f, max = 1.0f)
-    public float baseLossMult = 0.5f;
+    @Configurable.DecimalRange(min = 0f, max = 1f)
+    @Configurable.Synchronized
+    @Configurable.Gui.NumberFormat("0%")
+    public float lowestCoilEfficiency = 0.4f;
 
     @Configurable
-    @Configurable.Comment({"Minimal energy lossPerBlock per block."})
-    @Configurable.DecimalRange(min = 0.0f)
+    @Configurable.DecimalRange(min = 0f, max = 1f)
+    @Configurable.Synchronized
+    @Configurable.Gui.NumberFormat("0%")
+    public float highestCoilEfficiency = 0.8f;
+
+    @Configurable
+    @Configurable.DecimalRange(min = 0f)
+    @Configurable.Synchronized
     public float minLoss = 0f;
 
     @Configurable
-    @Configurable.Comment({"Minimal wire block distance."})
-    @Configurable.DecimalRange(min = 0.0f, max = 256.0f)
+    @Configurable.DecimalRange(min = 0f)
+    @Configurable.Synchronized
     public float minWireRange = 4f;
 
     @Configurable
-    @Configurable.Comment({"Maximal wire block distance."})
-    @Configurable.DecimalRange(min = 0.0f, max = 256.0f)
+    @Configurable.DecimalRange(min = 0f)
+    @Configurable.Synchronized
     public float maxWireRange = 128f;
 
     @Configurable
-    @Configurable.Comment({"Exponent applied to tower range."})
-    @Configurable.DecimalRange(min = 0.0f, max = 8.0f)
+    @Configurable.DecimalRange(min = 0f, max = 8f)
+    @Configurable.Comment(value = {"Tower range is calculated as:", "pow(insulator.y - tower_base.y, towerRangePower)"}, localize = true)
+    @Configurable.Synchronized
     public float towerRangePower = 2f;
 
     @Configurable
-    @Configurable.Comment({"Block tags that count as tower structure, e.g. \"minecraft:fences\"."})
-    @Configurable.ValueUpdateCallback(method = "onTagsChanged")
-    public String[] towerStructureTags = new String[]{"minecraft:fences", "minecraft:walls", "minecraft:fence_gates", "minecraft:planks", "minecraft:slabs"};
+    @Configurable.Comment(value = {
+            "Block filters that count as tower structure, e.g. \"minecraft:fences|minecraft:walls\"",
+            "Uses tag expressions from GTCEU (A&B, A|B, A^B, etc)"},
+            localize = true)
+    @Configurable.Synchronized
+    public String[] towerStructureFilters = new String[]{
+            "minecraft:fences|minecraft:walls",
+            "minecraft:slabs|minecraft:planks",
+            "minecraft:fence_gates"
+    };
 
     @Configurable
-    @Configurable.Comment({"Whether to use billboards to render wires."})
+    @Configurable.Comment(value = {"Whether to use billboards to render wires"}, localize = true)
     public boolean useFlatWires = false;
 
     @Configurable
-    @Configurable.Comment({"Tube LOD distance."})
+    @Configurable.DecimalRange(min = 0f)
     public float tubeWireLODDistance = 16;
 
     @Configurable
-    @Configurable.Comment({"Billboard LOD distance."})
-    public float billboardLODDistance = 128;
+    @Configurable.DecimalRange(min = 0f)
+    public float flatWireLODDistance = 128;
 
-    private transient Set<TagKey<Block>> resolvedTags;
+    private transient TagExprFilter.TagExprParser.MatchExpr towerTagExpression;
+    private final transient Object2BooleanArrayMap<Block> towerTagCache = new Object2BooleanArrayMap<>();
 
-    public void onTagsChanged(String[] newValue) {
-        resolvedTags = null;
+    private IValidationResult onTagsChanged(String[] newValue, IConfigValueReadable<String[]> readable) {
+        var combined = String.join("|", Arrays.stream(newValue).map(s -> "(" + s + ")").toList());
+        towerTagExpression = TagExprFilter.parseExpression(combined);
+        if (towerTagExpression == null) towerTagExpression = TagExprFilter.parseExpression("!*");
+
+        towerTagCache.clear();
+        return IValidationResult.success();
     }
 
-    public Set<TagKey<Block>> towerTags() {
-        Set<TagKey<Block>> tags = resolvedTags;
-        if (tags == null) {
-            tags = Arrays.stream(towerStructureTags)
-                    .map(ResourceLocation::tryParse)
-                    .filter(Objects::nonNull)
-                    .map(id -> TagKey.create(Registries.BLOCK, id))
-                    .collect(Collectors.toUnmodifiableSet());
-            resolvedTags = tags;
-        }
-        return tags;
+    public boolean isTowerBlock(BlockState state) {
+        if (towerTagExpression == null) onTagsChanged(towerStructureFilters, null);
+        var block = state.getBlock();
+        if (towerTagCache.containsKey(block)) return towerTagCache.getBoolean(block);
+
+        var tagSet = state.getTags()
+                .map(TagKey::location)
+                .map(ResourceLocation::toString)
+                .collect(Collectors.toSet());
+
+        var result = towerTagExpression.matches(tagSet);
+        towerTagCache.put(block, result);
+        return result;
     }
 }

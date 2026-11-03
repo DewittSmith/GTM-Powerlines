@@ -14,6 +14,7 @@ import com.gregtechceu.gtceu.api.sound.SoundEntry;
 import com.gregtechceu.gtceu.common.data.GTCreativeModeTabs;
 import com.tterrag.registrate.util.entry.RegistryEntry;
 import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Items;
@@ -37,8 +38,7 @@ public class GTMPowerlines {
     public static final RegistryEntry<CreativeModeTab> POWERLINE_CREATIVE_TAB = POWERLINE_REGISTRATE
             .defaultCreativeTab(MOD_ID, builder -> builder
                     .displayItems(new GTCreativeModeTabs.RegistrateDisplayItemsGenerator(MOD_ID, POWERLINE_REGISTRATE))
-                    .title(POWERLINE_REGISTRATE
-                            .addLang("itemGroup", id("creative_tab"), "GTM Powerlines"))
+                    .title(Component.translatable("itemGroup.gtm_powerlines.creative_tab"))
                     .icon(GTMPowerlinesRegistries.POWERLINE_INSULATOR::asStack)
                     .build())
             .register();

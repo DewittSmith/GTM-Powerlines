@@ -125,12 +125,6 @@ public class PowerlineWireEvents {
         }
 
         var flatDistance = Math.sqrt(attach.pos().atY(0).distSqr(pos.atY(0)));
-        if (flatDistance < GTMPowerlinesConfig.INSTANCE.minWireRange) {
-            message(player, "message.gtm_powerlines.wire.too_short", Mth.floor(flatDistance), Mth.ceil(GTMPowerlinesConfig.INSTANCE.minWireRange));
-            finish(event);
-            return;
-        }
-
         var maxDistance = Math.max(clickedBe.maxConnectionRange(), fromBe.maxConnectionRange());
         if (flatDistance > maxDistance) {
             message(player, "message.gtm_powerlines.wire.too_long", Mth.ceil(flatDistance), Mth.floor(maxDistance));

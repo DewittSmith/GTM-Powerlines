@@ -11,7 +11,7 @@ public enum WireLOD {
 
         WireLOD selected;
         if (distance < GTMPowerlinesConfig.INSTANCE.tubeWireLODDistance) selected = WireLOD.TUBE;
-        else if (distance < GTMPowerlinesConfig.INSTANCE.billboardLODDistance) selected = WireLOD.BILLBOARD;
+        else if (distance < GTMPowerlinesConfig.INSTANCE.flatWireLODDistance) selected = WireLOD.BILLBOARD;
         else selected = WireLOD.CULL;
         return selected == TUBE && GTMPowerlinesConfig.INSTANCE.useFlatWires ? WireLOD.BILLBOARD : selected;
     }

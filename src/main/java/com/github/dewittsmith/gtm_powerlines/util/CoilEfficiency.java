@@ -1,12 +1,19 @@
 package com.github.dewittsmith.gtm_powerlines.util;
 
+import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
 import com.gregtechceu.gtceu.api.block.ICoilType;
+import com.gregtechceu.gtceu.common.block.CoilBlock;
 import net.minecraft.util.Mth;
 
 public class CoilEfficiency {
+    private final static float MIN_TEMPERATURE = CoilBlock.CoilType.CUPRONICKEL.getCoilTemperature();
+    private final static float MAX_TEMPERATURE = CoilBlock.CoilType.TRITANIUM.getCoilTemperature();
+
     public static float of(ICoilType coilType) {
-        final float MIN_EFFICIENCY = 0.4f;
-        final float MAX_EFFICIENCY = 0.8f;
-        return Mth.clampedLerp(MIN_EFFICIENCY, MAX_EFFICIENCY, Mth.sqrt(coilType.getTier() / 7f));
+        var t = (coilType.getCoilTemperature() - MIN_TEMPERATURE) / (MAX_TEMPERATURE - MIN_TEMPERATURE);
+
+        final float MIN_EFFICIENCY = GTMPowerlinesConfig.INSTANCE.lowestCoilEfficiency;
+        final float MAX_EFFICIENCY = GTMPowerlinesConfig.INSTANCE.highestCoilEfficiency;
+        return Mth.clampedLerp(MIN_EFFICIENCY, MAX_EFFICIENCY, Mth.sqrt(t));
     }
 }

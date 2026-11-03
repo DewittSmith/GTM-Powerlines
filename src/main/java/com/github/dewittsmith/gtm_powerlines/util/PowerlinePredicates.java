@@ -7,14 +7,12 @@ import com.gregtechceu.gtceu.api.pattern.error.PatternStringError;
 import com.lowdragmc.lowdraglib.utils.BlockInfo;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.Property;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.stream.Stream;
 
 import static com.gregtechceu.gtceu.api.pattern.Predicates.custom;
@@ -72,7 +70,7 @@ public final class PowerlinePredicates {
         }, () -> new BlockInfo[]{new BlockInfo(blockState)});
     }
 
-    public static TraceabilityPredicate blockTags(Collection<TagKey<Block>> tags) {
-        return new TraceabilityPredicate(new PredicateBlockTags(tags));
+    public static TraceabilityPredicate towerBlocks() {
+        return new TraceabilityPredicate(new PredicateTowerBlocks());
     }
 }

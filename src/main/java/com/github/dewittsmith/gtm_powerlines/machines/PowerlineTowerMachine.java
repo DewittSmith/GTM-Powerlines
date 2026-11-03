@@ -15,13 +15,12 @@ import it.unimi.dsi.fastutil.longs.LongSet;
 import it.unimi.dsi.fastutil.longs.LongSets;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.tags.TagKey;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 
@@ -49,13 +48,7 @@ public class PowerlineTowerMachine extends MultiblockControllerMachine implement
     }
 
     private static boolean isStructure(BlockState s) {
-        for (TagKey<Block> tag : GTMPowerlinesConfig.INSTANCE.towerTags()) {
-            if (s.is(tag)) {
-                return true;
-            }
-        }
-
-        return false;
+        return GTMPowerlinesConfig.INSTANCE.isTowerBlock(s);
     }
 
     private static boolean isInsulator(BlockState s) {
@@ -85,8 +78,13 @@ public class PowerlineTowerMachine extends MultiblockControllerMachine implement
     }
 
     private boolean rescan() {
-        var level = getLevel();
-        if (level == null || level.isClientSide) return false;
+        if (!(getLevel() instanceof ServerLevel level)) return false;
+
+        detachInsulators();
+        insulatorBlocks.clear();
+
+        var multiblockState = getMultiblockState();
+        multiblockState.clean();
 
         LongSet found = new LongOpenHashSet();
         LongSet insulators = new LongOpenHashSet();
@@ -117,21 +115,11 @@ public class PowerlineTowerMachine extends MultiblockControllerMachine implement
                     if (cursor.getY() < minElevation) minElevation = cursor.getY();
                 }
 
-                if (found.size() > MAX_BLOCKS) {
-                    detachInsulators();
-                    insulatorBlocks.clear();
-                    return false;
-                }
+                if (found.size() > MAX_BLOCKS) return false;
             }
         }
 
-        var multiblockState = getMultiblockState();
-
-        multiblockState.clean();
         multiblockState.cache.addAll(found);
-
-        detachInsulators();
-        insulatorBlocks.clear();
         insulatorBlocks.addAll(insulators);
         attachInsulators();
 
@@ -147,7 +135,7 @@ public class PowerlineTowerMachine extends MultiblockControllerMachine implement
         if (!(player instanceof ServerPlayer sp)) return InteractionResult.PASS;
         if (!sp.getMainHandItem().isEmpty()) return InteractionResult.PASS;
 
-        if (sp.isShiftKeyDown()) {
+        if (isFormed() && sp.isShiftKeyDown()) {
             rescan();
             Net.sendToPlayer(sp, new TowerHighlightPacket(level.dimension(), getStructureBlocks().toLongArray(), insulatorBlocks.toLongArray(), getPos().asLong()));
             return InteractionResult.CONSUME;
