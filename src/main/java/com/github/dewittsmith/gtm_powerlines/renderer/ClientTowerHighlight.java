@@ -2,7 +2,6 @@ package com.github.dewittsmith.gtm_powerlines.renderer;
 
 import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
 import com.github.dewittsmith.gtm_powerlines.network.TowerHighlightPacket;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import it.unimi.dsi.fastutil.longs.Long2LongArrayMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayFIFOQueue;
 import net.minecraft.client.Minecraft;
@@ -80,7 +79,7 @@ public final class ClientTowerHighlight {
 
         Vec3 cam = event.getCamera().getPosition();
         var buffers = mc.renderBuffers().bufferSource();
-        VertexConsumer lines = buffers.getBuffer(RenderType.lines());
+        var lines = buffers.getBuffer(RenderType.LINES);
         var stack = event.getPoseStack();
 
         var now = level.getGameTime() + event.getPartialTick();
@@ -106,7 +105,7 @@ public final class ClientTowerHighlight {
             else LevelRenderer.renderLineBox(stack, lines, box, 0f, 1f, 0f, alpha);
         }
 
-        buffers.endBatch(RenderType.lines());
+        buffers.endBatch(RenderType.LINES);
     }
 }
 

@@ -1,6 +1,7 @@
 package com.github.dewittsmith.gtm_powerlines.machines;
 
 import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
+import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
 import com.github.dewittsmith.gtm_powerlines.network.PowerlineNetwork;
 import com.github.dewittsmith.gtm_powerlines.util.BlockUtils;
 import com.github.dewittsmith.gtm_powerlines.util.CoilEfficiency;
@@ -276,6 +277,6 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine imple
 
     @Override
     public float getWireDistanceFor(BlockPos block) {
-        return 16;
+        return Mth.clamp(16, GTMPowerlinesConfig.INSTANCE.minWireRange, GTMPowerlinesConfig.INSTANCE.maxWireRange);
     }
 }

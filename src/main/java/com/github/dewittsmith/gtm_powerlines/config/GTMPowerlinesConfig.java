@@ -64,7 +64,7 @@ public class GTMPowerlinesConfig {
     @Configurable.DecimalRange(min = 0f, max = 8f)
     @Configurable.Comment(value = {"Tower range is calculated as:", "pow(insulator.y - tower_base.y, towerRangePower)"}, localize = true)
     @Configurable.Synchronized
-    public float towerRangePower = 2f;
+    public float towerRangePower = 1.7f;
 
     @Configurable
     @Configurable.Comment(value = {

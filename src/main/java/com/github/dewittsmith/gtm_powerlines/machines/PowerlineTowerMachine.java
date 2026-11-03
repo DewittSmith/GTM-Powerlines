@@ -17,6 +17,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -24,13 +25,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 
-import java.util.HashSet;
-import java.util.Set;
-
 public class PowerlineTowerMachine extends MultiblockControllerMachine implements IWireMachine, IInteractedMachine {
     private static final int MAX_BLOCKS = 64;
-
-    public static final Set<PowerlineTowerMachine> RENDERED_TOWERS = new HashSet<>();
 
     private final LongSet insulatorBlocks = new LongOpenHashSet();
     private int baseElevation = 0;
@@ -137,7 +133,13 @@ public class PowerlineTowerMachine extends MultiblockControllerMachine implement
 
         if (isFormed() && sp.isShiftKeyDown()) {
             rescan();
-            Net.sendToPlayer(sp, new TowerHighlightPacket(level.dimension(), getStructureBlocks().toLongArray(), insulatorBlocks.toLongArray(), getPos().asLong()));
+            Net.sendToPlayer(sp, new TowerHighlightPacket(
+                    level.dimension(),
+                    getStructureBlocks().toLongArray(),
+                    insulatorBlocks.toLongArray(),
+                    getPos().asLong()
+            ));
+
             return InteractionResult.CONSUME;
         }
 
@@ -156,6 +158,6 @@ public class PowerlineTowerMachine extends MultiblockControllerMachine implement
 
     @Override
     public float getWireDistanceFor(BlockPos block) {
-        return (float) Math.pow(block.getY() - baseElevation, GTMPowerlinesConfig.INSTANCE.towerRangePower);
+        return Mth.clamp((float) Math.pow(block.getY() - baseElevation, GTMPowerlinesConfig.INSTANCE.towerRangePower), GTMPowerlinesConfig.INSTANCE.minWireRange, GTMPowerlinesConfig.INSTANCE.maxWireRange);
     }
 }

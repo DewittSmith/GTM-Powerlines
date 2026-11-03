@@ -1,6 +1,5 @@
 package com.github.dewittsmith.gtm_powerlines.blockentity;
 
-import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
 import com.github.dewittsmith.gtm_powerlines.machines.PowerlineTransformerMachine;
 import com.github.dewittsmith.gtm_powerlines.network.PowerlineNetwork;
 import com.github.dewittsmith.gtm_powerlines.util.BlockUtils;
@@ -13,7 +12,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
@@ -54,8 +52,7 @@ public class PowerlineInsulatorBlockEntity extends BlockEntity {
     public float maxConnectionRange() {
         if (controller == null) return 0f;
         var wireMachine = BlockUtils.instanceOf(level, controller, IWireMachine.class);
-        var wireDistance = wireMachine.map(iWireMachine -> iWireMachine.getWireDistanceFor(worldPosition)).orElse(0f);
-        return Mth.clamp(wireDistance, GTMPowerlinesConfig.INSTANCE.minWireRange, GTMPowerlinesConfig.INSTANCE.maxWireRange);
+        return wireMachine.map(wm -> wm.getWireDistanceFor(worldPosition)).orElse(0f);
     }
 
     public boolean hasConnectionCapacity() {
