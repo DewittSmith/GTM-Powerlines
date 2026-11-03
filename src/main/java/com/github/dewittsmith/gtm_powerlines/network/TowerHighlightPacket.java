@@ -11,18 +11,18 @@ import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
-public record TowerHighlightPacket(ResourceKey<Level> dimension, long[] structure, long[] insulators, int ticks) {
+public record TowerHighlightPacket(ResourceKey<Level> dimension, long[] structure, long[] insulators, long controller) {
 
     public static void encode(TowerHighlightPacket p, FriendlyByteBuf buf) {
         buf.writeResourceKey(p.dimension);
         buf.writeLongArray(p.structure);
         buf.writeLongArray(p.insulators);
-        buf.writeVarInt(p.ticks);
+        buf.writeLong(p.controller);
     }
 
     public static TowerHighlightPacket decode(FriendlyByteBuf buf) {
         return new TowerHighlightPacket(buf.readResourceKey(Registries.DIMENSION),
-                buf.readLongArray(), buf.readLongArray(), buf.readVarInt());
+                buf.readLongArray(), buf.readLongArray(), buf.readLong());
     }
 
     public static void handle(TowerHighlightPacket p, Supplier<NetworkEvent.Context> ctx) {

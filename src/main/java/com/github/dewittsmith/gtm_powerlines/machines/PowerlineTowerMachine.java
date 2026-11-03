@@ -149,7 +149,7 @@ public class PowerlineTowerMachine extends MultiblockControllerMachine implement
 
         if (sp.isShiftKeyDown()) {
             rescan();
-            Net.sendToPlayer(sp, new TowerHighlightPacket(level.dimension(), getStructureBlocks().toLongArray(), insulatorBlocks.toLongArray(), 200));
+            Net.sendToPlayer(sp, new TowerHighlightPacket(level.dimension(), getStructureBlocks().toLongArray(), insulatorBlocks.toLongArray(), getPos().asLong()));
             return InteractionResult.CONSUME;
         }
 
