@@ -47,7 +47,7 @@ public class PowerlineNetwork extends SavedData {
     public static PowerlineNetwork get(ServerLevel level) {
         return level.getDataStorage().computeIfAbsent(tag -> {
             var network = PowerlineNetwork.load(tag);
-            network.rebuildTransferEdges(level);
+            network.setTransferDirty();
             return network;
         }, PowerlineNetwork::new, "gtm_powerlines_network");
     }
@@ -69,7 +69,7 @@ public class PowerlineNetwork extends SavedData {
         if (x.equals(y) || at(x).stream().anyMatch(o -> o.other(x).equals(y))) return false;
         add(e);
         setDirty();
-        rebuildTransferEdges(level);
+        setTransferDirty();
         Net.sendToDimension(level, new WireDeltaPacket(true, e));
         return true;
     }
@@ -79,7 +79,7 @@ public class PowerlineNetwork extends SavedData {
             if (e.other(x).equals(y)) {
                 remove(e);
                 setDirty();
-                rebuildTransferEdges(level);
+                setTransferDirty();
                 Net.sendToDimension(level, new WireDeltaPacket(false, e));
                 return true;
             }
@@ -95,31 +95,38 @@ public class PowerlineNetwork extends SavedData {
         }
         if (!removed.isEmpty()) {
             setDirty();
-            rebuildTransferEdges(level);
+            setTransferDirty();
         }
 
         return removed;
+    }
+
+    private boolean isTransferDirty;
+
+    public void setTransferDirty() {
+        isTransferDirty = true;
+    }
+
+    public boolean rebuildTransferEdgesIfDirty(ServerLevel level) {
+        if (!isTransferDirty) return false;
+        isTransferDirty = false;
+        rebuildTransferEdges(level);
+        return true;
     }
 
     public void rebuildTransferEdges(ServerLevel level) {
         transfers.clear();
         for (var key : byPos.keySet()) {
             var pos = BlockPos.of(key);
-            rebuildTransferEdges(level, pos);
+            var insulatorOpt = BlockUtils.instanceOf(level, pos, PowerlineInsulatorBlockEntity.class);
+            if (insulatorOpt.isEmpty()) continue;
+            var transformerOpt = BlockUtils.instanceOf(level, insulatorOpt.get().getController(), PowerlineTransformerMachine.class);
+            if (transformerOpt.isEmpty()) continue;
+            rebuildTransferEdges(level, pos, transformerOpt.get());
         }
     }
 
-    public void rebuildTransferEdges(ServerLevel level, BlockPos insulator) {
-        transfers.remove(insulator.asLong());
-        var insulatorOpt = BlockUtils.instanceOf(level, insulator, PowerlineInsulatorBlockEntity.class);
-        if (insulatorOpt.isEmpty()) return;
-        var transformerOpt = BlockUtils.instanceOf(level, insulatorOpt.get().getController(), PowerlineTransformerMachine.class);
-        if (transformerOpt.isEmpty()) return;
-        rebuildTransferEdges(level, insulator, transformerOpt.get());
-    }
-
-    public void rebuildTransferEdges(ServerLevel level, BlockPos insulator, PowerlineTransformerMachine transformer) {
-        transfers.remove(insulator.asLong());
+    private void rebuildTransferEdges(ServerLevel level, BlockPos insulator, PowerlineTransformerMachine transformer) {
         if (transformer.isOutput()) return;
 
         List<TransferEdge> found = new ArrayList<>();
@@ -175,19 +182,19 @@ public class PowerlineNetwork extends SavedData {
     private float edgeLoss(Edge edge) {
         var stats = WireInfo.of(edge.wire());
         if (stats.isEmpty()) return Float.MAX_VALUE;
-        return (float) (edge.a().getCenter().distanceTo(edge.b().getCenter()) * stats.get().lossPerBlock());
+        return (float) Math.sqrt(edge.a.distSqr(edge.b)) * stats.get().lossPerBlock();
     }
 
     private void add(Edge e) {
         edges.add(e);
-        index(e.a(), e);
-        index(e.b(), e);
+        index(e.a, e);
+        index(e.b, e);
     }
 
     private void remove(Edge e) {
         edges.remove(e);
-        unindex(e.a(), e);
-        unindex(e.b(), e);
+        unindex(e.a, e);
+        unindex(e.b, e);
     }
 
     private void index(BlockPos p, Edge e) {
@@ -203,13 +210,12 @@ public class PowerlineNetwork extends SavedData {
     }
 
     @Override
-
     public CompoundTag save(CompoundTag tag) {
         ListTag list = new ListTag();
         for (Edge e : edges) {
             CompoundTag t = new CompoundTag();
-            t.putLong("a", e.a().asLong());
-            t.putLong("b", e.b().asLong());
+            t.putLong("a", e.a.asLong());
+            t.putLong("b", e.b.asLong());
             t.putString("wire", e.wire().toString());
             list.add(t);
         }

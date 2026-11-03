@@ -124,16 +124,16 @@ public class PowerlineWireEvents {
             return;
         }
 
-        var distance = Math.sqrt(attach.pos().distSqr(pos));
-        if (distance < GTMPowerlinesConfig.INSTANCE.minWireRange) {
-            message(player, "message.gtm_powerlines.wire.too_short", Mth.floor(distance), Mth.ceil(GTMPowerlinesConfig.INSTANCE.minWireRange));
+        var flatDistance = Math.sqrt(attach.pos().atY(0).distSqr(pos.atY(0)));
+        if (flatDistance < GTMPowerlinesConfig.INSTANCE.minWireRange) {
+            message(player, "message.gtm_powerlines.wire.too_short", Mth.floor(flatDistance), Mth.ceil(GTMPowerlinesConfig.INSTANCE.minWireRange));
             finish(event);
             return;
         }
 
         var maxDistance = Math.max(clickedBe.maxConnectionRange(), fromBe.maxConnectionRange());
-        if (distance > maxDistance) {
-            message(player, "message.gtm_powerlines.wire.too_long", Mth.ceil(distance), Mth.floor(maxDistance));
+        if (flatDistance > maxDistance) {
+            message(player, "message.gtm_powerlines.wire.too_long", Mth.ceil(flatDistance), Mth.floor(maxDistance));
             finish(event);
             return;
         }

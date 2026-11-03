@@ -75,28 +75,33 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine imple
             this.coilType = coil;
         }
 
-        if (!isRemote() && !isOutput() && transferSub == null) {
-            transferSub = subscribeServerTick(this::transferTick);
-        }
-
         if (getLevel() instanceof ServerLevel level) {
-            for (var insulator : insulators) {
-                PowerlineNetwork.get(level).rebuildTransferEdges(level, insulator);
+            if (isInput() && transferSub == null) {
+                transferSub = subscribeServerTick(this::transferTick);
             }
+
+            PowerlineNetwork.get(level).setTransferDirty();
         }
     }
 
     @Override
     public void onStructureInvalid() {
         super.onStructureInvalid();
+
         if (transferSub != null) {
             unsubscribe(transferSub);
             transferSub = null;
         }
 
-        energyContainer = null;
         setInsulatorsConnected(insulators, false);
         insulators = Collections.emptyList();
+
+        coilType = CoilBlock.CoilType.CUPRONICKEL;
+        energyContainer = null;
+
+        if (getLevel() instanceof ServerLevel level) {
+            PowerlineNetwork.get(level).setTransferDirty();
+        }
     }
 
     @Override
@@ -138,30 +143,58 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine imple
             energyOutput = 0;
         }
 
-        var efficiency = CoilEfficiency.of(coilType);
         var network = PowerlineNetwork.get(level);
+        network.rebuildTransferEdgesIfDirty(level);
+
+        var efficiency = CoilEfficiency.of(coilType);
+
         for (var insulator : insulators) {
+            var insulatorBeOpt = BlockUtils.instanceOf(level, insulator, PowerlineInsulatorBlockEntity.class);
+            if (insulatorBeOpt.isEmpty()) continue;
+            if (insulatorBeOpt.get().getWireTier() != getTier()) continue;
+
             for (var edge : network.transferAt(insulator)) {
                 var stored = energyContainer.getEnergyStored();
-                if (stored == 0) return;
+                if (stored <= 0) return;
+
                 var otherOpt = BlockUtils.instanceOf(level, edge.b(), PowerlineInsulatorBlockEntity.class);
                 if (otherOpt.isEmpty()) continue;
-                var other = BlockUtils.instanceOf(level, otherOpt.get().getController(), PowerlineTransformerMachine.class);
+                if (otherOpt.get().getWireTier() != getTier()) continue;
+
+                var controller = otherOpt.get().getController();
+                if (controller == null) continue;
+                var other = BlockUtils.instanceOf(level, controller, PowerlineTransformerMachine.class);
                 if (other.isEmpty()) continue;
                 var otherContainer = other.get().energyContainer;
-                if (otherContainer.getEnergyCanBeInserted() <= 0) continue;
 
-                var otherEfficiency = CoilEfficiency.of(other.get().coilType);
-                var penalty = 1f - (efficiency + otherEfficiency) / 2;
-                var canTransfer = stored - Mth.ceil(edge.totalLoss() * penalty);
-                if (canTransfer <= 0) continue;
+                long room = otherContainer.getEnergyCanBeInserted();
+                long rate = otherContainer.getOutputVoltage() * otherContainer.getOutputAmperage();
+                long needed = Math.min(room, rate);
+                if (needed <= 0) continue;
 
-                var added = otherContainer.addEnergy(canTransfer);
-                var toRemove = Mth.ceil(stored * ((float) added / canTransfer));
-                energyContainer.removeEnergy(toRemove);
+                long sendRate = energyContainer.getInputVoltage() * energyContainer.getInputAmperage();
+                needed = Math.min(needed, sendRate);
+
+                long voltage = Math.max(1, energyContainer.getInputVoltage());
+                var penalty = 1f - (efficiency + CoilEfficiency.of(other.get().coilType)) / 2;
+                long lossPerAmp = Mth.ceil(edge.totalLoss() * penalty);
+
+                long amps = (needed + voltage - 1) / voltage;
+                long cost = needed + lossPerAmp * amps;
+
+                if (cost > stored) {
+                    needed = needed * stored / cost;
+                    amps = (needed + voltage - 1) / voltage;
+                    cost = Math.min(stored, needed + lossPerAmp * amps);
+                }
+                if (needed <= 0) continue;
+
+                long added = otherContainer.addEnergy(needed);
+                long drawn = added == needed ? cost : Math.min(stored, added + lossPerAmp * ((added + voltage - 1) / voltage));
+                energyContainer.removeEnergy(drawn);
 
                 networkOutput += added;
-                energyOutput += toRemove;
+                energyOutput += drawn;
             }
         }
     }
@@ -172,6 +205,12 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine imple
 
     public boolean isOutput() {
         return energyContainer != null && energyContainer.getOutputVoltage() > 0;
+    }
+
+    public IO getIO() {
+        if (isInput()) return IO.IN;
+        else if (isOutput()) return IO.OUT;
+        return IO.NONE;
     }
 
     private void setInsulatorsConnected(Collection<BlockPos> positions, boolean connected) {
