@@ -1,13 +1,15 @@
 package com.github.dewittsmith.gtm_powerlines.wire;
 
-import com.github.dewittsmith.gtm_powerlines.block.PowerlineInsulatorBlock;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.Vec3;
 
+import com.github.dewittsmith.gtm_powerlines.block.PowerlineInsulatorBlock;
+
 public final class WireGeometry {
+
     public static double sag(double length) {
         return Math.min(length * 0.04, 2.0);
     }
@@ -27,8 +29,7 @@ public final class WireGeometry {
         return new Vec3(
                 b.x - a.x,
                 b.y - a.y - 4.0 * sag * (1.0 - 2.0 * t),
-                b.z - a.z
-        ).normalize();
+                b.z - a.z).normalize();
     }
 
     public static Vec3 getAttachmentPoint(BlockEntity be) {

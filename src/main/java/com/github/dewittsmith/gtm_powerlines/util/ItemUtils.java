@@ -4,6 +4,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
 public final class ItemUtils {
+
     public static boolean canConsume(Player player, ItemStack held, int count) {
         if (player.getAbilities().instabuild) return true;
         return countAvailable(player, held) >= count;

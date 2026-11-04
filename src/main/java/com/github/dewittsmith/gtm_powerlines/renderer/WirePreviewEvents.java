@@ -1,17 +1,12 @@
 package com.github.dewittsmith.gtm_powerlines.renderer;
 
-import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
-import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
-import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
-import com.github.dewittsmith.gtm_powerlines.wire.*;
 import com.gregtechceu.gtceu.data.recipe.CustomTags;
-import com.mojang.blaze3d.vertex.PoseStack;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -21,8 +16,15 @@ import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
+import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
+import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
+import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
+import com.github.dewittsmith.gtm_powerlines.wire.*;
+import com.mojang.blaze3d.vertex.PoseStack;
+
 @Mod.EventBusSubscriber(modid = GTMPowerlines.MOD_ID, value = Dist.CLIENT)
 public class WirePreviewEvents {
+
     @SubscribeEvent
     public static void onRenderLevel(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_ENTITIES) return;
@@ -52,8 +54,10 @@ public class WirePreviewEvents {
 
         poseStack.pushPose();
         poseStack.translate(-cameraPos.x, -cameraPos.y, -cameraPos.z);
-        if (GTMPowerlinesConfig.INSTANCE.rendering.useFlatWires) PowerlineWireRenderer.renderBillboard(poseStack, bufferSource, start, end, attachment.argb(), LightTexture.FULL_BRIGHT, cameraPos);
-        else PowerlineWireRenderer.renderTube(poseStack, bufferSource, start, end, attachment.argb(), LightTexture.FULL_BRIGHT, PowerlineWireRenderer.Caps.END);
+        if (GTMPowerlinesConfig.INSTANCE.rendering.useFlatWires) PowerlineWireRenderer.renderBillboard(poseStack,
+                bufferSource, start, end, attachment.argb(), LightTexture.FULL_BRIGHT, cameraPos);
+        else PowerlineWireRenderer.renderTube(poseStack, bufferSource, start, end, attachment.argb(),
+                LightTexture.FULL_BRIGHT, PowerlineWireRenderer.Caps.END);
         poseStack.popPose();
         bufferSource.endBatch(PowerlineWireRenderer.wireRenderType());
     }
@@ -76,7 +80,8 @@ public class WirePreviewEvents {
             LevelRenderer.renderLineBox(pose, buffer, box, 1f, 1f, 0f, 1f);
         }
 
-        var hit = WireTargeting.find(level, sel.pos(), ClientWires.at(sel.pos()), player.getEyePosition(event.getPartialTick()), player.getViewVector(event.getPartialTick()));
+        var hit = WireTargeting.find(level, sel.pos(), ClientWires.at(sel.pos()),
+                player.getEyePosition(event.getPartialTick()), player.getViewVector(event.getPartialTick()));
         if (hit != null) {
             AABB dot = new AABB(hit.point(), hit.point()).inflate(0.1).move(-cam.x, -cam.y, -cam.z);
             LevelRenderer.renderLineBox(pose, buffer, dot, 1f, 1f, 0f, 1f);

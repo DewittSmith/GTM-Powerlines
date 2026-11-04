@@ -1,11 +1,5 @@
 package com.github.dewittsmith.gtm_powerlines.renderer;
 
-import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
-import com.github.dewittsmith.gtm_powerlines.network.PowerlineNetwork;
-import com.github.dewittsmith.gtm_powerlines.wire.ClientWires;
-import com.github.dewittsmith.gtm_powerlines.wire.WireGeometry;
-import com.github.dewittsmith.gtm_powerlines.wire.WireInfo;
-import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.culling.Frustum;
@@ -18,8 +12,16 @@ import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
+import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
+import com.github.dewittsmith.gtm_powerlines.network.PowerlineNetwork;
+import com.github.dewittsmith.gtm_powerlines.wire.ClientWires;
+import com.github.dewittsmith.gtm_powerlines.wire.WireGeometry;
+import com.github.dewittsmith.gtm_powerlines.wire.WireInfo;
+import com.mojang.blaze3d.vertex.PoseStack;
+
 @Mod.EventBusSubscriber(modid = GTMPowerlines.MOD_ID, value = Dist.CLIENT)
 public final class ClientWireRenderer {
+
     @SubscribeEvent
     public static void onRenderLevel(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES) return;
@@ -49,10 +51,10 @@ public final class ClientWireRenderer {
             pose.translate(-cam.x, -cam.y, -cam.z);
 
             switch (lod) {
-                case TUBE ->
-                        PowerlineWireRenderer.renderTube(pose, buffers, a, b, wireInfo.color(), light, PowerlineWireRenderer.Caps.NONE);
-                case BILLBOARD ->
-                        PowerlineWireRenderer.renderBillboard(pose, buffers, a, b, wireInfo.color(), light, cam);
+                case TUBE -> PowerlineWireRenderer.renderTube(pose, buffers, a, b, wireInfo.color(), light,
+                        PowerlineWireRenderer.Caps.NONE);
+                case BILLBOARD -> PowerlineWireRenderer.renderBillboard(pose, buffers, a, b, wireInfo.color(), light,
+                        cam);
             }
 
             pose.popPose();

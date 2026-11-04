@@ -1,8 +1,5 @@
 package com.github.dewittsmith.gtm_powerlines.renderer;
 
-import com.github.dewittsmith.gtm_powerlines.wire.WireGeometry;
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -12,7 +9,12 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
 
+import com.github.dewittsmith.gtm_powerlines.wire.WireGeometry;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+
 public class PowerlineWireRenderer {
+
     private static final ResourceLocation WIRE_TEXTURE = new ResourceLocation("gtceu", "block/cable/insulation_5");
 
     public static final float BLOCK_PIXEL_SIZE = 16;
@@ -31,9 +33,11 @@ public class PowerlineWireRenderer {
         return RenderType.entityCutoutNoCull(TextureAtlas.LOCATION_BLOCKS);
     }
 
-    public static void renderTube(PoseStack poseStack, MultiBufferSource buffers, Vec3 start, Vec3 end, int argb, int light, Caps caps) {
+    public static void renderTube(PoseStack poseStack, MultiBufferSource buffers, Vec3 start, Vec3 end, int argb,
+                                  int light, Caps caps) {
         VertexConsumer consumer = buffers.getBuffer(wireRenderType());
-        TextureAtlasSprite sprite = Minecraft.getInstance().getTextureAtlas(TextureAtlas.LOCATION_BLOCKS).apply(WIRE_TEXTURE);
+        TextureAtlasSprite sprite = Minecraft.getInstance().getTextureAtlas(TextureAtlas.LOCATION_BLOCKS)
+                .apply(WIRE_TEXTURE);
         PoseStack.Pose pose = poseStack.last();
 
         double length = start.distanceTo(end);
@@ -104,9 +108,11 @@ public class PowerlineWireRenderer {
         }
     }
 
-    public static void renderBillboard(PoseStack poseStack, MultiBufferSource buffers, Vec3 start, Vec3 end, int argb, int light, Vec3 cameraPos) {
+    public static void renderBillboard(PoseStack poseStack, MultiBufferSource buffers, Vec3 start, Vec3 end, int argb,
+                                       int light, Vec3 cameraPos) {
         VertexConsumer consumer = buffers.getBuffer(wireRenderType());
-        TextureAtlasSprite sprite = Minecraft.getInstance().getTextureAtlas(TextureAtlas.LOCATION_BLOCKS).apply(WIRE_TEXTURE);
+        TextureAtlasSprite sprite = Minecraft.getInstance().getTextureAtlas(TextureAtlas.LOCATION_BLOCKS)
+                .apply(WIRE_TEXTURE);
         PoseStack.Pose pose = poseStack.last();
 
         double length = start.distanceTo(end);
@@ -128,9 +134,7 @@ public class PowerlineWireRenderer {
         Vec3 pRight = pForward.cross(pToCamera).normalize();
 
         if (pRight.lengthSqr() < 1.0e-6) {
-            Vec3 ref = Math.abs(pForward.y) > 0.99
-                    ? new Vec3(1, 0, 0)
-                    : new Vec3(0, 1, 0);
+            Vec3 ref = Math.abs(pForward.y) > 0.99 ? new Vec3(1, 0, 0) : new Vec3(0, 1, 0);
             pRight = pForward.cross(ref).normalize();
         }
 
@@ -149,9 +153,7 @@ public class PowerlineWireRenderer {
             Vec3 right = forward.cross(toCamera).normalize();
 
             if (right.lengthSqr() < 1.0e-6) {
-                Vec3 ref = Math.abs(forward.y) > 0.99
-                        ? new Vec3(1, 0, 0)
-                        : new Vec3(0, 1, 0);
+                Vec3 ref = Math.abs(forward.y) > 0.99 ? new Vec3(1, 0, 0) : new Vec3(0, 1, 0);
                 right = forward.cross(ref).normalize();
             }
 
@@ -176,7 +178,8 @@ public class PowerlineWireRenderer {
         vertex(vc, pose, d, argb, u1, v0, light, n);
     }
 
-    private static void vertex(VertexConsumer consumer, PoseStack.Pose pose, Vec3 p, int argb, float u, float v, int light, Vec3 n) {
+    private static void vertex(VertexConsumer consumer, PoseStack.Pose pose, Vec3 p, int argb, float u, float v,
+                               int light, Vec3 n) {
         consumer.vertex(pose.pose(), (float) p.x, (float) p.y, (float) p.z)
                 .color(argb)
                 .uv(u, v)

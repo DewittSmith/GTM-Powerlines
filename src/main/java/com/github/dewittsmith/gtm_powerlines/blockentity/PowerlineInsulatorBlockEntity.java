@@ -1,12 +1,5 @@
 package com.github.dewittsmith.gtm_powerlines.blockentity;
 
-import com.github.dewittsmith.gtm_powerlines.machines.PowerlineTransformerMachine;
-import com.github.dewittsmith.gtm_powerlines.network.PowerlineNetwork;
-import com.github.dewittsmith.gtm_powerlines.util.BlockUtils;
-import com.github.dewittsmith.gtm_powerlines.wire.IWireMachine;
-import com.github.dewittsmith.gtm_powerlines.wire.WireConnectionResult;
-import com.github.dewittsmith.gtm_powerlines.wire.WireInfo;
-import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
@@ -16,10 +9,20 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
-import javax.annotation.Nullable;
+import com.github.dewittsmith.gtm_powerlines.machines.PowerlineTransformerMachine;
+import com.github.dewittsmith.gtm_powerlines.network.PowerlineNetwork;
+import com.github.dewittsmith.gtm_powerlines.util.BlockUtils;
+import com.github.dewittsmith.gtm_powerlines.wire.IWireMachine;
+import com.github.dewittsmith.gtm_powerlines.wire.WireConnectionResult;
+import com.github.dewittsmith.gtm_powerlines.wire.WireInfo;
+import lombok.Getter;
+
 import java.util.List;
 
+import javax.annotation.Nullable;
+
 public class PowerlineInsulatorBlockEntity extends BlockEntity {
+
     @Getter
     @Nullable
     private BlockPos controller;
@@ -86,9 +89,8 @@ public class PowerlineInsulatorBlockEntity extends BlockEntity {
         if (wireInfoOpt.isEmpty()) return WireConnectionResult.TOO_MANY_CONNECTIONS;
         if (tier != -1 && tier != wireInfoOpt.get().tier()) return WireConnectionResult.incompatibleTier(tier);
 
-        return network().connect((ServerLevel) level, worldPosition, target, wire)
-                ? WireConnectionResult.SUCCESS
-                : WireConnectionResult.ALREADY_CONNECTED;
+        return network().connect((ServerLevel) level, worldPosition, target, wire) ? WireConnectionResult.SUCCESS :
+                WireConnectionResult.ALREADY_CONNECTED;
     }
 
     public boolean disconnectFrom(BlockPos target) {

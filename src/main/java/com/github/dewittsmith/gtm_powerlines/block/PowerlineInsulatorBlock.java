@@ -1,7 +1,5 @@
 package com.github.dewittsmith.gtm_powerlines.block;
 
-import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
-import com.github.dewittsmith.gtm_powerlines.registry.GTMPowerlinesRegistries;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
@@ -18,11 +16,15 @@ import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.registries.ForgeRegistries;
+
+import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
+import com.github.dewittsmith.gtm_powerlines.registry.GTMPowerlinesRegistries;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 
 public class PowerlineInsulatorBlock extends Block implements EntityBlock {
+
     private static final Map<Direction, VoxelShape> SHAPES = Map.of(
             Direction.UP, box(5, 0, 5, 11, 16, 11),
             Direction.DOWN, box(5, 0, 5, 11, 16, 11),
@@ -72,9 +74,8 @@ public class PowerlineInsulatorBlock extends Block implements EntityBlock {
     @Override
     public BlockState updateShape(BlockState state, Direction dir, BlockState neighbor,
                                   LevelAccessor level, BlockPos pos, BlockPos neighborPos) {
-        return dir == state.getValue(DIRECTION).getOpposite() && !state.canSurvive(level, pos)
-                ? Blocks.AIR.defaultBlockState()
-                : super.updateShape(state, dir, neighbor, level, pos, neighborPos);
+        return dir == state.getValue(DIRECTION).getOpposite() && !state.canSurvive(level, pos) ?
+                Blocks.AIR.defaultBlockState() : super.updateShape(state, dir, neighbor, level, pos, neighborPos);
     }
 
     @Override
@@ -94,9 +95,8 @@ public class PowerlineInsulatorBlock extends Block implements EntityBlock {
 
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean moved) {
-        if (!state.is(newState.getBlock())
-                && !level.isClientSide
-                && level.getBlockEntity(pos) instanceof PowerlineInsulatorBlockEntity blockEntity) {
+        if (!state.is(newState.getBlock()) && !level.isClientSide &&
+                level.getBlockEntity(pos) instanceof PowerlineInsulatorBlockEntity blockEntity) {
 
             var direction = state.getValue(DIRECTION);
             for (var edge : blockEntity.getConnections()) {

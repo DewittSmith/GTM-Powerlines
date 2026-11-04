@@ -1,7 +1,13 @@
 package com.github.dewittsmith.gtm_powerlines.config;
 
-import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
 import com.gregtechceu.gtceu.utils.TagExprFilter;
+
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+
+import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
 import dev.toma.configuration.Configuration;
 import dev.toma.configuration.config.Config;
 import dev.toma.configuration.config.Configurable;
@@ -9,16 +15,13 @@ import dev.toma.configuration.config.format.ConfigFormats;
 import dev.toma.configuration.config.validate.IValidationResult;
 import dev.toma.configuration.config.value.IConfigValueReadable;
 import it.unimi.dsi.fastutil.objects.Object2BooleanArrayMap;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.tags.TagKey;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
 @Config(id = GTMPowerlines.MOD_ID)
 public class GTMPowerlinesConfig {
+
     public static GTMPowerlinesConfig INSTANCE;
     private static final Object LOCK = new Object();
 
@@ -43,6 +46,7 @@ public class GTMPowerlinesConfig {
     public RenderingConfig rendering = new RenderingConfig();
 
     public static class WireConfig {
+
         @Configurable
         @Configurable.DecimalRange(min = 0f, max = 1f)
         @Configurable.Synchronized
@@ -77,9 +81,11 @@ public class GTMPowerlinesConfig {
     }
 
     public static class TowerConfig {
+
         @Configurable
         @Configurable.DecimalRange(min = 0f, max = 8f)
-        @Configurable.Comment(value = {"Tower range is calculated as:", "pow(insulator.y - tower_base.y, towerRangePower)"}, localize = true)
+        @Configurable.Comment(value = { "Tower range is calculated as:",
+                "pow(insulator.y - tower_base.y, towerRangePower)" }, localize = true)
         @Configurable.Synchronized
         public float towerRangePower = 1.7f;
 
@@ -96,10 +102,10 @@ public class GTMPowerlinesConfig {
         @Configurable
         @Configurable.Comment(value = {
                 "Block filters that count as tower structure, e.g. \"minecraft:fences|minecraft:walls\"",
-                "Uses tag expressions from GTCEU (A&B, A|B, A^B, etc)"},
-                localize = true)
+                "Uses tag expressions from GTCEU (A&B, A|B, A^B, etc)" },
+                              localize = true)
         @Configurable.Synchronized
-        public String[] towerStructureFilters = new String[]{
+        public String[] towerStructureFilters = new String[] {
                 "minecraft:fences|minecraft:walls",
                 "minecraft:slabs|minecraft:planks",
                 "minecraft:fence_gates"
@@ -107,8 +113,9 @@ public class GTMPowerlinesConfig {
     }
 
     public static class RenderingConfig {
+
         @Configurable
-        @Configurable.Comment(value = {"Whether to use billboards to render wires"}, localize = true)
+        @Configurable.Comment(value = { "Whether to use billboards to render wires" }, localize = true)
         public boolean useFlatWires = false;
 
         @Configurable

@@ -1,6 +1,5 @@
 package com.github.dewittsmith.gtm_powerlines.network;
 
-import com.github.dewittsmith.gtm_powerlines.renderer.ClientTowerHighlight;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceKey;
@@ -8,6 +7,8 @@ import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
+
+import com.github.dewittsmith.gtm_powerlines.renderer.ClientTowerHighlight;
 
 import java.util.function.Supplier;
 

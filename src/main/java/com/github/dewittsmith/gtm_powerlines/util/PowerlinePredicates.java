@@ -4,7 +4,9 @@ import com.gregtechceu.gtceu.api.capability.recipe.IO;
 import com.gregtechceu.gtceu.api.machine.multiblock.PartAbility;
 import com.gregtechceu.gtceu.api.pattern.TraceabilityPredicate;
 import com.gregtechceu.gtceu.api.pattern.error.PatternStringError;
+
 import com.lowdragmc.lowdraglib.utils.BlockInfo;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.Block;
@@ -18,8 +20,9 @@ import java.util.stream.Stream;
 import static com.gregtechceu.gtceu.api.pattern.Predicates.custom;
 
 public final class PowerlinePredicates {
-    private static final PartAbility[] INPUTS = {PartAbility.INPUT_ENERGY, PartAbility.SUBSTATION_INPUT_ENERGY};
-    private static final PartAbility[] OUTPUTS = {PartAbility.OUTPUT_ENERGY, PartAbility.SUBSTATION_OUTPUT_ENERGY};
+
+    private static final PartAbility[] INPUTS = { PartAbility.INPUT_ENERGY, PartAbility.SUBSTATION_INPUT_ENERGY };
+    private static final PartAbility[] OUTPUTS = { PartAbility.OUTPUT_ENERGY, PartAbility.SUBSTATION_OUTPUT_ENERGY };
 
     public static final String IO_KEY = "PowerlineIO";
 
@@ -67,7 +70,7 @@ public final class PowerlinePredicates {
 
             state.getMatchContext().getOrCreate(name, () -> new ArrayList<BlockPos>()).add(state.getPos());
             return true;
-        }, () -> new BlockInfo[]{new BlockInfo(blockState)});
+        }, () -> new BlockInfo[] { new BlockInfo(blockState) });
     }
 
     public static TraceabilityPredicate towerBlocks() {

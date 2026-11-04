@@ -1,22 +1,25 @@
 package com.github.dewittsmith.gtm_powerlines.wire;
 
-import com.github.dewittsmith.gtm_powerlines.network.PowerlineNetwork;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
-import javax.annotation.Nullable;
+import com.github.dewittsmith.gtm_powerlines.network.PowerlineNetwork;
+
 import java.util.Collection;
 
+import javax.annotation.Nullable;
+
 public final class WireTargeting {
-    public record Hit(PowerlineNetwork.Edge edge, Vec3 point) {
-    }
+
+    public record Hit(PowerlineNetwork.Edge edge, Vec3 point) {}
 
     private static final double MAX_DISTANCE = 0.35;
     private static final double REACH = 12.0;
 
-    public static @Nullable Hit find(Level level, BlockPos origin, Collection<PowerlineNetwork.Edge> edges, Vec3 eye, Vec3 look) {
+    public static @Nullable Hit find(Level level, BlockPos origin, Collection<PowerlineNetwork.Edge> edges, Vec3 eye,
+                                     Vec3 look) {
         Vec3 from = WireGeometry.getAttachmentPoint(level, origin);
         Hit best = null;
         double bestDist = MAX_DISTANCE;

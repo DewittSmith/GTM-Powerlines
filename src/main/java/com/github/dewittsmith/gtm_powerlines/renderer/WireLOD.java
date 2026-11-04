@@ -3,12 +3,12 @@ package com.github.dewittsmith.gtm_powerlines.renderer;
 import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
 
 public enum WireLOD {
+
     TUBE,
     BILLBOARD,
     CULL;
 
     public static WireLOD getLOD(double distance) {
-
         WireLOD selected;
         if (distance < GTMPowerlinesConfig.INSTANCE.rendering.tubeWireLODDistance) selected = WireLOD.TUBE;
         else if (distance < GTMPowerlinesConfig.INSTANCE.rendering.flatWireLODDistance) selected = WireLOD.BILLBOARD;

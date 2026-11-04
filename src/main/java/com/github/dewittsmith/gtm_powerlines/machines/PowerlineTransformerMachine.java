@@ -1,11 +1,5 @@
 package com.github.dewittsmith.gtm_powerlines.machines;
 
-import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
-import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
-import com.github.dewittsmith.gtm_powerlines.network.PowerlineNetwork;
-import com.github.dewittsmith.gtm_powerlines.util.BlockUtils;
-import com.github.dewittsmith.gtm_powerlines.util.CoilEfficiency;
-import com.github.dewittsmith.gtm_powerlines.wire.IWireMachine;
 import com.gregtechceu.gtceu.api.block.ICoilType;
 import com.gregtechceu.gtceu.api.capability.IEnergyContainer;
 import com.gregtechceu.gtceu.api.capability.recipe.EURecipeCapability;
@@ -27,9 +21,10 @@ import com.gregtechceu.gtceu.api.machine.multiblock.WorkableMultiblockMachine;
 import com.gregtechceu.gtceu.api.misc.EnergyContainerList;
 import com.gregtechceu.gtceu.common.block.CoilBlock;
 import com.gregtechceu.gtceu.utils.GTUtil;
+
 import com.lowdragmc.lowdraglib.gui.modular.ModularUI;
 import com.lowdragmc.lowdraglib.gui.widget.*;
-import lombok.Getter;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -38,12 +33,22 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
-import javax.annotation.Nullable;
+import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
+import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
+import com.github.dewittsmith.gtm_powerlines.network.PowerlineNetwork;
+import com.github.dewittsmith.gtm_powerlines.util.BlockUtils;
+import com.github.dewittsmith.gtm_powerlines.util.CoilEfficiency;
+import com.github.dewittsmith.gtm_powerlines.wire.IWireMachine;
+import lombok.Getter;
+
 import java.util.*;
+
+import javax.annotation.Nullable;
 
 import static com.github.dewittsmith.gtm_powerlines.registry.GTMPowerlinesRegistries.POWERLINE_INSULATOR;
 
-public class PowerlineTransformerMachine extends WorkableMultiblockMachine implements IFancyUIMachine, IDisplayUIMachine, IWireMachine, ITieredMachine {
+public class PowerlineTransformerMachine extends WorkableMultiblockMachine
+                                         implements IFancyUIMachine, IDisplayUIMachine, IWireMachine, ITieredMachine {
 
     @Getter
     private ICoilType coilType = CoilBlock.CoilType.CUPRONICKEL;
@@ -191,7 +196,8 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine imple
                 if (needed <= 0) continue;
 
                 long added = otherContainer.addEnergy(needed);
-                long drawn = added == needed ? cost : Math.min(stored, added + lossPerAmp * ((added + voltage - 1) / voltage));
+                long drawn = added == needed ? cost :
+                        Math.min(stored, added + lossPerAmp * ((added + voltage - 1) / voltage));
                 energyContainer.removeEnergy(drawn);
 
                 networkOutput += added;
@@ -277,6 +283,7 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine imple
 
     @Override
     public float getWireDistanceFor(BlockPos block) {
-        return Mth.clamp(16, GTMPowerlinesConfig.INSTANCE.wire.minWireRange, GTMPowerlinesConfig.INSTANCE.wire.maxWireRange);
+        return Mth.clamp(16, GTMPowerlinesConfig.INSTANCE.wire.minWireRange,
+                GTMPowerlinesConfig.INSTANCE.wire.maxWireRange);
     }
 }

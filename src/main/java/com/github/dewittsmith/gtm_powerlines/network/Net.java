@@ -1,6 +1,5 @@
 package com.github.dewittsmith.gtm_powerlines.network;
 
-import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -9,9 +8,12 @@ import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.network.simple.SimpleChannel;
 
+import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
+
 import java.util.Optional;
 
 public final class Net {
+
     private static final String PROTOCOL = "1";
 
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(

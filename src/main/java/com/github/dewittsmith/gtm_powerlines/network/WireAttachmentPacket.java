@@ -1,6 +1,5 @@
 package com.github.dewittsmith.gtm_powerlines.network;
 
-import com.github.dewittsmith.gtm_powerlines.wire.WireAttachment;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.item.ItemStack;
@@ -8,8 +7,11 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
 
-import javax.annotation.Nullable;
+import com.github.dewittsmith.gtm_powerlines.wire.WireAttachment;
+
 import java.util.function.Supplier;
+
+import javax.annotation.Nullable;
 
 public record WireAttachmentPacket(@Nullable WireAttachment.Attach attachment) {
 
@@ -30,12 +32,12 @@ public record WireAttachmentPacket(@Nullable WireAttachment.Attach attachment) {
                 buf.readResourceKey(Registries.DIMENSION),
                 buf.readBlockPos(),
                 buf.readItem().getItem(),
-                buf.readInt()
-        ));
+                buf.readInt()));
     }
 
     public static void handle(WireAttachmentPacket p, Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> WireAttachment.setClient(p.attachment)));
+        ctx.get().enqueueWork(
+                () -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> WireAttachment.setClient(p.attachment)));
         ctx.get().setPacketHandled(true);
     }
 }

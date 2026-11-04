@@ -1,7 +1,5 @@
 package com.github.dewittsmith.gtm_powerlines.wire;
 
-import com.github.dewittsmith.gtm_powerlines.network.Net;
-import com.github.dewittsmith.gtm_powerlines.network.WireAttachmentPacket;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
@@ -9,14 +7,18 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
 
-import javax.annotation.Nullable;
+import com.github.dewittsmith.gtm_powerlines.network.Net;
+import com.github.dewittsmith.gtm_powerlines.network.WireAttachmentPacket;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import javax.annotation.Nullable;
+
 public final class WireAttachment {
-    public record Attach(ResourceKey<Level> dimension, BlockPos pos, Item wire, int argb) {
-    }
+
+    public record Attach(ResourceKey<Level> dimension, BlockPos pos, Item wire, int argb) {}
 
     private static final Map<UUID, Attach> ATTACH = new HashMap<>();
     private static @Nullable Attach clientAttachment;

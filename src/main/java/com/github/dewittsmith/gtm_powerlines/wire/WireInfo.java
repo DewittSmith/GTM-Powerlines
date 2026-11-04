@@ -1,16 +1,19 @@
 package com.github.dewittsmith.gtm_powerlines.wire;
 
-import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
 import com.gregtechceu.gtceu.api.data.chemical.ChemicalHelper;
 import com.gregtechceu.gtceu.api.data.chemical.material.properties.PropertyKey;
 import com.gregtechceu.gtceu.utils.GTUtil;
+
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.ItemLike;
 import net.minecraftforge.registries.ForgeRegistries;
 
+import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
+
 import java.util.Optional;
 
 public record WireInfo(int color, int tier, float lossPerBlock) {
+
     public static Optional<WireInfo> of(ResourceLocation wireId) {
         var item = ForgeRegistries.ITEMS.getValue(wireId);
         return of(item);

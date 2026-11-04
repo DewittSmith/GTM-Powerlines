@@ -1,11 +1,13 @@
 package com.github.dewittsmith.gtm_powerlines.wire;
 
-import com.github.dewittsmith.gtm_powerlines.network.PowerlineNetwork;
 import net.minecraft.core.BlockPos;
+
+import com.github.dewittsmith.gtm_powerlines.network.PowerlineNetwork;
 
 import java.util.*;
 
 public final class ClientWires {
+
     private static final Set<PowerlineNetwork.Edge> EDGES = new LinkedHashSet<>();
 
     public static void replace(List<PowerlineNetwork.Edge> all) {

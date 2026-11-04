@@ -1,12 +1,5 @@
 package com.github.dewittsmith.gtm_powerlines.registry;
 
-import com.github.dewittsmith.gtm_powerlines.block.PowerlineInsulatorBlock;
-import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
-import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
-import com.github.dewittsmith.gtm_powerlines.machines.PowerlineTowerMachine;
-import com.github.dewittsmith.gtm_powerlines.machines.PowerlineTransformerMachine;
-import com.github.dewittsmith.gtm_powerlines.util.CoilEfficiency;
-import com.github.dewittsmith.gtm_powerlines.util.PowerlinePredicates;
 import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.api.GTCEuAPI;
 import com.gregtechceu.gtceu.api.GTValues;
@@ -20,13 +13,21 @@ import com.gregtechceu.gtceu.api.pattern.MultiblockShapeInfo;
 import com.gregtechceu.gtceu.common.data.GTMachines;
 import com.gregtechceu.gtceu.common.data.GTMaterials;
 import com.gregtechceu.gtceu.common.data.GTRecipeTypes;
-import com.tterrag.registrate.util.entry.BlockEntityEntry;
-import com.tterrag.registrate.util.entry.BlockEntry;
+
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SoundType;
+
+import com.github.dewittsmith.gtm_powerlines.block.PowerlineInsulatorBlock;
+import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
+import com.github.dewittsmith.gtm_powerlines.machines.PowerlineTowerMachine;
+import com.github.dewittsmith.gtm_powerlines.machines.PowerlineTransformerMachine;
+import com.github.dewittsmith.gtm_powerlines.util.CoilEfficiency;
+import com.github.dewittsmith.gtm_powerlines.util.PowerlinePredicates;
+import com.tterrag.registrate.util.entry.BlockEntityEntry;
+import com.tterrag.registrate.util.entry.BlockEntry;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -37,6 +38,7 @@ import static com.gregtechceu.gtceu.api.pattern.Predicates.*;
 import static com.gregtechceu.gtceu.common.data.GTBlocks.*;
 
 public class GTMPowerlinesRegistries {
+
     static {
         POWERLINE_REGISTRATE.creativeModeTab(() -> POWERLINE_CREATIVE_TAB);
     }
@@ -45,8 +47,7 @@ public class GTMPowerlinesRegistries {
             .block("powerline_insulator", PowerlineInsulatorBlock::new)
             .initialProperties(() -> Blocks.IRON_BLOCK)
             .properties(p -> p.noOcclusion().strength(1.5f, 6f).sound(SoundType.GLASS))
-            .blockstate((ctx, prov) -> {
-            })
+            .blockstate((ctx, prov) -> {})
             .simpleItem()
             .register();
 
@@ -65,7 +66,9 @@ public class GTMPowerlinesRegistries {
                     .aisle("S", "F", "I")
                     .where('S', controller(blocks(definition.get())))
                     .where('F', PowerlinePredicates.towerBlocks())
-                    .where('I', PowerlinePredicates.track("insulators", POWERLINE_INSULATOR.getDefaultState()).setMinGlobalLimited(1))
+                    .where('I',
+                            PowerlinePredicates.track("insulators", POWERLINE_INSULATOR.getDefaultState())
+                                    .setMinGlobalLimited(1))
                     .build())
             .shapeInfos(definition -> {
                 var shapeInfo = new ArrayList<MultiblockShapeInfo>();
@@ -86,7 +89,9 @@ public class GTMPowerlinesRegistries {
                         .aisle("S#", "D#", "D#", "F#", "F#", "FI", "LL")
                         .where('S', definition, Direction.NORTH)
                         .where('F', Blocks.SPRUCE_FENCE)
-                        .where('I', POWERLINE_INSULATOR.getDefaultState().setValue(PowerlineInsulatorBlock.DIRECTION, Direction.DOWN))
+                        .where('I',
+                                POWERLINE_INSULATOR.getDefaultState().setValue(PowerlineInsulatorBlock.DIRECTION,
+                                        Direction.DOWN))
                         .where('D', Blocks.POLISHED_DEEPSLATE_WALL)
                         .where('L', Blocks.SPRUCE_SLAB)
                         .where('#', Blocks.AIR)
@@ -119,7 +124,9 @@ public class GTMPowerlinesRegistries {
                                 "##J#####J##")
                         .where('O', definition, Direction.NORTH)
                         .where('F', Blocks.SPRUCE_FENCE)
-                        .where('I', POWERLINE_INSULATOR.getDefaultState().setValue(PowerlineInsulatorBlock.DIRECTION, Direction.DOWN))
+                        .where('I',
+                                POWERLINE_INSULATOR.getDefaultState().setValue(PowerlineInsulatorBlock.DIRECTION,
+                                        Direction.DOWN))
                         .where('D', Blocks.POLISHED_DEEPSLATE_WALL)
                         .where('#', Blocks.AIR)
                         .where('C', MACHINE_CASING_LV)
@@ -155,8 +162,12 @@ public class GTMPowerlinesRegistries {
                             .or(autoAbilities(true, false, false)))
                     .where('F', frames(GTMaterials.Steel))
                     .where('P', blocks(CASING_STEEL_PIPE.get()))
-                    .where('I', PowerlinePredicates.track("insulators", POWERLINE_INSULATOR.getDefaultState(), PowerlineInsulatorBlock.DIRECTION).setExactLimit(6)
-                            .or(any()))
+                    .where('I',
+                            PowerlinePredicates
+                                    .track("insulators", POWERLINE_INSULATOR.getDefaultState(),
+                                            PowerlineInsulatorBlock.DIRECTION)
+                                    .setExactLimit(6)
+                                    .or(any()))
                     .where('#', air())
                     .build())
             .shapeInfos(definition -> {
@@ -178,34 +189,46 @@ public class GTMPowerlinesRegistries {
                         .where('#', Blocks.AIR);
                 GTCEuAPI.HEATING_COILS.entrySet().stream()
                         .sorted(Comparator.comparingInt(entry -> entry.getKey().getTier()))
-                        .forEach(coil -> shapeInfo.add(builder.shallowCopy().where('C', coil.getValue().get()).build()));
+                        .forEach(
+                                coil -> shapeInfo.add(builder.shallowCopy().where('C', coil.getValue().get()).build()));
                 return shapeInfo;
             })
             .workableCasingModel(
                     GTCEu.id("block/casings/voltage/lv/side"),
                     GTCEu.id("block/multiblock/implosion_compressor"))
             .additionalDisplay((controller, components) -> {
-                if (!(controller instanceof PowerlineTransformerMachine transformerMachine) || !transformerMachine.isFormed()) {
+                if (!(controller instanceof PowerlineTransformerMachine transformerMachine) ||
+                        !transformerMachine.isFormed()) {
                     return;
                 }
 
-                components.add(Component.translatable("multiblock.gtm_powerlines.powerline_transformer.powerline_tier", GTValues.VNF[transformerMachine.getTier()]));
-                components.add(Component.translatable("multiblock.gtm_powerlines.powerline_transformer.powerline_efficiency", Mth.floor(100 * CoilEfficiency.of(transformerMachine.getCoilType()))));
+                components.add(Component.translatable("multiblock.gtm_powerlines.powerline_transformer.powerline_tier",
+                        GTValues.VNF[transformerMachine.getTier()]));
+                components.add(
+                        Component.translatable("multiblock.gtm_powerlines.powerline_transformer.powerline_efficiency",
+                                Mth.floor(100 * CoilEfficiency.of(transformerMachine.getCoilType()))));
 
                 components.add(Component.translatable("multiblock.gtm_powerlines.powerline_transformer.mode")
                         .append(Component.translatable(transformerMachine.getIO().tooltip)));
 
                 if (transformerMachine.isInput()) {
-                    components.add(Component.translatable("multiblock.gtm_powerlines.powerline_transformer.energy_output", transformerMachine.getEnergyOutputPerSec() / 20));
-                    components.add(Component.translatable("multiblock.gtm_powerlines.powerline_transformer.network_output", transformerMachine.getNetworkOutputPerSec() / 20));
-                    components.add(Component.translatable("multiblock.gtm_powerlines.powerline_transformer.energy_loss", (transformerMachine.getEnergyOutputPerSec() - transformerMachine.getNetworkOutputPerSec()) / 20));
+                    components
+                            .add(Component.translatable("multiblock.gtm_powerlines.powerline_transformer.energy_output",
+                                    transformerMachine.getEnergyOutputPerSec() / 20));
+                    components.add(
+                            Component.translatable("multiblock.gtm_powerlines.powerline_transformer.network_output",
+                                    transformerMachine.getNetworkOutputPerSec() / 20));
+                    components.add(Component.translatable("multiblock.gtm_powerlines.powerline_transformer.energy_loss",
+                            (transformerMachine.getEnergyOutputPerSec() - transformerMachine.getNetworkOutputPerSec()) /
+                                    20));
                 } else {
-                    components.add(Component.translatable("multiblock.gtm_powerlines.powerline_transformer.energy_input", transformerMachine.getEnergyInput()));
+                    components
+                            .add(Component.translatable("multiblock.gtm_powerlines.powerline_transformer.energy_input",
+                                    transformerMachine.getEnergyInput()));
                 }
 
             })
             .register();
 
-    public static void init() {
-    }
+    public static void init() {}
 }

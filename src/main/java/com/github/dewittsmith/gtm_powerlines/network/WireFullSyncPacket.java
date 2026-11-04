@@ -1,10 +1,11 @@
 package com.github.dewittsmith.gtm_powerlines.network;
 
-import com.github.dewittsmith.gtm_powerlines.wire.ClientWires;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
+
+import com.github.dewittsmith.gtm_powerlines.wire.ClientWires;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,7 +26,8 @@ public record WireFullSyncPacket(List<PowerlineNetwork.Edge> edges) {
     }
 
     public static void handle(WireFullSyncPacket p, Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> ClientWires.replace(p.edges)));
+        ctx.get()
+                .enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> ClientWires.replace(p.edges)));
         ctx.get().setPacketHandled(true);
     }
 

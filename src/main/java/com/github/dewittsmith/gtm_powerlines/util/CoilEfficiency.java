@@ -1,11 +1,14 @@
 package com.github.dewittsmith.gtm_powerlines.util;
 
-import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
 import com.gregtechceu.gtceu.api.block.ICoilType;
 import com.gregtechceu.gtceu.common.block.CoilBlock;
+
 import net.minecraft.util.Mth;
 
+import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
+
 public class CoilEfficiency {
+
     private final static float MIN_TEMPERATURE = CoilBlock.CoilType.CUPRONICKEL.getCoilTemperature();
     private final static float MAX_TEMPERATURE = CoilBlock.CoilType.TRITANIUM.getCoilTemperature();
 

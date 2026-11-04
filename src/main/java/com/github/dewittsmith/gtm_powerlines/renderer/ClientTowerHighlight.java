@@ -1,9 +1,5 @@
 package com.github.dewittsmith.gtm_powerlines.renderer;
 
-import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
-import com.github.dewittsmith.gtm_powerlines.network.TowerHighlightPacket;
-import it.unimi.dsi.fastutil.longs.Long2LongArrayMap;
-import it.unimi.dsi.fastutil.objects.ObjectArrayFIFOQueue;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.RenderType;
@@ -20,12 +16,17 @@ import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
+import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
+import com.github.dewittsmith.gtm_powerlines.network.TowerHighlightPacket;
+import it.unimi.dsi.fastutil.longs.Long2LongArrayMap;
+import it.unimi.dsi.fastutil.objects.ObjectArrayFIFOQueue;
+
 import java.util.Arrays;
 
 @Mod.EventBusSubscriber(modid = GTMPowerlines.MOD_ID, value = Dist.CLIENT)
 public final class ClientTowerHighlight {
-    private record QueueDepthPos(long pos, int depth) {
-    }
+
+    private record QueueDepthPos(long pos, int depth) {}
 
     private static final int FADE_IN = 5;
     private static final int FADE_OUT = 20;
@@ -108,4 +109,3 @@ public final class ClientTowerHighlight {
         buffers.endBatch(RenderType.LINES);
     }
 }
-

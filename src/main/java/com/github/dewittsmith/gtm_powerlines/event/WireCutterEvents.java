@@ -1,15 +1,10 @@
 package com.github.dewittsmith.gtm_powerlines.event;
 
-import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
-import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
-import com.github.dewittsmith.gtm_powerlines.network.PowerlineNetwork;
-import com.github.dewittsmith.gtm_powerlines.wire.WireCutSelection;
-import com.github.dewittsmith.gtm_powerlines.wire.WireTargeting;
 import com.gregtechceu.gtceu.data.recipe.CustomTags;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -23,6 +18,12 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
 
+import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
+import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
+import com.github.dewittsmith.gtm_powerlines.network.PowerlineNetwork;
+import com.github.dewittsmith.gtm_powerlines.wire.WireCutSelection;
+import com.github.dewittsmith.gtm_powerlines.wire.WireTargeting;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +31,7 @@ import java.util.UUID;
 
 @Mod.EventBusSubscriber(modid = GTMPowerlines.MOD_ID)
 public class WireCutterEvents {
+
     private static final Map<UUID, Long> HANDLED = new HashMap<>();
 
     private static boolean alreadyHandled(Player p, Level l) {
@@ -97,7 +99,8 @@ public class WireCutterEvents {
             return true;
         }
 
-        var hit = WireTargeting.find(level, be.getBlockPos(), be.getConnections(), player.getEyePosition(), player.getViewVector(1f));
+        var hit = WireTargeting.find(level, be.getBlockPos(), be.getConnections(), player.getEyePosition(),
+                player.getViewVector(1f));
         if (hit == null) {
             WireCutSelection.clear(player);
             message(player, "message.gtm_powerlines.cutter.cancelled");

@@ -1,14 +1,9 @@
 package com.github.dewittsmith.gtm_powerlines.event;
 
-import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
-import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
-import com.github.dewittsmith.gtm_powerlines.network.PowerlineNetwork;
-import com.github.dewittsmith.gtm_powerlines.util.ItemUtils;
-import com.github.dewittsmith.gtm_powerlines.wire.WireAttachment;
-import com.github.dewittsmith.gtm_powerlines.wire.WireInfo;
 import com.gregtechceu.gtceu.api.GTValues;
 import com.gregtechceu.gtceu.api.data.chemical.ChemicalHelper;
 import com.gregtechceu.gtceu.api.data.tag.TagPrefix;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -24,6 +19,13 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
 
+import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
+import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
+import com.github.dewittsmith.gtm_powerlines.network.PowerlineNetwork;
+import com.github.dewittsmith.gtm_powerlines.util.ItemUtils;
+import com.github.dewittsmith.gtm_powerlines.wire.WireAttachment;
+import com.github.dewittsmith.gtm_powerlines.wire.WireInfo;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -31,6 +33,7 @@ import java.util.UUID;
 
 @Mod.EventBusSubscriber(modid = GTMPowerlines.MOD_ID)
 public class PowerlineWireEvents {
+
     private static final Map<UUID, Long> PLAYER_TICKS = new HashMap<>();
 
     @SubscribeEvent
@@ -78,7 +81,8 @@ public class PowerlineWireEvents {
 
             var tier = clickedBe.getWireTier();
             if (tier != -1 && wireInfo.tier() != -1 && tier != wireInfo.tier()) {
-                message(player, "message.gtm_powerlines.wire.incompatible_tier", GTValues.VNF[tier], GTValues.VNF[wireInfo.tier()]);
+                message(player, "message.gtm_powerlines.wire.incompatible_tier", GTValues.VNF[tier],
+                        GTValues.VNF[wireInfo.tier()]);
                 finish(event);
                 return;
             }
@@ -96,7 +100,8 @@ public class PowerlineWireEvents {
             return;
         }
 
-        if (!(level.getBlockEntity(attach.pos()) instanceof PowerlineInsulatorBlockEntity fromBe) || fromBe.getController() == null) {
+        if (!(level.getBlockEntity(attach.pos()) instanceof PowerlineInsulatorBlockEntity fromBe) ||
+                fromBe.getController() == null) {
             WireAttachment.clear(player);
             message(player, "message.gtm_powerlines.wire.start_insulator_gone");
             finish(event);
@@ -114,7 +119,8 @@ public class PowerlineWireEvents {
         if (fromController.equals(toController)) {
             var tier = clickedBe.getWireTier();
             if (tier != -1 && tier != wireInfo.tier()) {
-                message(player, "message.gtm_powerlines.wire.incompatible_tier", GTValues.VNF[tier], GTValues.VNF[wireInfo.tier()]);
+                message(player, "message.gtm_powerlines.wire.incompatible_tier", GTValues.VNF[tier],
+                        GTValues.VNF[wireInfo.tier()]);
                 finish(event);
                 return;
             }
@@ -158,8 +164,8 @@ public class PowerlineWireEvents {
             case SAME_BLOCK -> message(player, "message.gtm_powerlines.wire.same_block_selected");
             case ALREADY_CONNECTED -> message(player, "message.gtm_powerlines.wire.already_connected");
             case TOO_MANY_CONNECTIONS -> message(player, "message.gtm_powerlines.wire.too_many_connections");
-            case INCOMPATIBLE_TIER ->
-                    message(player, "message.gtm_powerlines.wire.incompatible_tier", GTValues.VNF[connectResult.value()], GTValues.VNF[wireInfo.tier()]);
+            case INCOMPATIBLE_TIER -> message(player, "message.gtm_powerlines.wire.incompatible_tier",
+                    GTValues.VNF[connectResult.value()], GTValues.VNF[wireInfo.tier()]);
         }
     }
 

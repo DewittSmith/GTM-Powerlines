@@ -1,11 +1,15 @@
 package com.github.dewittsmith.gtm_powerlines.util;
 
-import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
 import com.gregtechceu.gtceu.api.pattern.predicates.SimplePredicate;
+
 import com.lowdragmc.lowdraglib.utils.BlockInfo;
+
 import net.minecraft.core.registries.BuiltInRegistries;
 
+import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
+
 public class PredicateTowerBlocks extends SimplePredicate {
+
     public PredicateTowerBlocks() {
         super("tower_blocks");
         buildPredicate();

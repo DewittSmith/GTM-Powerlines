@@ -1,20 +1,10 @@
 package com.github.dewittsmith.gtm_powerlines.machines;
 
-import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
-import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
-import com.github.dewittsmith.gtm_powerlines.network.Net;
-import com.github.dewittsmith.gtm_powerlines.network.PowerlineNetwork;
-import com.github.dewittsmith.gtm_powerlines.network.TowerHighlightPacket;
-import com.github.dewittsmith.gtm_powerlines.registry.GTMPowerlinesRegistries;
-import com.github.dewittsmith.gtm_powerlines.wire.IWireMachine;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.feature.IInteractedMachine;
 import com.gregtechceu.gtceu.api.machine.multiblock.MultiblockControllerMachine;
 import com.gregtechceu.gtceu.api.pattern.MultiblockWorldSavedData;
-import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
-import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
-import it.unimi.dsi.fastutil.longs.LongSet;
-import it.unimi.dsi.fastutil.longs.LongSets;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -27,7 +17,20 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 
+import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
+import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
+import com.github.dewittsmith.gtm_powerlines.network.Net;
+import com.github.dewittsmith.gtm_powerlines.network.PowerlineNetwork;
+import com.github.dewittsmith.gtm_powerlines.network.TowerHighlightPacket;
+import com.github.dewittsmith.gtm_powerlines.registry.GTMPowerlinesRegistries;
+import com.github.dewittsmith.gtm_powerlines.wire.IWireMachine;
+import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import it.unimi.dsi.fastutil.longs.LongSet;
+import it.unimi.dsi.fastutil.longs.LongSets;
+
 public class PowerlineTowerMachine extends MultiblockControllerMachine implements IWireMachine, IInteractedMachine {
+
     private final LongSet insulatorBlocks = new LongOpenHashSet();
     private int baseElevation = 0;
 
@@ -173,8 +176,7 @@ public class PowerlineTowerMachine extends MultiblockControllerMachine implement
                     level.dimension(),
                     getStructureBlocks().toLongArray(),
                     insulatorBlocks.toLongArray(),
-                    getPos().asLong()
-            ));
+                    getPos().asLong()));
 
             return InteractionResult.CONSUME;
         }
@@ -194,6 +196,8 @@ public class PowerlineTowerMachine extends MultiblockControllerMachine implement
 
     @Override
     public float getWireDistanceFor(BlockPos block) {
-        return Mth.clamp((float) Math.pow(block.getY() - baseElevation, GTMPowerlinesConfig.INSTANCE.tower.towerRangePower), GTMPowerlinesConfig.INSTANCE.wire.minWireRange, GTMPowerlinesConfig.INSTANCE.wire.maxWireRange);
+        return Mth.clamp(
+                (float) Math.pow(block.getY() - baseElevation, GTMPowerlinesConfig.INSTANCE.tower.towerRangePower),
+                GTMPowerlinesConfig.INSTANCE.wire.minWireRange, GTMPowerlinesConfig.INSTANCE.wire.maxWireRange);
     }
 }

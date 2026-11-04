@@ -1,19 +1,21 @@
 package com.github.dewittsmith.gtm_powerlines.wire;
 
-import com.github.dewittsmith.gtm_powerlines.network.Net;
-import com.github.dewittsmith.gtm_powerlines.network.WireCutSelectionPacket;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 
-import javax.annotation.Nullable;
+import com.github.dewittsmith.gtm_powerlines.network.Net;
+import com.github.dewittsmith.gtm_powerlines.network.WireCutSelectionPacket;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import javax.annotation.Nullable;
+
 public final class WireCutSelection {
-    public record Selection(BlockPos pos) {
-    }
+
+    public record Selection(BlockPos pos) {}
 
     private static final Map<UUID, Selection> SELECTED = new HashMap<>();
     private static @Nullable Selection clientSelection;
