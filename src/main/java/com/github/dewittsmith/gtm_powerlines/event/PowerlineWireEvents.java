@@ -2,7 +2,8 @@ package com.github.dewittsmith.gtm_powerlines.event;
 
 import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
 import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
-import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
+import com.github.dewittsmith.gtm_powerlines.network.PowerlineNetwork;
+import com.github.dewittsmith.gtm_powerlines.util.ItemUtils;
 import com.github.dewittsmith.gtm_powerlines.wire.WireAttachment;
 import com.github.dewittsmith.gtm_powerlines.wire.WireInfo;
 import com.gregtechceu.gtceu.api.GTValues;
@@ -137,7 +138,17 @@ public class PowerlineWireEvents {
             case SUCCESS -> {
                 clickedBe.connect(attach.pos(), wire);
 
-                if (!player.getAbilities().instabuild) held.shrink(1);
+                var count = PowerlineNetwork.Edge.wireCount(pos, attach.pos());
+                var haveCount = ItemUtils.countAvailable(player, held);
+                if (haveCount < count) {
+                    fromBe.disconnectFrom(pos);
+                    clickedBe.disconnectFrom(attach.pos());
+                    message(player, "message.gtm_powerlines.wire.not_enough", haveCount, count);
+                    finish(event);
+                    return;
+                }
+
+                ItemUtils.consume(player, held, count);
                 WireAttachment.set(player, level, pos, wireItem, wireInfo.color());
                 message(player, "message.gtm_powerlines.wire.connected");
                 finish(event);

@@ -53,6 +53,11 @@ public class GTMPowerlinesConfig {
     @Configurable
     @Configurable.DecimalRange(min = 0f)
     @Configurable.Synchronized
+    public float lossMultiplier = 1f;
+
+    @Configurable
+    @Configurable.DecimalRange(min = 0f)
+    @Configurable.Synchronized
     public float minWireRange = 4f;
 
     @Configurable
@@ -65,6 +70,11 @@ public class GTMPowerlinesConfig {
     @Configurable.Comment(value = {"Tower range is calculated as:", "pow(insulator.y - tower_base.y, towerRangePower)"}, localize = true)
     @Configurable.Synchronized
     public float towerRangePower = 1.7f;
+
+    @Configurable
+    @Configurable.Range(min = 0)
+    @Configurable.Synchronized
+    public int maxTowerBlocks = 64;
 
     @Configurable
     @Configurable.Comment(value = {

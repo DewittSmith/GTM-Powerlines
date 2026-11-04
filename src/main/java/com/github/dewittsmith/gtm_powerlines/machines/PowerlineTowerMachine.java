@@ -26,8 +26,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 
 public class PowerlineTowerMachine extends MultiblockControllerMachine implements IWireMachine, IInteractedMachine {
-    private static final int MAX_BLOCKS = 64;
-
     private final LongSet insulatorBlocks = new LongOpenHashSet();
     private int baseElevation = 0;
 
@@ -89,6 +87,7 @@ public class PowerlineTowerMachine extends MultiblockControllerMachine implement
         queue.enqueue(getPos().asLong());
         BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
 
+        final var maxBlocks = GTMPowerlinesConfig.INSTANCE.maxTowerBlocks;
         var minElevation = getPos().getY();
         while (!queue.isEmpty()) {
             long current = queue.dequeueLong();
@@ -111,7 +110,7 @@ public class PowerlineTowerMachine extends MultiblockControllerMachine implement
                     if (cursor.getY() < minElevation) minElevation = cursor.getY();
                 }
 
-                if (found.size() > MAX_BLOCKS) return false;
+                if (found.size() > maxBlocks) return false;
             }
         }
 

@@ -9,13 +9,13 @@ import com.gregtechceu.gtceu.data.recipe.CustomTags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.event.entity.living.LivingEquipmentChangeEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
@@ -117,7 +117,7 @@ public class WireCutterEvents {
     private static void refund(Player player, PowerlineNetwork.Edge edge) {
         if (player.getAbilities().instabuild) return;
         Item item = ForgeRegistries.ITEMS.getValue(edge.wire());
-        if (item != null && item != Items.AIR) player.getInventory().placeItemBackInInventory(new ItemStack(item));
+        if (item != null) player.getInventory().placeItemBackInInventory(new ItemStack(item, edge.wireCount()));
     }
 
     private static void message(Player p, String key, Object... args) {

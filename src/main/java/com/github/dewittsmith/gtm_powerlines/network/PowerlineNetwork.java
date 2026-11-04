@@ -16,6 +16,7 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.Mth;
 import net.minecraft.world.level.saveddata.SavedData;
 
 import java.util.*;
@@ -25,6 +26,14 @@ public class PowerlineNetwork extends SavedData {
         public static Edge of(BlockPos x, BlockPos y, ResourceLocation wire) {
             return x.asLong() <= y.asLong() ? new Edge(x.immutable(), y.immutable(), wire)
                     : new Edge(y.immutable(), x.immutable(), wire);
+        }
+
+        public static int wireCount(BlockPos a, BlockPos b) {
+            return Mth.ceil(Math.sqrt(a.distSqr(b)));
+        }
+
+        public int wireCount() {
+            return wireCount(a, b);
         }
 
         public BlockPos other(BlockPos p) {
@@ -183,7 +192,7 @@ public class PowerlineNetwork extends SavedData {
     private float edgeLoss(Edge edge) {
         var stats = WireInfo.of(edge.wire());
         if (stats.isEmpty()) return Float.MAX_VALUE;
-        return (float) Math.sqrt(edge.a.distSqr(edge.b)) * Math.max(stats.get().lossPerBlock(), GTMPowerlinesConfig.INSTANCE.minLoss);
+        return (float) Math.sqrt(edge.a.distSqr(edge.b)) * stats.get().lossPerBlock();
     }
 
     private void add(Edge e) {

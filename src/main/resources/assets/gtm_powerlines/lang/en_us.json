@@ -42,6 +42,7 @@
   "message.gtm_powerlines.cutter.look_and_click": "Look at a wire and click to cut it",
   "message.gtm_powerlines.cutter.cancelled": "Cutting cancelled",
   "message.gtm_powerlines.cutter.wire_cut": "Wire cut",
+  "message.gtm_powerlines.wire.not_enough": "Not enough wires (%1$d / need %2$d)",
   "tooltip.gtm_powerlines.coil_efficiency": "§8Powerline Transformer",
   "tooltip.gtm_powerlines.coil_efficiency_value": "  §6Powerline Efficiency: §f%1$d%%"
 }
