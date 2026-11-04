@@ -16,6 +16,7 @@
   "config.gtm_powerlines.option.towerRangePower.comment.0": "Tower range is calculated as:",
   "config.gtm_powerlines.option.towerRangePower.comment.1": "pow(insulator.y - tower_base.y, towerRangePower)",
   "config.gtm_powerlines.option.maxTowerBlocks": "Max tower structure blocks",
+  "config.gtm_powerlines.option.maxWireConnections": "Max wire connections",
   "config.gtm_powerlines.option.towerStructureFilters": "Tower block filters",
   "config.gtm_powerlines.option.towerStructureFilters.entry": "Expression",
   "config.gtm_powerlines.option.towerStructureFilters.comment.0": "Block filters that count as tower structure, e.g. \"minecraft:fences|minecraft:walls)\"",

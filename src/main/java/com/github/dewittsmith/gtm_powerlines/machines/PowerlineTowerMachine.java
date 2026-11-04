@@ -167,7 +167,7 @@ public class PowerlineTowerMachine extends MultiblockControllerMachine implement
 
     @Override
     public int getMaxConnections() {
-        return 4;
+        return GTMPowerlinesConfig.INSTANCE.tower.maxWireConnections;
     }
 
     @Override

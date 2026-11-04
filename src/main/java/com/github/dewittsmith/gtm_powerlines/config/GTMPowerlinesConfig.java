@@ -89,6 +89,11 @@ public class GTMPowerlinesConfig {
         public int maxTowerBlocks = 64;
 
         @Configurable
+        @Configurable.Range(min = 1)
+        @Configurable.Synchronized
+        public int maxWireConnections = 4;
+
+        @Configurable
         @Configurable.Comment(value = {
                 "Block filters that count as tower structure, e.g. \"minecraft:fences|minecraft:walls\"",
                 "Uses tag expressions from GTCEU (A&B, A|B, A^B, etc)"},
