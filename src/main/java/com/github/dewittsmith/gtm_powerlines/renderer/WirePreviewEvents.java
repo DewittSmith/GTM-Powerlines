@@ -39,21 +39,23 @@ public class WirePreviewEvents {
 
     private static void renderDraggingWire(RenderLevelStageEvent event, Minecraft mc, LocalPlayer player, Level level) {
         var attachment = WireAttachment.get(player);
-        if (attachment == null) return;
+        if (attachment == null || !attachment.dimension().equals(level.dimension())) return;
+        if (!player.getMainHandItem().is(attachment.wire())) return;
+        if (!(level.getBlockEntity(attachment.pos()) instanceof PowerlineInsulatorBlockEntity)) return;
 
         Vec3 start = WireGeometry.getAttachmentPoint(level, attachment.pos());
         Vec3 end = player.getRopeHoldPosition(event.getPartialTick());
         Vec3 cameraPos = event.getCamera().getPosition();
 
-        Vec3 localStart = start.subtract(cameraPos);
-        Vec3 localEnd = end.subtract(cameraPos);
-
         PoseStack poseStack = event.getPoseStack();
         var bufferSource = mc.renderBuffers().bufferSource();
 
-        if (GTMPowerlinesConfig.INSTANCE.rendering.useFlatWires) PowerlineWireRenderer.renderBillboard(poseStack, bufferSource, localStart, localEnd, attachment.argb(), LightTexture.FULL_BRIGHT, cameraPos);
-        else PowerlineWireRenderer.renderTube(poseStack, bufferSource, localStart, localEnd, attachment.argb(), LightTexture.FULL_BRIGHT, PowerlineWireRenderer.Caps.END);
-        bufferSource.endLastBatch();
+        poseStack.pushPose();
+        poseStack.translate(-cameraPos.x, -cameraPos.y, -cameraPos.z);
+        if (GTMPowerlinesConfig.INSTANCE.rendering.useFlatWires) PowerlineWireRenderer.renderBillboard(poseStack, bufferSource, start, end, attachment.argb(), LightTexture.FULL_BRIGHT, cameraPos);
+        else PowerlineWireRenderer.renderTube(poseStack, bufferSource, start, end, attachment.argb(), LightTexture.FULL_BRIGHT, PowerlineWireRenderer.Caps.END);
+        poseStack.popPose();
+        bufferSource.endBatch(PowerlineWireRenderer.wireRenderType());
     }
 
     private static void renderCutPreview(RenderLevelStageEvent event, Minecraft mc, LocalPlayer player, Level level) {
@@ -74,7 +76,7 @@ public class WirePreviewEvents {
             LevelRenderer.renderLineBox(pose, buffer, box, 1f, 1f, 0f, 1f);
         }
 
-        var hit = WireTargeting.find(sel.pos(), ClientWires.at(sel.pos()), player.getEyePosition(event.getPartialTick()), player.getViewVector(event.getPartialTick()));
+        var hit = WireTargeting.find(level, sel.pos(), ClientWires.at(sel.pos()), player.getEyePosition(event.getPartialTick()), player.getViewVector(event.getPartialTick()));
         if (hit != null) {
             AABB dot = new AABB(hit.point(), hit.point()).inflate(0.1).move(-cam.x, -cam.y, -cam.z);
             LevelRenderer.renderLineBox(pose, buffer, dot, 1f, 1f, 0f, 1f);

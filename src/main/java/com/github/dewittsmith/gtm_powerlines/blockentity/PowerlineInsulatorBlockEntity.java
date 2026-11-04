@@ -78,6 +78,8 @@ public class PowerlineInsulatorBlockEntity extends BlockEntity {
         if (getConnections().stream().anyMatch(e -> e.other(worldPosition).equals(target)))
             return WireConnectionResult.ALREADY_CONNECTED;
         if (!hasConnectionCapacity()) return WireConnectionResult.TOO_MANY_CONNECTIONS;
+        var other = BlockUtils.instanceOf(level, target, PowerlineInsulatorBlockEntity.class);
+        if (other.isEmpty() || !other.get().hasConnectionCapacity()) return WireConnectionResult.TOO_MANY_CONNECTIONS;
 
         var tier = getWireTier();
         var wireInfoOpt = WireInfo.of(wire);

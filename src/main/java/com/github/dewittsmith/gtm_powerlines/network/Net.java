@@ -34,6 +34,12 @@ public final class Net {
         CHANNEL.registerMessage(id++, TowerHighlightPacket.class,
                 TowerHighlightPacket::encode, TowerHighlightPacket::decode, TowerHighlightPacket::handle,
                 Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+        CHANNEL.registerMessage(id++, WireAttachmentPacket.class,
+                WireAttachmentPacket::encode, WireAttachmentPacket::decode, WireAttachmentPacket::handle,
+                Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+        CHANNEL.registerMessage(id++, WireCutSelectionPacket.class,
+                WireCutSelectionPacket::encode, WireCutSelectionPacket::decode, WireCutSelectionPacket::handle,
+                Optional.of(NetworkDirection.PLAY_TO_CLIENT));
     }
 
     public static void sendToPlayer(ServerPlayer player, Object packet) {

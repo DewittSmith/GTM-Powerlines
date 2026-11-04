@@ -1,11 +1,15 @@
 package com.github.dewittsmith.gtm_powerlines.wire;
 
+import com.github.dewittsmith.gtm_powerlines.network.Net;
+import com.github.dewittsmith.gtm_powerlines.network.WireAttachmentPacket;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
 
+import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -15,20 +19,24 @@ public final class WireAttachment {
     }
 
     private static final Map<UUID, Attach> ATTACH = new HashMap<>();
+    private static @Nullable Attach clientAttachment;
 
     public static Attach get(Player p) {
-        return ATTACH.get(p.getUUID());
+        return p.level().isClientSide ? clientAttachment : ATTACH.get(p.getUUID());
     }
 
     public static void set(Player p, Level l, BlockPos pos, Item wire, int argb) {
-        ATTACH.put(p.getUUID(), new Attach(l.dimension(), pos.immutable(), wire, argb));
+        var attachment = new Attach(l.dimension(), pos.immutable(), wire, argb);
+        ATTACH.put(p.getUUID(), attachment);
+        if (p instanceof ServerPlayer sp) Net.sendToPlayer(sp, new WireAttachmentPacket(attachment));
     }
 
     public static void clear(Player p) {
         ATTACH.remove(p.getUUID());
+        if (p instanceof ServerPlayer sp) Net.sendToPlayer(sp, new WireAttachmentPacket(null));
     }
 
-    public static void clearAll() {
-        ATTACH.clear();
+    public static void setClient(@Nullable Attach attachment) {
+        clientAttachment = attachment;
     }
 }

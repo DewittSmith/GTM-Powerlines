@@ -149,7 +149,9 @@ public class PowerlineWireEvents {
                 }
 
                 ItemUtils.consume(player, held, count);
-                WireAttachment.set(player, level, pos, wireItem, wireInfo.color());
+
+                if (clickedBe.hasConnectionCapacity())
+                    WireAttachment.set(player, level, pos, wireItem, wireInfo.color());
                 message(player, "message.gtm_powerlines.wire.connected");
                 finish(event);
             }
@@ -173,7 +175,7 @@ public class PowerlineWireEvents {
         Player player = event.getEntity();
         var time = level.getGameTime();
         var lastTime = PLAYER_TICKS.put(player.getUUID(), time);
-        if (lastTime == time) return;
+        if (lastTime != null && lastTime == time) return;
 
         WireAttachment.clear(event.getEntity());
         message(event.getEntity(), "message.gtm_powerlines.wire.cancelled");
@@ -209,4 +211,3 @@ public class PowerlineWireEvents {
         event.setCancellationResult(InteractionResult.SUCCESS);
     }
 }
-

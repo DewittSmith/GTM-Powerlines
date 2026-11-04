@@ -13,7 +13,7 @@ public final class WireGeometry {
     }
 
     public static int samples(double length) {
-        return Math.max(1, Mth.ceil(length));
+        return Math.max(2, Mth.ceil(length));
     }
 
     public static Vec3 sample(Vec3 a, Vec3 b, double t, double sag) {
