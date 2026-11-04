@@ -2,9 +2,9 @@ package com.github.dewittsmith.gtm_powerlines.block;
 
 import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
 import com.github.dewittsmith.gtm_powerlines.registry.GTMPowerlinesRegistries;
-
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -17,6 +17,7 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
@@ -96,6 +97,13 @@ public class PowerlineInsulatorBlock extends Block implements EntityBlock {
         if (!state.is(newState.getBlock())
                 && !level.isClientSide
                 && level.getBlockEntity(pos) instanceof PowerlineInsulatorBlockEntity blockEntity) {
+
+            var direction = state.getValue(DIRECTION);
+            for (var edge : blockEntity.getConnections()) {
+                var item = ForgeRegistries.ITEMS.getValue(edge.wire());
+                if (item == null) continue;
+                Block.popResourceFromFace(level, pos, direction, new ItemStack(item, edge.wireCount()));
+            }
             blockEntity.disconnectAll();
         }
         super.onRemove(state, level, pos, newState, moved);

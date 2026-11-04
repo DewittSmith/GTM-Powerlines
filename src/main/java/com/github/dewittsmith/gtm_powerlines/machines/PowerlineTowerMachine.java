@@ -3,6 +3,7 @@ package com.github.dewittsmith.gtm_powerlines.machines;
 import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
 import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
 import com.github.dewittsmith.gtm_powerlines.network.Net;
+import com.github.dewittsmith.gtm_powerlines.network.PowerlineNetwork;
 import com.github.dewittsmith.gtm_powerlines.network.TowerHighlightPacket;
 import com.github.dewittsmith.gtm_powerlines.registry.GTMPowerlinesRegistries;
 import com.github.dewittsmith.gtm_powerlines.wire.IWireMachine;
@@ -72,8 +73,30 @@ public class PowerlineTowerMachine extends MultiblockControllerMachine implement
         }
     }
 
+    @Override
+    public void onStructureFormed() {
+        super.onStructureFormed();
+        if (getLevel() instanceof ServerLevel level) {
+            PowerlineNetwork.get(level).setTransferDirty();
+        }
+    }
+
+    @Override
+    public void onStructureInvalid() {
+        super.onStructureInvalid();
+        if (getLevel() instanceof ServerLevel level) {
+            PowerlineNetwork.get(level).setTransferDirty();
+        }
+    }
+
     private void invalidate() {
+        if (!isFormed()) return;
         if (!(getLevel() instanceof ServerLevel level)) return;
+
+        detachInsulators();
+        insulatorBlocks.clear();
+        var multiblockState = getMultiblockState();
+        multiblockState.clean();
 
         onStructureInvalid();
 
@@ -87,7 +110,6 @@ public class PowerlineTowerMachine extends MultiblockControllerMachine implement
 
         detachInsulators();
         insulatorBlocks.clear();
-
         var multiblockState = getMultiblockState();
         multiblockState.clean();
 

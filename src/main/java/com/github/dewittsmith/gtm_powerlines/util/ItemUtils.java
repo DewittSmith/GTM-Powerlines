@@ -10,6 +10,8 @@ public final class ItemUtils {
     }
 
     public static int countAvailable(Player player, ItemStack held) {
+        if (player.getAbilities().instabuild) return Integer.MAX_VALUE;
+
         int total = held.getCount();
         for (var stack : player.getInventory().items) {
             if (stack == held) continue;
