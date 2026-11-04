@@ -9,6 +9,7 @@ import com.github.dewittsmith.gtm_powerlines.wire.IWireMachine;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.feature.IInteractedMachine;
 import com.gregtechceu.gtceu.api.machine.multiblock.MultiblockControllerMachine;
+import com.gregtechceu.gtceu.api.pattern.MultiblockWorldSavedData;
 import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
@@ -71,6 +72,16 @@ public class PowerlineTowerMachine extends MultiblockControllerMachine implement
         }
     }
 
+    private void invalidate() {
+        if (!(getLevel() instanceof ServerLevel level)) return;
+
+        onStructureInvalid();
+
+        var data = MultiblockWorldSavedData.getOrCreate(level);
+        data.removeAsyncLogic(this);
+        data.addAsyncLogic(this);
+    }
+
     private boolean rescan() {
         if (!(getLevel() instanceof ServerLevel level)) return false;
 
@@ -131,7 +142,11 @@ public class PowerlineTowerMachine extends MultiblockControllerMachine implement
         if (!sp.getMainHandItem().isEmpty()) return InteractionResult.PASS;
 
         if (isFormed() && sp.isShiftKeyDown()) {
-            rescan();
+            if (!rescan()) {
+                invalidate();
+                return InteractionResult.PASS;
+            }
+
             Net.sendToPlayer(sp, new TowerHighlightPacket(
                     level.dimension(),
                     getStructureBlocks().toLongArray(),
