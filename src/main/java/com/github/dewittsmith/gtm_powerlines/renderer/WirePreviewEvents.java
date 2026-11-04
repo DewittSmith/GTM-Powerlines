@@ -51,7 +51,7 @@ public class WirePreviewEvents {
         PoseStack poseStack = event.getPoseStack();
         var bufferSource = mc.renderBuffers().bufferSource();
 
-        if (GTMPowerlinesConfig.INSTANCE.useFlatWires) PowerlineWireRenderer.renderBillboard(poseStack, bufferSource, localStart, localEnd, attachment.argb(), LightTexture.FULL_BRIGHT, cameraPos);
+        if (GTMPowerlinesConfig.INSTANCE.rendering.useFlatWires) PowerlineWireRenderer.renderBillboard(poseStack, bufferSource, localStart, localEnd, attachment.argb(), LightTexture.FULL_BRIGHT, cameraPos);
         else PowerlineWireRenderer.renderTube(poseStack, bufferSource, localStart, localEnd, attachment.argb(), LightTexture.FULL_BRIGHT, PowerlineWireRenderer.Caps.END);
         bufferSource.endLastBatch();
     }

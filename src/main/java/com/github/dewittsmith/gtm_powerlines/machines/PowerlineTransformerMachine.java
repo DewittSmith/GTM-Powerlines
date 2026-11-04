@@ -277,6 +277,6 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine imple
 
     @Override
     public float getWireDistanceFor(BlockPos block) {
-        return Mth.clamp(16, GTMPowerlinesConfig.INSTANCE.minWireRange, GTMPowerlinesConfig.INSTANCE.maxWireRange);
+        return Mth.clamp(16, GTMPowerlinesConfig.INSTANCE.wire.minWireRange, GTMPowerlinesConfig.INSTANCE.wire.maxWireRange);
     }
 }

@@ -25,8 +25,8 @@ public record WireInfo(int color, int tier, float lossPerBlock) {
         var color = 0xFF000000 | stack.material().getMaterialRGB();
         var tier = GTUtil.getFloorTierByVoltage(wire.getVoltage());
 
-        var loss = wire.getLossPerBlock() * GTMPowerlinesConfig.INSTANCE.lossMultiplier;
-        loss = Math.max(loss, GTMPowerlinesConfig.INSTANCE.minLoss);
+        var loss = wire.getLossPerBlock() * GTMPowerlinesConfig.INSTANCE.wire.lossMultiplier;
+        loss = Math.max(loss, GTMPowerlinesConfig.INSTANCE.wire.minLoss);
 
         return Optional.of(new WireInfo(color, tier, loss));
     }

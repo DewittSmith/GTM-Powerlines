@@ -10,9 +10,9 @@ public enum WireLOD {
     public static WireLOD getLOD(double distance) {
 
         WireLOD selected;
-        if (distance < GTMPowerlinesConfig.INSTANCE.tubeWireLODDistance) selected = WireLOD.TUBE;
-        else if (distance < GTMPowerlinesConfig.INSTANCE.flatWireLODDistance) selected = WireLOD.BILLBOARD;
+        if (distance < GTMPowerlinesConfig.INSTANCE.rendering.tubeWireLODDistance) selected = WireLOD.TUBE;
+        else if (distance < GTMPowerlinesConfig.INSTANCE.rendering.flatWireLODDistance) selected = WireLOD.BILLBOARD;
         else selected = WireLOD.CULL;
-        return selected == TUBE && GTMPowerlinesConfig.INSTANCE.useFlatWires ? WireLOD.BILLBOARD : selected;
+        return selected == TUBE && GTMPowerlinesConfig.INSTANCE.rendering.useFlatWires ? WireLOD.BILLBOARD : selected;
     }
 }

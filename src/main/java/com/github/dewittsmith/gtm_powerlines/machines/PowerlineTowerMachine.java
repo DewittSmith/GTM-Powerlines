@@ -87,7 +87,7 @@ public class PowerlineTowerMachine extends MultiblockControllerMachine implement
         queue.enqueue(getPos().asLong());
         BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
 
-        final var maxBlocks = GTMPowerlinesConfig.INSTANCE.maxTowerBlocks;
+        final var maxBlocks = GTMPowerlinesConfig.INSTANCE.tower.maxTowerBlocks;
         var minElevation = getPos().getY();
         while (!queue.isEmpty()) {
             long current = queue.dequeueLong();
@@ -157,6 +157,6 @@ public class PowerlineTowerMachine extends MultiblockControllerMachine implement
 
     @Override
     public float getWireDistanceFor(BlockPos block) {
-        return Mth.clamp((float) Math.pow(block.getY() - baseElevation, GTMPowerlinesConfig.INSTANCE.towerRangePower), GTMPowerlinesConfig.INSTANCE.minWireRange, GTMPowerlinesConfig.INSTANCE.maxWireRange);
+        return Mth.clamp((float) Math.pow(block.getY() - baseElevation, GTMPowerlinesConfig.INSTANCE.tower.towerRangePower), GTMPowerlinesConfig.INSTANCE.wire.minWireRange, GTMPowerlinesConfig.INSTANCE.wire.maxWireRange);
     }
 }
