@@ -132,7 +132,7 @@ public class PowerlineWireEvents {
         }
 
         var flatDistance = Math.sqrt(attach.pos().atY(0).distSqr(pos.atY(0)));
-        var maxDistance = Math.max(clickedBe.maxConnectionRange(), fromBe.maxConnectionRange());
+        var maxDistance = clickedBe.maxConnectionRange() + fromBe.maxConnectionRange();
         if (flatDistance > maxDistance) {
             message(player, "message.gtm_powerlines.wire.too_long", Mth.ceil(flatDistance), Mth.floor(maxDistance));
             finish(event);

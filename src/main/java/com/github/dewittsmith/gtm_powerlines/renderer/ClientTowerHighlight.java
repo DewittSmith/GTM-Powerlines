@@ -1,8 +1,6 @@
 package com.github.dewittsmith.gtm_powerlines.renderer;
 
-import com.github.dewittsmith.gtm_powerlines.registry.GTMPowerlinesRegistries;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.BlockPos;
@@ -22,7 +20,6 @@ import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
 import com.github.dewittsmith.gtm_powerlines.network.TowerHighlightPacket;
 import it.unimi.dsi.fastutil.longs.Long2LongArrayMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayFIFOQueue;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 
 import java.util.Arrays;
 

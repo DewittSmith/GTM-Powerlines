@@ -58,11 +58,14 @@ public class PowerlineInsulatorBlockEntity extends BlockEntity {
         return wireMachine.map(wm -> wm.getWireDistanceFor(worldPosition)).orElse(0f);
     }
 
-    public boolean hasConnectionCapacity() {
-        if (!isServer() || controller == null) return false;
+    public int maxConnections() {
         var wireMachine = BlockUtils.instanceOf(level, controller, IWireMachine.class);
-        var maxConnections = wireMachine.map(IWireMachine::getMaxConnections).orElse(0);
-        return connectionCount() < maxConnections;
+        return wireMachine.map(IWireMachine::getMaxConnections).orElse(0);
+    }
+
+    public boolean hasConnectionCapacity() {
+        if (controller == null) return false;
+        return connectionCount() < maxConnections();
     }
 
     public int getWireTier() {

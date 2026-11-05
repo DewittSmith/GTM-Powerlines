@@ -157,6 +157,8 @@ dependencies {
     modCompileOnly("mezz.jei:jei-${minecraft_version}-common-api:${jei_version}")
     modRuntimeOnly("mezz.jei:jei-${minecraft_version}-forge:${jei_version}")
     modRuntimeOnly("dev.emi:emi-forge:${emi_version}+${minecraft_version}")
+
+    modCompileOnly("curse.maven:jade-324717:5390389")
     modRuntimeOnly("curse.maven:jade-324717:5390389")
 
     // GregTech and dependencies
@@ -186,7 +188,8 @@ tasks.named('processResources', ProcessResources).configure {
             "forge_version"    : forge_version.split("\\.")[0], // only specify major version of forge
             "minecraft_version": minecraft_version,
             "gtceu_version"    : gtceu_version,
-            "configuration_version" : configuration_version
+            "configuration_version" : configuration_version,
+            "jade_version": jade_version
     ]
     inputs.properties(properties)
 

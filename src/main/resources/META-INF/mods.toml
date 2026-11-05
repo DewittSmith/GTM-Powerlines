@@ -35,3 +35,9 @@ mandatory = true
 versionRange = "[${configuration_version},)"
 ordering = "AFTER"
 side = "BOTH"
+[[dependencies.${mod_id}]]
+modId = "jade"
+mandatory = false
+versionRange = "[${jade_version},)"
+ordering = "AFTER"
+side = "BOTH"
