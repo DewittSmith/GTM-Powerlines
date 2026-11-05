@@ -130,7 +130,7 @@ public class PowerlineTowerMachine extends MultiblockControllerMachine implement
             if (!found.add(current)) continue;
 
             for (Direction direction : Direction.values()) {
-                cursor.set(BlockPos.getX(current), BlockPos.getY(current), BlockPos.getZ(current)).move(direction);
+                cursor.set(current).move(direction);
                 long key = cursor.asLong();
                 if (found.contains(key)) continue;
 

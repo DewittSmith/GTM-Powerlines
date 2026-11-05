@@ -1,5 +1,6 @@
 package com.github.dewittsmith.gtm_powerlines.registry;
 
+import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
 import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.api.GTCEuAPI;
 import com.gregtechceu.gtceu.api.GTValues;
@@ -58,10 +59,10 @@ public class GTMPowerlinesRegistries {
 
     public static final MachineDefinition POWERLINE_TOWER = POWERLINE_REGISTRATE
             .multiblock("powerline_tower", PowerlineTowerMachine::new)
-            .rotationState(RotationState.NON_Y_AXIS)
+            .rotationState(RotationState.ALL)
             .recipeType(GTRecipeTypes.DUMMY_RECIPES)
             .noRecipeModifier()
-            .appearanceBlock(MACHINE_CASING_LV)
+            .appearanceBlock(CASING_STEEL_SOLID)
             .pattern(definition -> FactoryBlockPattern.start()
                     .aisle("S", "F", "I")
                     .where('S', controller(blocks(definition.get())))
@@ -129,7 +130,7 @@ public class GTMPowerlinesRegistries {
                                         Direction.DOWN))
                         .where('D', Blocks.POLISHED_DEEPSLATE_WALL)
                         .where('#', Blocks.AIR)
-                        .where('C', MACHINE_CASING_LV)
+                        .where('C', CASING_STEEL_SOLID)
                         .where('G', Blocks.SPRUCE_FENCE_GATE)
                         .where('S', Blocks.SPRUCE_SLAB)
                         .where('P', Blocks.SPRUCE_PLANKS)
@@ -138,8 +139,8 @@ public class GTMPowerlinesRegistries {
                 return shapeInfo;
             })
             .workableCasingModel(
-                    GTCEu.id("block/casings/voltage/lv/side"),
-                    GTCEu.id("block/multiblock/large_miner"))
+                    GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
+                    GTMPowerlines.id("block/multiblock/powerline_tower"))
             .register();
 
     public static final MultiblockMachineDefinition POWERLINE_TRANSFORMER = POWERLINE_REGISTRATE
@@ -147,7 +148,7 @@ public class GTMPowerlinesRegistries {
             .rotationState(RotationState.NON_Y_AXIS)
             .recipeType(GTRecipeTypes.DUMMY_RECIPES)
             .noRecipeModifier()
-            .appearanceBlock(MACHINE_CASING_LV)
+            .appearanceBlock(CASING_STEEL_SOLID)
             .pattern(definition -> FactoryBlockPattern.start()
                     .aisle("RCXCR", "RCXCR", "RCXCR", "I###I")
                     .aisle("#CFC#", "#CFC#", "#CFC#", "#####")
@@ -157,7 +158,7 @@ public class GTMPowerlinesRegistries {
                     .where('S', controller(blocks(definition.get())))
                     .where('R', blocks(FIREBOX_STEEL.get()))
                     .where('C', heatingCoils())
-                    .where('X', blocks(MACHINE_CASING_LV.get())
+                    .where('X', blocks(CASING_STEEL_SOLID.get())
                             .or(PowerlinePredicates.powerlineHatch().setMinGlobalLimited(1))
                             .or(autoAbilities(true, false, false)))
                     .where('F', frames(GTMaterials.Steel))
@@ -180,7 +181,7 @@ public class GTMPowerlinesRegistries {
                         .aisle("RCXCR", "RCXCR", "RCXCR", "I###I")
                         .where('S', definition, Direction.NORTH)
                         .where('R', FIREBOX_STEEL)
-                        .where('X', MACHINE_CASING_LV)
+                        .where('X', CASING_STEEL_SOLID)
                         .where('F', ChemicalHelper.getBlock(TagPrefix.frameGt, GTMaterials.Steel))
                         .where('P', CASING_STEEL_PIPE)
                         .where('T', GTMachines.ENERGY_INPUT_HATCH[GTValues.LV], Direction.NORTH)
@@ -194,8 +195,8 @@ public class GTMPowerlinesRegistries {
                 return shapeInfo;
             })
             .workableCasingModel(
-                    GTCEu.id("block/casings/voltage/lv/side"),
-                    GTCEu.id("block/multiblock/implosion_compressor"))
+                    GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
+                    GTMPowerlines.id("block/multiblock/powerline_transformer"))
             .additionalDisplay((controller, components) -> {
                 if (!(controller instanceof PowerlineTransformerMachine transformerMachine) ||
                         !transformerMachine.isFormed()) {

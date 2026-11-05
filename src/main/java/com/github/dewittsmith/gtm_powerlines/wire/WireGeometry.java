@@ -33,7 +33,7 @@ public final class WireGeometry {
     }
 
     public static Vec3 getAttachmentPoint(BlockEntity be) {
-        final float OFFSET = 5f / 16f;
+        final float OFFSET = 6f / 16f;
 
         if (be == null) return Vec3.ZERO;
         var pos = be.getBlockPos().getCenter();

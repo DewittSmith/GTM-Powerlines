@@ -1,7 +1,6 @@
 package com.github.dewittsmith.gtm_powerlines.util;
 
 import com.gregtechceu.gtceu.api.blockentity.MetaMachineBlockEntity;
-
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 
@@ -17,4 +16,8 @@ public final class BlockUtils {
             return Optional.of(type.cast(meta.metaMachine));
         return Optional.empty();
     }
+
+//    public static <T> Optional<T> instanceOf() {
+//
+//    }
 }

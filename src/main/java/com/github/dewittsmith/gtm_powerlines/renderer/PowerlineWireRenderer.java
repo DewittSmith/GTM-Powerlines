@@ -18,7 +18,7 @@ public class PowerlineWireRenderer {
     private static final ResourceLocation WIRE_TEXTURE = new ResourceLocation("gtceu", "block/cable/insulation_5");
 
     public static final float BLOCK_PIXEL_SIZE = 16;
-    public static final float PIXEL_SIZE = 2;
+    public static final float PIXEL_SIZE = 1.9f;
     public static final float BLOCK_SIZE = PIXEL_SIZE / BLOCK_PIXEL_SIZE;
     public static final float HALF_SIZE = BLOCK_SIZE / 2;
 

@@ -29,3 +29,9 @@ mandatory = true
 versionRange = "[${gtceu_version},)"
 ordering = "AFTER"
 side = "BOTH"
+[[dependencies.${ mod_id }]]
+modId = "configuration"
+mandatory = true
+versionRange = "[${configuration_version},)"
+ordering = "AFTER"
+side = "BOTH"

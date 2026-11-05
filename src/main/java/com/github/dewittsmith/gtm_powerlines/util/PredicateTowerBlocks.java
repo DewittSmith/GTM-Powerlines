@@ -20,6 +20,7 @@ public class PredicateTowerBlocks extends SimplePredicate {
         predicate = state -> GTMPowerlinesConfig.INSTANCE.isTowerBlock(state.getBlockState());
 
         candidates = () -> BuiltInRegistries.BLOCK.stream()
+                .filter(block -> BuiltInRegistries.BLOCK.getKey(block).getNamespace().equals("minecraft"))
                 .filter(block -> GTMPowerlinesConfig.INSTANCE.isTowerBlock(block.defaultBlockState()))
                 .map(BlockInfo::fromBlock)
                 .toArray(BlockInfo[]::new);
