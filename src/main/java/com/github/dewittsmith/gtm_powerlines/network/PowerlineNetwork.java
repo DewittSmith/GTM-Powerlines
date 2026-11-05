@@ -133,10 +133,10 @@ public class PowerlineNetwork extends SavedData {
         transfers.clear();
         for (var key : byPos.keySet()) {
             var pos = BlockPos.of(key);
-            var insulatorOpt = BlockUtils.instanceOf(level, pos, PowerlineInsulatorBlockEntity.class);
+            var insulatorOpt = BlockUtils.instanceOf(level, pos, PowerlineInsulatorBlockEntity.class, true);
             if (insulatorOpt.isEmpty()) continue;
             var transformerOpt = BlockUtils.instanceOf(level, insulatorOpt.get().getController(),
-                    PowerlineTransformerMachine.class);
+                    PowerlineTransformerMachine.class, true);
             if (transformerOpt.isEmpty()) continue;
             rebuildTransferEdges(level, pos, transformerOpt.get());
         }
@@ -190,9 +190,10 @@ public class PowerlineNetwork extends SavedData {
             return NodeKind.UNKNOWN;
 
         BlockPos controller = be.getController();
-        var transformer = BlockUtils.instanceOf(level, controller, PowerlineTransformerMachine.class);
+        var transformer = BlockUtils.instanceOf(level, controller, PowerlineTransformerMachine.class, true);
         if (transformer.isPresent()) return transformer.get().isOutput() ? NodeKind.OUTPUT : NodeKind.INPUT;
-        return BlockUtils.instanceOf(level, controller, PowerlineTowerMachine.class).isPresent() ? NodeKind.TOWER :
+        return BlockUtils.instanceOf(level, controller, PowerlineTowerMachine.class, true).isPresent() ?
+                NodeKind.TOWER :
                 NodeKind.UNKNOWN;
     }
 
