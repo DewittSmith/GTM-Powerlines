@@ -28,11 +28,18 @@ import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import it.unimi.dsi.fastutil.longs.LongSets;
+import lombok.Getter;
 
 public class PowerlineTowerMachine extends MultiblockControllerMachine implements IWireMachine, IInteractedMachine {
 
     private final LongSet insulatorBlocks = new LongOpenHashSet();
     private int baseElevation = 0;
+
+    @Getter
+    private float maxWireDistance = 0;
+
+    @Getter
+    private int blockCount = 0;
 
     public PowerlineTowerMachine(IMachineBlockEntity machineBlockEntity) {
         super(machineBlockEntity);
@@ -123,8 +130,12 @@ public class PowerlineTowerMachine extends MultiblockControllerMachine implement
         queue.enqueue(getPos().asLong());
         BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
 
+        maxWireDistance = 0;
+        blockCount = 0;
+
         final var maxBlocks = GTMPowerlinesConfig.INSTANCE.tower.maxTowerBlocks;
-        var minElevation = getPos().getY();
+        var minElevation = Integer.MAX_VALUE;
+        var maxInsulatorY = Integer.MIN_VALUE;
         while (!queue.isEmpty()) {
             long current = queue.dequeueLong();
             if (!found.add(current)) continue;
@@ -144,11 +155,15 @@ public class PowerlineTowerMachine extends MultiblockControllerMachine implement
                     queue.enqueue(key);
                     insulators.add(key);
                     if (cursor.getY() < minElevation) minElevation = cursor.getY();
+                    if (cursor.getY() > maxInsulatorY) maxInsulatorY = cursor.getY();
                 }
 
                 if (found.size() > maxBlocks) return false;
             }
         }
+
+        maxWireDistance = getWireDistanceFor(cursor.set(getPos()).setY(maxInsulatorY));
+        blockCount = found.size();
 
         multiblockState.cache.addAll(found);
         insulatorBlocks.addAll(insulators);

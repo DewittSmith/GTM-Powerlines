@@ -27,6 +27,7 @@
   "config.gtm_powerlines.option.tubeWireLODDistance": "Tube LOD distance",
   "config.gtm_powerlines.option.flatWireLODDistance": "Flat LOD distance",
   "config.jade.plugin_gtm_powerlines.powerline_insulator_info": "Powerline Insulator Info",
+  "config.jade.plugin_gtm_powerlines.powerline_tower_info": "Powerline Tower Info",
   "multiblock.gtm_powerlines.powerline_transformer.mode": "Transfer Mode: ",
   "multiblock.gtm_powerlines.powerline_transformer.powerline_tier": "Powerline Tier: %1$s",
   "multiblock.gtm_powerlines.powerline_transformer.powerline_efficiency": "Coil Efficiency: %1$d%%",
@@ -53,5 +54,6 @@
   "tooltip.gtm_powerlines.coil_efficiency": "§8Powerline Transformer",
   "tooltip.gtm_powerlines.coil_efficiency_value": "  §6Powerline Efficiency: §f%1$d%%",
   "tooltip.gtm_powerlines.connections": "Connections %1$d / max %2$d",
-  "tooltip.gtm_powerlines.max_distance": "Max Distance %1$d"
+  "tooltip.gtm_powerlines.max_distance": "Max Distance %1$d",
+  "tooltip.gtm_powerlines.block_count": "Block Count %1$d / max %2$d"
 }

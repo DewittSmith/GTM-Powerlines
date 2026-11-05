@@ -52,7 +52,7 @@ public class PowerlineInsulatorProvider implements IBlockComponentProvider, ISer
 
     @Override
     public void appendTooltip(ITooltip tooltip, BlockAccessor accessor, IPluginConfig config) {
-        CompoundTag data = accessor.getServerData();
+        var data = accessor.getServerData();
         if (!data.contains("Connections")) return;
 
         if (!data.getBoolean("InStructure")) {
