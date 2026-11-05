@@ -35,7 +35,7 @@ public final class ClientWireEvents {
         if (info.isEmpty()) return;
 
         var tooltip = event.getToolTip();
-        tooltip.add(Component.translatable("tooltip.gtm_powerlines.wire.tier", GTValues.VNF[info.get().tier()]));
-        tooltip.add(Component.translatable("tooltip.gtm_powerlines.wire.loss", Mth.ceil(info.get().lossPerBlock())));
+        tooltip.add(Component.translatable("gtceu.cable.voltage", GTValues.VEX[info.get().tier()], GTValues.VNF[info.get().tier()]));
+        tooltip.add(Component.translatable("gtceu.cable.loss_per_block", Mth.ceil(info.get().lossPerBlock())));
     }
 }
