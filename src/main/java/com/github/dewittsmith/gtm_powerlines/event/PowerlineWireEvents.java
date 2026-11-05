@@ -1,8 +1,6 @@
 package com.github.dewittsmith.gtm_powerlines.event;
 
 import com.gregtechceu.gtceu.api.GTValues;
-import com.gregtechceu.gtceu.api.data.chemical.ChemicalHelper;
-import com.gregtechceu.gtceu.api.data.tag.TagPrefix;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -28,7 +26,6 @@ import com.github.dewittsmith.gtm_powerlines.wire.WireInfo;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 
 @Mod.EventBusSubscriber(modid = GTMPowerlines.MOD_ID)
@@ -44,7 +41,7 @@ public class PowerlineWireEvents {
         Player player = event.getEntity();
         ItemStack held = event.getItemStack();
         var wireItem = held.getItem();
-        var wireInfoOpt = getWireInfo(held);
+        var wireInfoOpt = WireInfo.of(held.getItem());
         if (wireInfoOpt.isEmpty()) return;
         var wireInfo = wireInfoOpt.get();
         var wire = ForgeRegistries.ITEMS.getKey(wireItem);
@@ -173,7 +170,7 @@ public class PowerlineWireEvents {
     public static void onRightClickAir(PlayerInteractEvent.RightClickItem event) {
         var level = event.getLevel();
         if (level.isClientSide() || event.getHand() != InteractionHand.MAIN_HAND) return;
-        if (getWireInfo(event.getItemStack()).isEmpty()) return;
+        if (WireInfo.of(event.getItemStack().getItem()).isEmpty()) return;
 
         var attach = WireAttachment.get(event.getEntity());
         if (attach == null) return;
@@ -200,12 +197,6 @@ public class PowerlineWireEvents {
 
         WireAttachment.clear(player);
         player.displayClientMessage(Component.translatable("message.gtm_powerlines.wire.cancelled"), true);
-    }
-
-    private static Optional<WireInfo> getWireInfo(ItemStack stack) {
-        if (stack.isEmpty()) return Optional.empty();
-        if (ChemicalHelper.getPrefix(stack.getItem()) != TagPrefix.wireFine) return Optional.empty();
-        return WireInfo.of(stack.getItem());
     }
 
     private static void message(Player p, String key, Object... args) {
