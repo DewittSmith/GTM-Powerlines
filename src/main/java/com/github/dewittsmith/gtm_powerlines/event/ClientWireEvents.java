@@ -1,12 +1,7 @@
 package com.github.dewittsmith.gtm_powerlines.event;
 
-import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
-import com.github.dewittsmith.gtm_powerlines.registry.GTMPowerlinesRegistries;
-import com.github.dewittsmith.gtm_powerlines.wire.ClientWires;
-import com.github.dewittsmith.gtm_powerlines.wire.WireAttachment;
-import com.github.dewittsmith.gtm_powerlines.wire.WireCutSelection;
-import com.github.dewittsmith.gtm_powerlines.wire.WireInfo;
 import com.gregtechceu.gtceu.api.GTValues;
+
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
@@ -15,6 +10,13 @@ import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
+
+import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
+import com.github.dewittsmith.gtm_powerlines.registry.GTMPowerlinesRegistries;
+import com.github.dewittsmith.gtm_powerlines.wire.ClientWires;
+import com.github.dewittsmith.gtm_powerlines.wire.WireAttachment;
+import com.github.dewittsmith.gtm_powerlines.wire.WireCutSelection;
+import com.github.dewittsmith.gtm_powerlines.wire.WireInfo;
 
 @Mod.EventBusSubscriber(modid = GTMPowerlines.MOD_ID, value = Dist.CLIENT)
 public final class ClientWireEvents {
@@ -35,7 +37,8 @@ public final class ClientWireEvents {
         if (info.isEmpty()) return;
 
         var tooltip = event.getToolTip();
-        tooltip.add(Component.translatable("gtceu.cable.voltage", GTValues.VEX[info.get().tier()], GTValues.VNF[info.get().tier()]));
+        tooltip.add(Component.translatable("gtceu.cable.voltage", GTValues.VEX[info.get().tier()],
+                GTValues.VNF[info.get().tier()]));
         tooltip.add(Component.translatable("gtceu.cable.loss_per_block", Mth.ceil(info.get().lossPerBlock())));
     }
 }

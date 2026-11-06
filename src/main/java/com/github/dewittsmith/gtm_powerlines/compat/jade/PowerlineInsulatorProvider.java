@@ -1,6 +1,5 @@
 package com.github.dewittsmith.gtm_powerlines.compat.jade;
 
-import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -28,7 +27,6 @@ public class PowerlineInsulatorProvider implements IBlockComponentProvider, ISer
     public void appendServerData(CompoundTag data, BlockAccessor accessor) {
         if (!(accessor.getBlockEntity() instanceof PowerlineInsulatorBlockEntity insulator)) return;
 
-        data.putBoolean("InStructure", insulator.getController() != null);
         data.putInt("MaxConnections", insulator.maxConnections());
         data.putFloat("MaxRange", insulator.maxConnectionRange());
 
@@ -55,13 +53,14 @@ public class PowerlineInsulatorProvider implements IBlockComponentProvider, ISer
         var data = accessor.getServerData();
         if (!data.contains("Connections")) return;
 
-        if (!data.getBoolean("InStructure")) {
-            tooltip.add(Component.translatable("message.gtm_powerlines.wire.insulator_not_in_structure")
-                    .withStyle(ChatFormatting.RED));
+        var maxConnections = data.getInt("MaxConnections");
+        if (maxConnections == Integer.MAX_VALUE) {
+            tooltip.add(Component.translatable("tooltip.gtm_powerlines.connections_nomax", data.getInt("Connections")));
+        } else {
+            tooltip.add(Component.translatable("tooltip.gtm_powerlines.connections",
+                    data.getInt("Connections"), data.getInt("MaxConnections")));
         }
 
-        tooltip.add(Component.translatable("tooltip.gtm_powerlines.connections",
-                data.getInt("Connections"), data.getInt("MaxConnections")));
         tooltip.add(Component.translatable("tooltip.gtm_powerlines.max_distance",
                 Mth.floor(data.getFloat("MaxRange"))));
 

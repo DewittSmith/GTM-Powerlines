@@ -72,8 +72,4 @@ public final class PowerlinePredicates {
             return true;
         }, () -> new BlockInfo[] { new BlockInfo(blockState) });
     }
-
-    public static TraceabilityPredicate towerBlocks() {
-        return new TraceabilityPredicate(new PredicateTowerBlocks());
-    }
 }

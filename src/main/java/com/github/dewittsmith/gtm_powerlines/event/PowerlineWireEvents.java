@@ -64,12 +64,6 @@ public class PowerlineWireEvents {
         }
 
         if (attach == null || !attach.dimension().equals(level.dimension())) {
-            if (clickedBe.getController() == null) {
-                message(player, "message.gtm_powerlines.wire.insulator_not_in_structure");
-                finish(event);
-                return;
-            }
-
             if (!clickedBe.hasConnectionCapacity()) {
                 message(player, "message.gtm_powerlines.wire.too_many_connections");
                 finish(event);
@@ -97,23 +91,17 @@ public class PowerlineWireEvents {
             return;
         }
 
-        if (!(level.getBlockEntity(attach.pos()) instanceof PowerlineInsulatorBlockEntity fromBe) ||
-                fromBe.getController() == null) {
+        if (!(level.getBlockEntity(attach.pos()) instanceof PowerlineInsulatorBlockEntity fromBe)) {
             WireAttachment.clear(player);
             message(player, "message.gtm_powerlines.wire.start_insulator_gone");
             finish(event);
             return;
         }
 
-        BlockPos fromController = fromBe.getController();
-        BlockPos toController = clickedBe.getController();
-        if (toController == null) {
-            message(player, "message.gtm_powerlines.wire.insulator_not_in_structure");
-            finish(event);
-            return;
-        }
+        var fromController = fromBe.getController();
+        var toController = clickedBe.getController();
 
-        if (fromController.equals(toController)) {
+        if (fromController != null && fromController.equals(toController)) {
             var tier = clickedBe.getWireTier();
             if (tier != -1 && tier != wireInfo.tier()) {
                 message(player, "message.gtm_powerlines.wire.incompatible_tier", GTValues.VNF[tier],

@@ -34,11 +34,9 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
 import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
-import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
 import com.github.dewittsmith.gtm_powerlines.network.PowerlineNetwork;
 import com.github.dewittsmith.gtm_powerlines.util.BlockUtils;
 import com.github.dewittsmith.gtm_powerlines.util.CoilEfficiency;
-import com.github.dewittsmith.gtm_powerlines.wire.IWireMachine;
 import lombok.Getter;
 
 import java.util.*;
@@ -48,7 +46,7 @@ import javax.annotation.Nullable;
 import static com.github.dewittsmith.gtm_powerlines.registry.GTMPowerlinesRegistries.POWERLINE_INSULATOR;
 
 public class PowerlineTransformerMachine extends WorkableMultiblockMachine
-                                         implements IFancyUIMachine, IDisplayUIMachine, IWireMachine, ITieredMachine {
+                                         implements IFancyUIMachine, IDisplayUIMachine, ITieredMachine {
 
     @Getter
     private ICoilType coilType = CoilBlock.CoilType.CUPRONICKEL;
@@ -274,16 +272,5 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine
         for (IMultiPart part : getParts()) {
             part.attachFancyTooltipsToController(this, tooltipsPanel);
         }
-    }
-
-    @Override
-    public int getMaxConnections() {
-        return 1;
-    }
-
-    @Override
-    public float getWireDistanceFor(BlockPos block) {
-        return Mth.clamp(16, GTMPowerlinesConfig.INSTANCE.wire.minWireRange,
-                GTMPowerlinesConfig.INSTANCE.wire.maxWireRange);
     }
 }

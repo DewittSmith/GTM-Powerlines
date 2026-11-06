@@ -40,8 +40,8 @@ public class PowerlineWireRenderer {
                 .apply(WIRE_TEXTURE);
         PoseStack.Pose pose = poseStack.last();
 
-        double length = start.distanceTo(end);
-        double sag = WireGeometry.sag(length);
+        double sag = WireGeometry.sag(start, end);
+        double length = WireGeometry.length(start, end, sag);
         int samples = WireGeometry.samples(length);
 
         Vec3 pPos = WireGeometry.sample(start, end, 0, sag);
@@ -115,8 +115,8 @@ public class PowerlineWireRenderer {
                 .apply(WIRE_TEXTURE);
         PoseStack.Pose pose = poseStack.last();
 
-        double length = start.distanceTo(end);
-        double sag = WireGeometry.sag(length);
+        double sag = WireGeometry.sag(start, end);
+        double length = WireGeometry.length(start, end, sag);
         int samples = WireGeometry.samples(length);
 
         float u0 = sprite.getU0(), v0 = sprite.getV0(), u1 = sprite.getU1(), v1 = sprite.getV1();

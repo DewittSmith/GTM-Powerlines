@@ -26,8 +26,8 @@ public final class WireTargeting {
 
         for (var edge : edges) {
             var to = WireGeometry.getAttachmentPoint(level, edge.other(origin));
-            double length = from.distanceTo(to);
-            double sag = WireGeometry.sag(length);
+            double sag = WireGeometry.sag(from, to);
+            double length = WireGeometry.length(from, to, sag);
             int n = WireGeometry.samples(length);
 
             Vec3 prev = from;

@@ -1,21 +1,35 @@
 package com.github.dewittsmith.gtm_powerlines.wire;
 
+import com.github.dewittsmith.gtm_powerlines.block.PowerlineInsulatorBlock;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.Vec3;
 
-import com.github.dewittsmith.gtm_powerlines.block.PowerlineInsulatorBlock;
-
 public final class WireGeometry {
 
-    public static double sag(double length) {
-        return Math.min(length * 0.04, 2.0);
+    public static double sag(Vec3 a, Vec3 b) {
+        return Math.min(a.distanceTo(b) * 0.06, 2.0);
+    }
+
+    public static double length(Vec3 a, Vec3 b, double sag) {
+        var dx = b.x - a.x;
+        var dy = b.y - a.y;
+        var dz = b.z - a.z;
+
+        var d2 = dx * dx + dy * dy + dz * dz;
+        if (d2 < 1e-4) return 0f;
+
+        var d = Math.sqrt(d2);
+        var horizontalD2 = dx * dx + dz * dz;
+
+        // Second degree approximation: d + (8s^2(dx^2 + dz^2) / 3d^3)
+        return d + (8.0 * sag * sag * horizontalD2) / (3.0 * d2 * d);
     }
 
     public static int samples(double length) {
-        return Math.max(2, Mth.ceil(length));
+        return Math.max(2, (int) Math.ceil(length)) + 1;
     }
 
     public static Vec3 sample(Vec3 a, Vec3 b, double t, double sag) {

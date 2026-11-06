@@ -33,9 +33,6 @@ public final class Net {
         CHANNEL.registerMessage(id++, WireDeltaPacket.class,
                 WireDeltaPacket::encode, WireDeltaPacket::decode, WireDeltaPacket::handle,
                 Optional.of(NetworkDirection.PLAY_TO_CLIENT));
-        CHANNEL.registerMessage(id++, TowerHighlightPacket.class,
-                TowerHighlightPacket::encode, TowerHighlightPacket::decode, TowerHighlightPacket::handle,
-                Optional.of(NetworkDirection.PLAY_TO_CLIENT));
         CHANNEL.registerMessage(id++, WireAttachmentPacket.class,
                 WireAttachmentPacket::encode, WireAttachmentPacket::decode, WireAttachmentPacket::handle,
                 Optional.of(NetworkDirection.PLAY_TO_CLIENT));

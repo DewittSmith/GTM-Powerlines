@@ -5,14 +5,16 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
+import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
 import com.github.dewittsmith.gtm_powerlines.machines.PowerlineTransformerMachine;
 import com.github.dewittsmith.gtm_powerlines.network.PowerlineNetwork;
+import com.github.dewittsmith.gtm_powerlines.registry.GTMPowerlinesRegistries;
 import com.github.dewittsmith.gtm_powerlines.util.BlockUtils;
-import com.github.dewittsmith.gtm_powerlines.wire.IWireMachine;
 import com.github.dewittsmith.gtm_powerlines.wire.WireConnectionResult;
 import com.github.dewittsmith.gtm_powerlines.wire.WireInfo;
 import lombok.Getter;
@@ -27,8 +29,12 @@ public class PowerlineInsulatorBlockEntity extends BlockEntity {
     @Nullable
     private BlockPos controller;
 
+    private final int maxElevation;
+
     public PowerlineInsulatorBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState blockState) {
         super(type, pos, blockState);
+        maxElevation = Mth.ceil(Math.pow(GTMPowerlinesConfig.INSTANCE.wire.maxWireRange,
+                1f / GTMPowerlinesConfig.INSTANCE.insulator.rangePower));
     }
 
     public void setController(@Nullable BlockPos controller) {
@@ -48,23 +54,50 @@ public class PowerlineInsulatorBlockEntity extends BlockEntity {
         return isServer() ? network().at(worldPosition) : List.of();
     }
 
+    public int getElevation() {
+        var level = getLevel();
+        if (level == null) return 0;
+
+        var cursor = worldPosition.mutable();
+        for (var i = 0; i < maxElevation; ++i) {
+            cursor.move(0, -1, 0);
+            var bs = level.getBlockState(cursor);
+            if (bs.isAir() || bs.is(GTMPowerlinesRegistries.INSULATOR_SURFACE_IGNORE)) continue;
+            return worldPosition.getY() - cursor.getY();
+        }
+
+        return maxElevation;
+    }
+
     public int connectionCount() {
         return getConnections().size();
     }
 
     public float maxConnectionRange() {
-        if (controller == null) return 0f;
-        var wireMachine = BlockUtils.instanceOf(level, controller, IWireMachine.class);
-        return wireMachine.map(wm -> wm.getWireDistanceFor(worldPosition)).orElse(0f);
+        if (controller != null &&
+                BlockUtils.instanceOf(level, controller, PowerlineTransformerMachine.class).isPresent()) {
+            return Mth.clamp(8, GTMPowerlinesConfig.INSTANCE.wire.minWireRange,
+                    GTMPowerlinesConfig.INSTANCE.wire.maxWireRange);
+        }
+
+        return Mth.clamp((float) Math.pow(getElevation(), GTMPowerlinesConfig.INSTANCE.insulator.rangePower),
+                GTMPowerlinesConfig.INSTANCE.wire.minWireRange, GTMPowerlinesConfig.INSTANCE.wire.maxWireRange);
     }
 
     public int maxConnections() {
-        var wireMachine = BlockUtils.instanceOf(level, controller, IWireMachine.class);
-        return wireMachine.map(IWireMachine::getMaxConnections).orElse(0);
+        if (controller != null &&
+                BlockUtils.instanceOf(level, controller, PowerlineTransformerMachine.class).isPresent()) {
+            return 1;
+        }
+
+        if (GTMPowerlinesConfig.INSTANCE.insulator.maxWireConnections < 2) {
+            return Integer.MAX_VALUE;
+        }
+
+        return GTMPowerlinesConfig.INSTANCE.insulator.maxWireConnections;
     }
 
     public boolean hasConnectionCapacity() {
-        if (controller == null) return false;
         return connectionCount() < maxConnections();
     }
 

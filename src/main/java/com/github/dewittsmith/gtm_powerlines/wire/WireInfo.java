@@ -1,15 +1,17 @@
 package com.github.dewittsmith.gtm_powerlines.wire;
 
-import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
 import com.gregtechceu.gtceu.api.data.chemical.ChemicalHelper;
 import com.gregtechceu.gtceu.api.data.chemical.material.properties.PropertyKey;
 import com.gregtechceu.gtceu.api.data.tag.TagPrefix;
 import com.gregtechceu.gtceu.common.pipelike.cable.Insulation;
 import com.gregtechceu.gtceu.utils.GTUtil;
+
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.ItemLike;
 import net.minecraftforge.registries.ForgeRegistries;
+
+import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
 
 import java.util.HashMap;
 import java.util.Map;

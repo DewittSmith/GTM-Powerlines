@@ -10,7 +10,6 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.level.saveddata.SavedData;
 
 import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
-import com.github.dewittsmith.gtm_powerlines.machines.PowerlineTowerMachine;
 import com.github.dewittsmith.gtm_powerlines.machines.PowerlineTransformerMachine;
 import com.github.dewittsmith.gtm_powerlines.util.BlockUtils;
 import com.github.dewittsmith.gtm_powerlines.wire.WireInfo;
@@ -51,7 +50,7 @@ public class PowerlineNetwork extends SavedData {
     private final Long2ObjectMap<List<TransferEdge>> transfers = new Long2ObjectOpenHashMap<>();
 
     private enum NodeKind {
-        TOWER,
+        INSULATOR,
         INPUT,
         OUTPUT,
         UNKNOWN
@@ -167,7 +166,7 @@ public class PowerlineNetwork extends SavedData {
                     case INPUT, UNKNOWN -> {
                         continue;
                     }
-                    case TOWER -> { /* keep expanding */ }
+                    case INSULATOR -> { /* keep expanding */ }
                 }
             }
 
@@ -189,12 +188,10 @@ public class PowerlineNetwork extends SavedData {
                 be.getController() == null)
             return NodeKind.UNKNOWN;
 
-        BlockPos controller = be.getController();
+        var controller = be.getController();
         var transformer = BlockUtils.instanceOf(level, controller, PowerlineTransformerMachine.class, true);
         if (transformer.isPresent()) return transformer.get().isOutput() ? NodeKind.OUTPUT : NodeKind.INPUT;
-        return BlockUtils.instanceOf(level, controller, PowerlineTowerMachine.class, true).isPresent() ?
-                NodeKind.TOWER :
-                NodeKind.UNKNOWN;
+        return NodeKind.INSULATOR;
     }
 
     private float edgeLoss(Edge edge) {
