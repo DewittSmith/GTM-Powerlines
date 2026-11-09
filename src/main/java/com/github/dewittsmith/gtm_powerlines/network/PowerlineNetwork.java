@@ -12,7 +12,7 @@ import net.minecraft.world.level.saveddata.SavedData;
 import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
 import com.github.dewittsmith.gtm_powerlines.machines.PowerlineTransformerMachine;
 import com.github.dewittsmith.gtm_powerlines.util.BlockUtils;
-import com.github.dewittsmith.gtm_powerlines.wire.WireInfo;
+import com.github.dewittsmith.gtm_powerlines.wire.WireStats;
 import it.unimi.dsi.fastutil.longs.Long2FloatMap;
 import it.unimi.dsi.fastutil.longs.Long2FloatOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
@@ -195,9 +195,9 @@ public class PowerlineNetwork extends SavedData {
     }
 
     private float edgeLoss(Edge edge) {
-        var stats = WireInfo.of(edge.wire());
+        var stats = WireStats.of(edge.wire());
         if (stats.isEmpty()) return Float.MAX_VALUE;
-        return (float) Math.sqrt(edge.a.distSqr(edge.b)) * stats.get().lossPerBlock();
+        return (float) Math.sqrt(edge.a.distSqr(edge.b)) * stats.get().props().getLossPerBlock();
     }
 
     private void add(Edge e) {

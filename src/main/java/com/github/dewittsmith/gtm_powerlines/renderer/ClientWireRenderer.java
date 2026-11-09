@@ -16,7 +16,7 @@ import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
 import com.github.dewittsmith.gtm_powerlines.network.PowerlineNetwork;
 import com.github.dewittsmith.gtm_powerlines.wire.ClientWires;
 import com.github.dewittsmith.gtm_powerlines.wire.WireGeometry;
-import com.github.dewittsmith.gtm_powerlines.wire.WireInfo;
+import com.github.dewittsmith.gtm_powerlines.wire.WireStats;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 @Mod.EventBusSubscriber(modid = GTMPowerlines.MOD_ID, value = Dist.CLIENT)
@@ -39,7 +39,7 @@ public final class ClientWireRenderer {
             Vec3 a = WireGeometry.getAttachmentPoint(level, e.a()), b = WireGeometry.getAttachmentPoint(level, e.b());
             if (!frustum.isVisible(new AABB(a, b).inflate(1.0))) continue;
 
-            var wireInfoOpt = WireInfo.of(e.wire());
+            var wireInfoOpt = WireStats.of(e.wire());
             if (wireInfoOpt.isEmpty()) continue;
             var wireInfo = wireInfoOpt.get();
 

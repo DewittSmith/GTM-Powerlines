@@ -22,7 +22,7 @@ import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlock
 import com.github.dewittsmith.gtm_powerlines.network.PowerlineNetwork;
 import com.github.dewittsmith.gtm_powerlines.util.ItemUtils;
 import com.github.dewittsmith.gtm_powerlines.wire.WireAttachment;
-import com.github.dewittsmith.gtm_powerlines.wire.WireInfo;
+import com.github.dewittsmith.gtm_powerlines.wire.WireStats;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -41,7 +41,7 @@ public class PowerlineWireEvents {
         Player player = event.getEntity();
         ItemStack held = event.getItemStack();
         var wireItem = held.getItem();
-        var wireInfoOpt = WireInfo.of(held.getItem());
+        var wireInfoOpt = WireStats.of(held.getItem());
         if (wireInfoOpt.isEmpty()) return;
         var wireInfo = wireInfoOpt.get();
         var wire = ForgeRegistries.ITEMS.getKey(wireItem);
@@ -158,7 +158,7 @@ public class PowerlineWireEvents {
     public static void onRightClickAir(PlayerInteractEvent.RightClickItem event) {
         var level = event.getLevel();
         if (level.isClientSide() || event.getHand() != InteractionHand.MAIN_HAND) return;
-        if (WireInfo.of(event.getItemStack().getItem()).isEmpty()) return;
+        if (WireStats.of(event.getItemStack().getItem()).isEmpty()) return;
 
         var attach = WireAttachment.get(event.getEntity());
         if (attach == null) return;

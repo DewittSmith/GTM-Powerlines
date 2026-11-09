@@ -51,16 +51,6 @@ public class GTMPowerlinesConfig {
         @Configurable
         @Configurable.DecimalRange(min = 0f)
         @Configurable.Synchronized
-        public float minLoss = 0f;
-
-        @Configurable
-        @Configurable.DecimalRange(min = 0f)
-        @Configurable.Synchronized
-        public float lossMultiplier = 1f;
-
-        @Configurable
-        @Configurable.DecimalRange(min = 0f)
-        @Configurable.Synchronized
         public float minWireRange = 4f;
 
         @Configurable

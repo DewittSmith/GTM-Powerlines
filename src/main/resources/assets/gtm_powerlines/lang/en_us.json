@@ -6,8 +6,6 @@
   "config.gtm_powerlines.option.wire": "Wire",
   "config.gtm_powerlines.option.lowestCoilEfficiency": "Lowest coil efficiency",
   "config.gtm_powerlines.option.highestCoilEfficiency": "Highest coil efficiency",
-  "config.gtm_powerlines.option.minLoss": "Minimal energy loss per block",
-  "config.gtm_powerlines.option.lossMultiplier": "Energy loss per block multiplier",
   "config.gtm_powerlines.option.minWireRange": "Minimal wire distance",
   "config.gtm_powerlines.option.maxWireRange": "Maximal wire distance",
   "config.gtm_powerlines.option.insulator": "Insulator",

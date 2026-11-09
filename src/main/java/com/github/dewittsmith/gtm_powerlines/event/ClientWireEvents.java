@@ -16,7 +16,7 @@ import com.github.dewittsmith.gtm_powerlines.registry.GTMPowerlinesRegistries;
 import com.github.dewittsmith.gtm_powerlines.wire.ClientWires;
 import com.github.dewittsmith.gtm_powerlines.wire.WireAttachment;
 import com.github.dewittsmith.gtm_powerlines.wire.WireCutSelection;
-import com.github.dewittsmith.gtm_powerlines.wire.WireInfo;
+import com.github.dewittsmith.gtm_powerlines.wire.WireStats;
 
 @Mod.EventBusSubscriber(modid = GTMPowerlines.MOD_ID, value = Dist.CLIENT)
 public final class ClientWireEvents {
@@ -33,12 +33,13 @@ public final class ClientWireEvents {
         var stack = event.getItemStack();
         if (!stack.is(GTMPowerlinesRegistries.POWERLINE_WIRE)) return;
 
-        var info = WireInfo.of(ForgeRegistries.ITEMS.getKey(stack.getItem()));
+        var info = WireStats.of(ForgeRegistries.ITEMS.getKey(stack.getItem()));
         if (info.isEmpty()) return;
 
         var tooltip = event.getToolTip();
         tooltip.add(Component.translatable("gtceu.cable.voltage", GTValues.VEX[info.get().tier()],
                 GTValues.VNF[info.get().tier()]));
-        tooltip.add(Component.translatable("gtceu.cable.loss_per_block", Mth.ceil(info.get().lossPerBlock())));
+        tooltip.add(
+                Component.translatable("gtceu.cable.loss_per_block", Mth.ceil(info.get().props().getLossPerBlock())));
     }
 }

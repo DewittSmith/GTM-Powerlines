@@ -1,6 +1,10 @@
 package com.github.dewittsmith.gtm_powerlines.blockentity;
 
+import com.gregtechceu.gtceu.api.capability.IEnergyContainer;
+import com.gregtechceu.gtceu.api.capability.forge.GTCapability;
+
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.resources.ResourceLocation;
@@ -9,15 +13,20 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.util.LazyOptional;
 
+import com.github.dewittsmith.gtm_powerlines.block.PowerlineInsulatorBlock;
+import com.github.dewittsmith.gtm_powerlines.capabilities.PowerlineInsulatorEnergy;
 import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
 import com.github.dewittsmith.gtm_powerlines.machines.PowerlineTransformerMachine;
 import com.github.dewittsmith.gtm_powerlines.network.PowerlineNetwork;
 import com.github.dewittsmith.gtm_powerlines.registry.GTMPowerlinesRegistries;
 import com.github.dewittsmith.gtm_powerlines.util.BlockUtils;
 import com.github.dewittsmith.gtm_powerlines.wire.WireConnectionResult;
-import com.github.dewittsmith.gtm_powerlines.wire.WireInfo;
+import com.github.dewittsmith.gtm_powerlines.wire.WireStats;
 import lombok.Getter;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
@@ -30,6 +39,9 @@ public class PowerlineInsulatorBlockEntity extends BlockEntity {
     private BlockPos controller;
 
     private final int maxElevation;
+
+    private final IEnergyContainer energy = new PowerlineInsulatorEnergy(this);
+    private LazyOptional<IEnergyContainer> energyCap = LazyOptional.of(() -> energy);
 
     public PowerlineInsulatorBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState blockState) {
         super(type, pos, blockState);
@@ -107,8 +119,8 @@ public class PowerlineInsulatorBlockEntity extends BlockEntity {
         if (transformer.isPresent()) return transformer.get().getTier();
         var connections = getConnections();
         if (connections.isEmpty()) return -1;
-        var wireInfoOpt = WireInfo.of(connections.get(0).wire());
-        return wireInfoOpt.map(WireInfo::tier).orElse(-1);
+        var wireInfoOpt = WireStats.of(connections.get(0).wire());
+        return wireInfoOpt.map(WireStats::tier).orElse(-1);
     }
 
     public WireConnectionResult connect(BlockPos target, ResourceLocation wire) {
@@ -121,7 +133,7 @@ public class PowerlineInsulatorBlockEntity extends BlockEntity {
         if (other.isEmpty() || !other.get().hasConnectionCapacity()) return WireConnectionResult.TOO_MANY_CONNECTIONS;
 
         var tier = getWireTier();
-        var wireInfoOpt = WireInfo.of(wire);
+        var wireInfoOpt = WireStats.of(wire);
         if (wireInfoOpt.isEmpty()) return WireConnectionResult.TOO_MANY_CONNECTIONS;
         if (tier != -1 && tier != wireInfoOpt.get().tier()) return WireConnectionResult.incompatibleTier(tier);
 
@@ -147,5 +159,26 @@ public class PowerlineInsulatorBlockEntity extends BlockEntity {
     public void load(CompoundTag tag) {
         super.load(tag);
         controller = tag.contains("controller") ? NbtUtils.readBlockPos(tag.getCompound("controller")) : null;
+    }
+
+    @Override
+    public <T> @NotNull LazyOptional<T> getCapability(Capability<T> cap, @Nullable Direction side) {
+        var attachSide = getBlockState().getValue(PowerlineInsulatorBlock.DIRECTION).getOpposite();
+        if (cap == GTCapability.CAPABILITY_ENERGY_CONTAINER && (side == null || side == attachSide)) {
+            return energyCap.cast();
+        }
+        return super.getCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        energyCap.invalidate();
+    }
+
+    @Override
+    public void reviveCaps() {
+        super.reviveCaps();
+        energyCap = LazyOptional.of(() -> energy);
     }
 }

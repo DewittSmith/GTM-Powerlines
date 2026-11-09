@@ -30,7 +30,7 @@ import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlock
 import com.github.dewittsmith.gtm_powerlines.machines.PowerlineTransformerMachine;
 import com.github.dewittsmith.gtm_powerlines.util.CoilEfficiency;
 import com.github.dewittsmith.gtm_powerlines.util.PowerlinePredicates;
-import com.github.dewittsmith.gtm_powerlines.wire.WireInfo;
+import com.github.dewittsmith.gtm_powerlines.wire.WireStats;
 import com.tterrag.registrate.providers.ProviderType;
 import com.tterrag.registrate.util.entry.BlockEntityEntry;
 import com.tterrag.registrate.util.entry.BlockEntry;
@@ -60,7 +60,7 @@ public class GTMPowerlinesRegistries {
             for (var material : GTCEuAPI.materialManager.getRegisteredMaterials()) {
                 var stack = ChemicalHelper.get(TagPrefix.wireFine, material);
                 if (stack.isEmpty()) continue;
-                if (WireInfo.of(stack.getItem()).isPresent()) {
+                if (WireStats.of(stack.getItem()).isPresent()) {
                     tag.add(stack.getItem());
                 }
             }
