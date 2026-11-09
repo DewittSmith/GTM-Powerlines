@@ -28,8 +28,8 @@ public final class WireGeometry {
         return d + (8.0 * sag * sag * horizontalD2) / (3.0 * d2 * d);
     }
 
-    public static int samples(double length) {
-        return Math.max(2, (int) Math.ceil(length)) + 1;
+    public static float samples(double length) {
+        return (float) Math.max(1, length / (14.0 / 16.0));
     }
 
     public static Vec3 sample(Vec3 a, Vec3 b, double t, double sag) {

@@ -1,5 +1,8 @@
 package com.github.dewittsmith.gtm_powerlines.renderer;
 
+import com.github.dewittsmith.gtm_powerlines.wire.WireGeometry;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -8,10 +11,6 @@ import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
-
-import com.github.dewittsmith.gtm_powerlines.wire.WireGeometry;
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 
 public class PowerlineWireRenderer {
 
@@ -40,9 +39,7 @@ public class PowerlineWireRenderer {
                 .apply(WIRE_TEXTURE);
         PoseStack.Pose pose = poseStack.last();
 
-        double sag = WireGeometry.sag(start, end);
-        double length = WireGeometry.length(start, end, sag);
-        int samples = WireGeometry.samples(length);
+        var sag = WireGeometry.sag(start, end);
 
         Vec3 pPos = WireGeometry.sample(start, end, 0, sag);
         Vec3 pFwd = WireGeometry.sampleTangent(start, end, 0, sag).normalize();
@@ -66,8 +63,15 @@ public class PowerlineWireRenderer {
             quad(consumer, pose, pLD, pLU, pRU, pRD, argb, u0, v0, u1, cv1, light, pFwd.reverse());
         }
 
-        for (int i = 1; i < samples; i++) {
-            double t = i / (samples - 1.0);
+        var length = WireGeometry.length(start, end, sag);
+        var samples = WireGeometry.samples(length);
+
+        var t = 0f;
+        final var dt = 1 / samples;
+        while (samples > 0) {
+            var step = Math.min(1, samples);
+            t += dt * step;
+
             Vec3 pos = WireGeometry.sample(start, end, t, sag);
             Vec3 fwd = WireGeometry.sampleTangent(start, end, t, sag).normalize();
             Vec3 ref = Math.abs(fwd.y) > 0.99 ? new Vec3(1, 0, 0) : new Vec3(0, 1, 0);
@@ -85,18 +89,21 @@ public class PowerlineWireRenderer {
             Vec3 nUp = up.add(pUp).normalize();
             Vec3 nRight = right.add(pRight).normalize();
 
+            var vEnd = v0 + (v1 - v0) * step;
             // top
-            quad(consumer, pose, pTL, cTL, cTR, pTR, argb, u0, v0, u1, v1, light, nUp);
+            quad(consumer, pose, pTL, cTL, cTR, pTR, argb, u0, v0, u1, vEnd, light, nUp);
             // right
-            quad(consumer, pose, pTR, cTR, cBR, pBR, argb, u0, v0, u1, v1, light, nRight);
+            quad(consumer, pose, pTR, cTR, cBR, pBR, argb, u0, v0, u1, vEnd, light, nRight);
             // bottom
-            quad(consumer, pose, pBR, cBR, cBL, pBL, argb, u0, v0, u1, v1, light, nUp.reverse());
+            quad(consumer, pose, pBR, cBR, cBL, pBL, argb, u0, v0, u1, vEnd, light, nUp.reverse());
             // left
-            quad(consumer, pose, pBL, cBL, cTL, pTL, argb, u0, v0, u1, v1, light, nRight.reverse());
+            quad(consumer, pose, pBL, cBL, cTL, pTL, argb, u0, v0, u1, vEnd, light, nRight.reverse());
 
             pPos = pos;
             pRight = right;
             pUp = up;
+
+            samples -= 1;
         }
 
         if (caps == Caps.END || caps == Caps.BOTH) {
@@ -116,8 +123,6 @@ public class PowerlineWireRenderer {
         PoseStack.Pose pose = poseStack.last();
 
         double sag = WireGeometry.sag(start, end);
-        double length = WireGeometry.length(start, end, sag);
-        int samples = WireGeometry.samples(length);
 
         float u0 = sprite.getU0(), v0 = sprite.getV0(), u1 = sprite.getU1(), v1 = sprite.getV1();
         float w = u1 - u0, h = v1 - v0;
@@ -143,8 +148,14 @@ public class PowerlineWireRenderer {
         Vec3 pTL = pPos.add(pOffset);
         Vec3 pTR = pPos.subtract(pOffset);
 
-        for (int i = 1; i < samples; i++) {
-            double t = i / (samples - 1.0);
+        var length = WireGeometry.length(start, end, sag);
+        var samples = WireGeometry.samples(length);
+
+        var t = 0f;
+        final var dt = 1 / samples;
+        while (samples > 0) {
+            var step = Math.min(1, samples);
+            t += dt * step;
 
             Vec3 pos = WireGeometry.sample(start, end, t, sag);
             Vec3 forward = WireGeometry.sampleTangent(start, end, t, sag).normalize();
@@ -162,10 +173,13 @@ public class PowerlineWireRenderer {
             Vec3 cTR = pos.subtract(offset);
             Vec3 normal = right.cross(forward).normalize();
 
-            quad(consumer, pose, pTL, cTL, cTR, pTR, argb, u0, v0, u1, v1, light, normal);
+            var vEnd = v0 + (v1 - v0) * step;
+            quad(consumer, pose, pTL, cTL, cTR, pTR, argb, u0, v0, u1, vEnd, light, normal);
 
             pTL = cTL;
             pTR = cTR;
+
+            samples -= 1;
         }
     }
 
