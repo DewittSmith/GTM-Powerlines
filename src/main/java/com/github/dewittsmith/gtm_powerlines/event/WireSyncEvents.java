@@ -1,5 +1,7 @@
 package com.github.dewittsmith.gtm_powerlines.event;
 
+import com.github.dewittsmith.gtm_powerlines.graph.PowerlineGraph;
+import com.github.dewittsmith.gtm_powerlines.graph.PowerlineNetwork;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -7,7 +9,6 @@ import net.minecraftforge.fml.common.Mod;
 
 import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
 import com.github.dewittsmith.gtm_powerlines.network.Net;
-import com.github.dewittsmith.gtm_powerlines.network.PowerlineNetwork;
 import com.github.dewittsmith.gtm_powerlines.network.WireFullSyncPacket;
 import com.github.dewittsmith.gtm_powerlines.wire.WireAttachment;
 import com.github.dewittsmith.gtm_powerlines.wire.WireCutSelection;
@@ -44,6 +45,6 @@ public final class WireSyncEvents {
         WireAttachment.clear(p);
         WireCutSelection.clear(p);
         var network = PowerlineNetwork.get(p.serverLevel());
-        Net.sendToPlayer(p, new WireFullSyncPacket(List.copyOf(network.all())));
+        Net.sendToPlayer(p, new WireFullSyncPacket(List.copyOf(network.getGraph().all())));
     }
 }

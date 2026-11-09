@@ -50,7 +50,7 @@ public class PowerlineInsulatorEnergy implements IEnergyContainer {
 
     @Override
     public long getEnergyCapacity() {
-        return 0;
+        return Long.MAX_VALUE;
     }
 
     @Override

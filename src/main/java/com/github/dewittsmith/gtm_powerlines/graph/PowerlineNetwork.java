@@ -1,21 +1,20 @@
 package com.github.dewittsmith.gtm_powerlines.graph;
 
+import com.github.dewittsmith.gtm_powerlines.network.Net;
+import com.github.dewittsmith.gtm_powerlines.network.WireDeltaPacket;
 import com.gregtechceu.gtceu.api.capability.forge.GTCapability;
-
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.Tag;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.util.Mth;
-import net.minecraft.world.level.saveddata.SavedData;
-
-import it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap;
+import com.gregtechceu.gtceu.common.pipelike.cable.EnergyNetHandler;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import lombok.Getter;
 import lombok.NonNull;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.Mth;
+import net.minecraft.world.level.saveddata.SavedData;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -29,7 +28,6 @@ public class PowerlineNetwork extends SavedData {
 
     private final ServerLevel level;
 
-    private final Long2LongOpenHashMap startToEnd = new Long2LongOpenHashMap();
     private final Long2ObjectMap<List<TransferPath>> paths = new Long2ObjectOpenHashMap<>();
 
     public PowerlineNetwork(PowerlineGraph graph, ServerLevel level) {
@@ -52,12 +50,6 @@ public class PowerlineNetwork extends SavedData {
 
     public boolean rebuildPath(BlockPos start, BlockPos end) {
         var key = start.asLong();
-
-        if (!startToEnd.containsKey(key)) {
-            startToEnd.put(key, end.asLong());
-            setDirty();
-        }
-
         var list = paths.computeIfAbsent(key, PowerlineNetwork::arrayFactory);
         for (var path : list) {
             if (path.getEnd().equals(end)) {
@@ -72,9 +64,11 @@ public class PowerlineNetwork extends SavedData {
     }
 
     public void rebuildPaths() {
-        for (var entry : startToEnd.long2LongEntrySet()) {
-            var path = new TransferPath(BlockPos.of(entry.getLongKey()), BlockPos.of(entry.getLongValue()));
-            rebuildPath(path.getStart(), path.getEnd());
+        for (var a : graph.allNodes()) {
+            for (var b : graph.allNodes()) {
+                if (a.equals(b)) continue;
+                rebuildPath(a, b);
+            }
         }
     }
 
@@ -95,7 +89,41 @@ public class PowerlineNetwork extends SavedData {
         return usedAmperes;
     }
 
+    public boolean connect(BlockPos start, Direction startDir, BlockPos end, Direction endDir, ResourceLocation wire) {
+        if (!graph.connect(start, startDir, end, endDir, wire)) return false;
+
+        var e = graph.getEdge(start, end).orElse(null);
+        Net.sendToDimension(level, new WireDeltaPacket(true, e));
+
+        setDirty();
+        rebuildPaths();
+        return true;
+    }
+
+    public boolean disconnect(BlockPos start, BlockPos end) {
+        if (!graph.disconnect(start, end)) return false;
+
+        var e = graph.getEdge(start, end).orElse(null);
+        Net.sendToDimension(level, new WireDeltaPacket(false, e));
+
+        setDirty();
+        rebuildPaths();
+        return true;
+    }
+
+    public List<PowerlineGraph.Edge> disconnectAll(BlockPos start) {
+        var result = graph.disconnectAll(start);
+
+        result.forEach(e -> Net.sendToDimension(level, new WireDeltaPacket(false, e)));
+
+        setDirty();
+        rebuildPaths();
+        return result;
+    }
+
     private long sendEnergyTo(BlockPos target, Direction side, long voltage, long amperage) {
+        target = target.relative(side.getOpposite());
+
         if (!level.isLoaded(target)) return 0L;
         var be = level.getBlockEntity(target);
         if (be == null) return 0L;
@@ -105,31 +133,14 @@ public class PowerlineNetwork extends SavedData {
 
     @Override
     public @NotNull CompoundTag save(@NotNull CompoundTag tag) {
-        tag = PowerlineGraph.serialize(graph, tag);
-
-        var list = new ListTag();
-        for (var entry : startToEnd.long2LongEntrySet()) {
-            var e = new CompoundTag();
-            e.putLong("start", entry.getLongKey());
-            e.putLong("end", entry.getLongValue());
-            list.add(e);
-        }
-
-        tag.put("startToEnd", list);
-        return tag;
+        return PowerlineGraph.serialize(graph, tag);
     }
 
     public static PowerlineNetwork load(ServerLevel level, CompoundTag tag) {
         var graph = PowerlineGraph.deserialize(tag);
         var result = new PowerlineNetwork(graph, level);
 
-        for (var raw : tag.getList("startToEnd", Tag.TAG_COMPOUND)) {
-            var t = (CompoundTag) raw;
-            var start = t.getLong("start");
-            var end = t.getLong("end");
-            result.startToEnd.put(start, end);
-        }
-
+        result.rebuildPaths();
         return result;
     }
 }

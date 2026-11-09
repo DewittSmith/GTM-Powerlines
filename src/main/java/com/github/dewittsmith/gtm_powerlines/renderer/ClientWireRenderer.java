@@ -1,5 +1,10 @@
 package com.github.dewittsmith.gtm_powerlines.renderer;
 
+import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
+import com.github.dewittsmith.gtm_powerlines.wire.ClientWires;
+import com.github.dewittsmith.gtm_powerlines.wire.WireGeometry;
+import com.github.dewittsmith.gtm_powerlines.wire.WireStats;
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.culling.Frustum;
@@ -11,13 +16,6 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-
-import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
-import com.github.dewittsmith.gtm_powerlines.network.PowerlineNetwork;
-import com.github.dewittsmith.gtm_powerlines.wire.ClientWires;
-import com.github.dewittsmith.gtm_powerlines.wire.WireGeometry;
-import com.github.dewittsmith.gtm_powerlines.wire.WireStats;
-import com.mojang.blaze3d.vertex.PoseStack;
 
 @Mod.EventBusSubscriber(modid = GTMPowerlines.MOD_ID, value = Dist.CLIENT)
 public final class ClientWireRenderer {
@@ -35,7 +33,7 @@ public final class ClientWireRenderer {
         var buffers = mc.renderBuffers().bufferSource();
         Frustum frustum = event.getFrustum();
 
-        for (PowerlineNetwork.Edge e : ClientWires.all()) {
+        for (var e : ClientWires.all()) {
             Vec3 a = WireGeometry.getAttachmentPoint(level, e.a()), b = WireGeometry.getAttachmentPoint(level, e.b());
             if (!frustum.isVisible(new AABB(a, b).inflate(1.0))) continue;
 

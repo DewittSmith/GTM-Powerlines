@@ -1,7 +1,11 @@
 package com.github.dewittsmith.gtm_powerlines.event;
 
+import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
+import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
+import com.github.dewittsmith.gtm_powerlines.graph.PowerlineGraph;
+import com.github.dewittsmith.gtm_powerlines.wire.WireCutSelection;
+import com.github.dewittsmith.gtm_powerlines.wire.WireTargeting;
 import com.gregtechceu.gtceu.data.recipe.CustomTags;
-
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -18,14 +22,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
 
-import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
-import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
-import com.github.dewittsmith.gtm_powerlines.network.PowerlineNetwork;
-import com.github.dewittsmith.gtm_powerlines.wire.WireCutSelection;
-import com.github.dewittsmith.gtm_powerlines.wire.WireTargeting;
-
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -54,7 +51,7 @@ public class WireCutterEvents {
         if (level.getBlockEntity(event.getPos()) instanceof PowerlineInsulatorBlockEntity be) {
             markHandled(player, level);
             if (player.isShiftKeyDown()) {
-                List<PowerlineNetwork.Edge> removed = be.disconnectAll();
+                var removed = be.disconnectAll();
                 removed.forEach(e -> refund(player, e));
                 WireCutSelection.clear(player);
                 message(player, "message.gtm_powerlines.cutter.all_wires_removed");
@@ -107,7 +104,7 @@ public class WireCutterEvents {
             return true;
         }
 
-        PowerlineNetwork.Edge edge = hit.edge();
+        var edge = hit.edge();
         BlockPos target = edge.other(be.getBlockPos());
         if (be.disconnectFrom(target)) {
             refund(player, edge);
@@ -117,7 +114,7 @@ public class WireCutterEvents {
         return true;
     }
 
-    private static void refund(Player player, PowerlineNetwork.Edge edge) {
+    private static void refund(Player player, PowerlineGraph.Edge edge) {
         if (player.getAbilities().instabuild) return;
         Item item = ForgeRegistries.ITEMS.getValue(edge.wire());
         if (item != null) player.getInventory().placeItemBackInInventory(new ItemStack(item, edge.wireCount()));

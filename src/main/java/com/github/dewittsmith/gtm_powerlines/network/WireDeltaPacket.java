@@ -1,17 +1,16 @@
 package com.github.dewittsmith.gtm_powerlines.network;
 
+import com.github.dewittsmith.gtm_powerlines.graph.PowerlineGraph;
+import com.github.dewittsmith.gtm_powerlines.wire.ClientWires;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
 
-import com.github.dewittsmith.gtm_powerlines.wire.ClientWires;
-
 import java.util.function.Supplier;
 
-import static com.github.dewittsmith.gtm_powerlines.network.PowerlineNetwork.Edge;
 
-public record WireDeltaPacket(boolean add, Edge edge) {
+public record WireDeltaPacket(boolean add, PowerlineGraph.Edge edge) {
 
     public static void encode(WireDeltaPacket p, FriendlyByteBuf buf) {
         buf.writeBoolean(p.add);

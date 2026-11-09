@@ -1,5 +1,10 @@
 package com.github.dewittsmith.gtm_powerlines.graph;
 
+import com.github.dewittsmith.gtm_powerlines.wire.WireStats;
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import it.unimi.dsi.fastutil.longs.LongSet;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.SectionPos;
@@ -10,15 +15,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.ChunkPos;
 
-import com.github.dewittsmith.gtm_powerlines.wire.WireStats;
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
-import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
-import it.unimi.dsi.fastutil.longs.LongSet;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public class PowerlineGraph {
 
@@ -64,6 +61,7 @@ public class PowerlineGraph {
         }
     }
 
+    private final Set<BlockPos> nodes = new HashSet<>();
     private final List<Edge> edges = new ArrayList<>();
     private final Long2ObjectMap<List<Edge>> byPos = new Long2ObjectOpenHashMap<>();
     private final Long2ObjectMap<List<Edge>> byChunk = new Long2ObjectOpenHashMap<>();
@@ -128,6 +126,9 @@ public class PowerlineGraph {
         for (var chunk : getChunksCrossed(edge.a, edge.b)) {
             byChunk.computeIfAbsent(chunk, PowerlineGraph::arrayFactory).add(edge);
         }
+
+        nodes.add(edge.a);
+        nodes.add(edge.b);
     }
 
     private void remove(Edge edge) {
@@ -140,8 +141,16 @@ public class PowerlineGraph {
         }
     }
 
+    public Set<BlockPos> allNodes() {
+        return nodes;
+    }
+
     public List<Edge> all() {
         return edges;
+    }
+
+    public Optional<Edge> getEdge(BlockPos start, BlockPos end) {
+        return byPos.getOrDefault(start.asLong(), Collections.emptyList()).stream().filter(x -> x.a.equals(end) || x.b.equals(end)).findFirst();
     }
 
     public List<Edge> atBlock(int x, int y, int z) {
