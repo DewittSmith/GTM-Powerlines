@@ -79,8 +79,8 @@ public class PowerlineNetwork extends SavedData {
     }
 
     public boolean connect(ServerLevel level, BlockPos x, BlockPos y, ResourceLocation wire) {
-        Edge e = Edge.of(x, y, wire);
         if (x.equals(y) || at(x).stream().anyMatch(o -> o.other(x).equals(y))) return false;
+        var e = Edge.of(x, y, wire);
         add(e);
         setDirty();
         setTransferDirty();
@@ -102,16 +102,16 @@ public class PowerlineNetwork extends SavedData {
     }
 
     public List<Edge> disconnectAll(ServerLevel level, BlockPos pos) {
-        List<Edge> removed = new ArrayList<>(at(pos));
+        var removed = new ArrayList<>(at(pos));
         for (Edge e : removed) {
             remove(e);
             Net.sendToDimension(level, new WireDeltaPacket(false, e));
         }
+
         if (!removed.isEmpty()) {
             setDirty();
             setTransferDirty();
         }
-
         return removed;
     }
 
@@ -243,7 +243,7 @@ public class PowerlineNetwork extends SavedData {
         for (Tag raw : tag.getList("edges", Tag.TAG_COMPOUND)) {
             CompoundTag t = (CompoundTag) raw;
             n.add(Edge.of(BlockPos.of(t.getLong("a")), BlockPos.of(t.getLong("b")),
-                    new ResourceLocation(t.getString("wire"))));
+                    ResourceLocation.parse(t.getString("wire"))));
         }
 
         return n;

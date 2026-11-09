@@ -80,7 +80,7 @@ public class GTMPowerlines {
     }
 
     public static ResourceLocation id(String path) {
-        return new ResourceLocation(MOD_ID, path);
+        return ResourceLocation.fromNamespaceAndPath(MOD_ID, path);
     }
 
     private void addMaterialRegistries(MaterialRegistryEvent event) {

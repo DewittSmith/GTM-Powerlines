@@ -67,7 +67,7 @@ public class PowerlineInsulatorProvider implements IBlockComponentProvider, ISer
         var helper = IElementHelper.get();
         for (var raw : data.getList("Wires", Tag.TAG_COMPOUND)) {
             var t = (CompoundTag) raw;
-            var item = ForgeRegistries.ITEMS.getValue(new ResourceLocation(t.getString("Wire")));
+            var item = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse(t.getString("Wire")));
             if (item == null) continue;
             var stack = new ItemStack(item);
 
@@ -78,6 +78,6 @@ public class PowerlineInsulatorProvider implements IBlockComponentProvider, ISer
 
     @Override
     public ResourceLocation getUid() {
-        return new ResourceLocation(GTMPowerlines.MOD_ID, "powerline_insulator_info");
+        return GTMPowerlines.id("powerline_insulator_info");
     }
 }

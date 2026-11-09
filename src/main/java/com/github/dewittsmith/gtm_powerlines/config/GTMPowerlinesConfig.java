@@ -6,7 +6,6 @@ import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
 import dev.toma.configuration.Configuration;
 import dev.toma.configuration.config.Config;
 import dev.toma.configuration.config.Configurable;
-import dev.toma.configuration.config.UpdateRestrictions;
 import dev.toma.configuration.config.format.ConfigFormats;
 
 import java.util.Arrays;

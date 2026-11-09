@@ -17,7 +17,7 @@ public final class Net {
     private static final String PROTOCOL = "1";
 
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
-            new ResourceLocation(GTMPowerlines.MOD_ID, "main"),
+            ResourceLocation.fromNamespaceAndPath(GTMPowerlines.MOD_ID, "main"),
             () -> PROTOCOL, PROTOCOL::equals, PROTOCOL::equals);
 
     private static boolean registered = false;

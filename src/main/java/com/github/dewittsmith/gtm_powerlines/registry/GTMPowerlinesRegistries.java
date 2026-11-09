@@ -1,13 +1,5 @@
 package com.github.dewittsmith.gtm_powerlines.registry;
 
-import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
-import com.github.dewittsmith.gtm_powerlines.block.PowerlineInsulatorBlock;
-import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
-import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
-import com.github.dewittsmith.gtm_powerlines.machines.PowerlineTransformerMachine;
-import com.github.dewittsmith.gtm_powerlines.util.CoilEfficiency;
-import com.github.dewittsmith.gtm_powerlines.util.PowerlinePredicates;
-import com.github.dewittsmith.gtm_powerlines.wire.WireInfo;
 import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.api.GTCEuAPI;
 import com.gregtechceu.gtceu.api.GTValues;
@@ -20,12 +12,9 @@ import com.gregtechceu.gtceu.api.pattern.MultiblockShapeInfo;
 import com.gregtechceu.gtceu.common.data.GTMachines;
 import com.gregtechceu.gtceu.common.data.GTMaterials;
 import com.gregtechceu.gtceu.common.data.GTRecipeTypes;
-import com.tterrag.registrate.providers.ProviderType;
-import com.tterrag.registrate.util.entry.BlockEntityEntry;
-import com.tterrag.registrate.util.entry.BlockEntry;
+
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
@@ -34,11 +23,20 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SoundType;
-import net.minecraftforge.registries.ForgeRegistries;
+
+import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
+import com.github.dewittsmith.gtm_powerlines.block.PowerlineInsulatorBlock;
+import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
+import com.github.dewittsmith.gtm_powerlines.machines.PowerlineTransformerMachine;
+import com.github.dewittsmith.gtm_powerlines.util.CoilEfficiency;
+import com.github.dewittsmith.gtm_powerlines.util.PowerlinePredicates;
+import com.github.dewittsmith.gtm_powerlines.wire.WireInfo;
+import com.tterrag.registrate.providers.ProviderType;
+import com.tterrag.registrate.util.entry.BlockEntityEntry;
+import com.tterrag.registrate.util.entry.BlockEntry;
 
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.stream.Collectors;
 
 import static com.github.dewittsmith.gtm_powerlines.GTMPowerlines.POWERLINE_CREATIVE_TAB;
 import static com.github.dewittsmith.gtm_powerlines.GTMPowerlines.POWERLINE_REGISTRATE;
@@ -51,7 +49,8 @@ public class GTMPowerlinesRegistries {
 
     public static final TagKey<Block> WIRE_PASSTHROUGH = BlockTags.create(GTMPowerlines.id("wire_passthrough"));
 
-    public static final TagKey<Block> INSULATOR_SURFACE_IGNORE = BlockTags.create(GTMPowerlines.id("insulator_surface_ignore"));
+    public static final TagKey<Block> INSULATOR_SURFACE_IGNORE = BlockTags
+            .create(GTMPowerlines.id("insulator_surface_ignore"));
 
     static {
         POWERLINE_REGISTRATE.creativeModeTab(() -> POWERLINE_CREATIVE_TAB);
@@ -72,8 +71,7 @@ public class GTMPowerlinesRegistries {
             .block("powerline_insulator", PowerlineInsulatorBlock::new)
             .initialProperties(() -> Blocks.IRON_BLOCK)
             .properties(p -> p.noOcclusion().strength(1.5f, 6f).sound(SoundType.GLASS))
-            .blockstate((ctx, prov) -> {
-            })
+            .blockstate((ctx, prov) -> {})
             .simpleItem()
             .register();
 
@@ -170,6 +168,5 @@ public class GTMPowerlinesRegistries {
             })
             .register();
 
-    public static void init() {
-    }
+    public static void init() {}
 }
