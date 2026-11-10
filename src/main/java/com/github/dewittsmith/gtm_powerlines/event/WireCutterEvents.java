@@ -1,11 +1,7 @@
 package com.github.dewittsmith.gtm_powerlines.event;
 
-import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
-import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
-import com.github.dewittsmith.gtm_powerlines.graph.PowerlineGraph;
-import com.github.dewittsmith.gtm_powerlines.wire.WireCutSelection;
-import com.github.dewittsmith.gtm_powerlines.wire.WireTargeting;
 import com.gregtechceu.gtceu.data.recipe.CustomTags;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -21,6 +17,12 @@ import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
+
+import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
+import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
+import com.github.dewittsmith.gtm_powerlines.graph.PowerlineGraph;
+import com.github.dewittsmith.gtm_powerlines.wire.WireCutSelection;
+import com.github.dewittsmith.gtm_powerlines.wire.WireTargeting;
 
 import java.util.HashMap;
 import java.util.Map;

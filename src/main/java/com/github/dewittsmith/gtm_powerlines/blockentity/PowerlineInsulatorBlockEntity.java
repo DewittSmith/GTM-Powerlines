@@ -1,18 +1,8 @@
 package com.github.dewittsmith.gtm_powerlines.blockentity;
 
-import com.github.dewittsmith.gtm_powerlines.block.PowerlineInsulatorBlock;
-import com.github.dewittsmith.gtm_powerlines.capabilities.PowerlineInsulatorEnergy;
-import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
-import com.github.dewittsmith.gtm_powerlines.graph.PowerlineGraph;
-import com.github.dewittsmith.gtm_powerlines.graph.PowerlineNetwork;
-import com.github.dewittsmith.gtm_powerlines.machines.PowerlineTransformerMachine;
-import com.github.dewittsmith.gtm_powerlines.registry.GTMPowerlinesRegistries;
-import com.github.dewittsmith.gtm_powerlines.util.BlockUtils;
-import com.github.dewittsmith.gtm_powerlines.wire.WireConnectionResult;
-import com.github.dewittsmith.gtm_powerlines.wire.WireStats;
 import com.gregtechceu.gtceu.api.capability.IEnergyContainer;
 import com.gregtechceu.gtceu.api.capability.forge.GTCapability;
-import lombok.Getter;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -25,10 +15,23 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
+
+import com.github.dewittsmith.gtm_powerlines.block.PowerlineInsulatorBlock;
+import com.github.dewittsmith.gtm_powerlines.capabilities.PowerlineInsulatorEnergy;
+import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
+import com.github.dewittsmith.gtm_powerlines.graph.PowerlineGraph;
+import com.github.dewittsmith.gtm_powerlines.graph.PowerlineNetwork;
+import com.github.dewittsmith.gtm_powerlines.machines.PowerlineTransformerMachine;
+import com.github.dewittsmith.gtm_powerlines.registry.GTMPowerlinesRegistries;
+import com.github.dewittsmith.gtm_powerlines.util.BlockUtils;
+import com.github.dewittsmith.gtm_powerlines.wire.WireConnectionResult;
+import com.github.dewittsmith.gtm_powerlines.wire.WireStats;
+import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nullable;
 import java.util.List;
+
+import javax.annotation.Nullable;
 
 public class PowerlineInsulatorBlockEntity extends BlockEntity {
 

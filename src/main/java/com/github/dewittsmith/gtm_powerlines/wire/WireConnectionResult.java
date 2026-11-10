@@ -13,8 +13,10 @@ public record WireConnectionResult(Status status, int value, PowerlineGraph.Edge
     }
 
     public static final WireConnectionResult SAME_BLOCK = new WireConnectionResult(Status.SAME_BLOCK, 0, null);
-    public static final WireConnectionResult ALREADY_CONNECTED = new WireConnectionResult(Status.ALREADY_CONNECTED, 0, null);
-    public static final WireConnectionResult TOO_MANY_CONNECTIONS = new WireConnectionResult(Status.TOO_MANY_CONNECTIONS, 0, null);
+    public static final WireConnectionResult ALREADY_CONNECTED = new WireConnectionResult(Status.ALREADY_CONNECTED, 0,
+            null);
+    public static final WireConnectionResult TOO_MANY_CONNECTIONS = new WireConnectionResult(
+            Status.TOO_MANY_CONNECTIONS, 0, null);
 
     public static WireConnectionResult success(PowerlineGraph.Edge edge) {
         return new WireConnectionResult(Status.SUCCESS, 0, edge);

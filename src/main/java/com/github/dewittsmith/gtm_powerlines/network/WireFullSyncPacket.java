@@ -1,12 +1,13 @@
 package com.github.dewittsmith.gtm_powerlines.network;
 
-import com.github.dewittsmith.gtm_powerlines.graph.PowerlineGraph;
-import com.github.dewittsmith.gtm_powerlines.wire.ClientWires;
 import net.minecraft.core.Direction;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
+
+import com.github.dewittsmith.gtm_powerlines.graph.PowerlineGraph;
+import com.github.dewittsmith.gtm_powerlines.wire.ClientWires;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,6 +42,7 @@ public record WireFullSyncPacket(List<PowerlineGraph.Edge> edges) {
     }
 
     public static PowerlineGraph.Edge readEdge(FriendlyByteBuf buf) {
-        return PowerlineGraph.Edge.of(buf.readBlockPos(), buf.readEnum(Direction.class), buf.readBlockPos(), buf.readEnum(Direction.class), buf.readResourceLocation());
+        return PowerlineGraph.Edge.of(buf.readBlockPos(), buf.readEnum(Direction.class), buf.readBlockPos(),
+                buf.readEnum(Direction.class), buf.readResourceLocation());
     }
 }

@@ -1,10 +1,5 @@
 package com.github.dewittsmith.gtm_powerlines.graph;
 
-import com.github.dewittsmith.gtm_powerlines.wire.WireStats;
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
-import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
-import it.unimi.dsi.fastutil.longs.LongSet;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.SectionPos;
@@ -14,6 +9,12 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.ChunkPos;
+
+import com.github.dewittsmith.gtm_powerlines.wire.WireStats;
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.util.*;
 
@@ -50,6 +51,9 @@ public class PowerlineGraph {
 
         public static int wireCount(BlockPos a, Direction dirA, BlockPos b, Direction dirB) {
             return Mth.ceil(length(a, dirA, b, dirB));
+        }
+
+        public void uninsulateCable() {
         }
 
         public int wireCount() {
@@ -150,7 +154,8 @@ public class PowerlineGraph {
     }
 
     public Optional<Edge> getEdge(BlockPos start, BlockPos end) {
-        return byPos.getOrDefault(start.asLong(), Collections.emptyList()).stream().filter(x -> x.a.equals(end) || x.b.equals(end)).findFirst();
+        return byPos.getOrDefault(start.asLong(), Collections.emptyList()).stream()
+                .filter(x -> x.a.equals(end) || x.b.equals(end)).findFirst();
     }
 
     public List<Edge> atBlock(int x, int y, int z) {

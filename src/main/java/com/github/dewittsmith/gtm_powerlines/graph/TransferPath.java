@@ -14,10 +14,12 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.PriorityQueue;
 
+import javax.annotation.Nullable;
+
 public class TransferPath {
 
     public record Edge(BlockPos a, Direction dirA, BlockPos b, Direction dirB, float loss, long voltage, long amperage,
-                       boolean isCable) {}
+                       boolean isCable, PowerlineGraph.Edge graphEdge) {}
 
     private record PathEntry(BlockPos pos, PowerlineGraph.Edge edge, float totalLoss) {}
 
@@ -36,6 +38,11 @@ public class TransferPath {
     public TransferPath(BlockPos start, BlockPos end) {
         this.start = start;
         this.end = end;
+    }
+
+    public @Nullable Edge lastEdge() {
+        if (!hasPath()) return null;
+        return edges.get(edges.size() - 1);
     }
 
     public boolean hasPath() {
@@ -108,7 +115,8 @@ public class TransferPath {
                     edge.loss(),
                     props.getVoltage(),
                     props.getAmperage(),
-                    insulation.isCable));
+                    insulation.isCable,
+                    edge));
             totalLoss += edge.loss();
             current = backtracks.get(current);
         }

@@ -1,7 +1,8 @@
 package com.github.dewittsmith.gtm_powerlines.wire;
 
-import com.github.dewittsmith.gtm_powerlines.graph.PowerlineGraph;
 import net.minecraft.core.BlockPos;
+
+import com.github.dewittsmith.gtm_powerlines.graph.PowerlineGraph;
 
 import java.util.*;
 

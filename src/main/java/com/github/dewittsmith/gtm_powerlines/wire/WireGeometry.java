@@ -1,6 +1,7 @@
 package com.github.dewittsmith.gtm_powerlines.wire;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -48,18 +49,21 @@ public final class WireGeometry {
     }
 
     public static Vec3 getAttachmentPoint(BlockEntity be) {
-        final float OFFSET = 6f / 16f;
-
         if (be == null) return Vec3.ZERO;
-        var pos = be.getBlockPos().getCenter();
         var dir = be.getBlockState().getValue(PowerlineInsulatorBlock.DIRECTION);
-        return pos.add(dir.getStepX() * OFFSET, dir.getStepY() * OFFSET, dir.getStepZ() * OFFSET);
+        return getAttachmentPoint(be.getBlockPos(), dir);
     }
 
     public static Vec3 getAttachmentPoint(Level level, BlockPos pos) {
         if (!level.isLoaded(pos)) return pos.getCenter();
         var be = level.getBlockEntity(pos);
         return WireGeometry.getAttachmentPoint(be);
+    }
+
+    public static Vec3 getAttachmentPoint(BlockPos pos, Direction direction) {
+        final float OFFSET = 6f / 16f;
+        return pos.getCenter().add(direction.getStepX() * OFFSET, direction.getStepY() * OFFSET,
+                direction.getStepZ() * OFFSET);
     }
 
     public static double distanceToSegment(Vec3 p, Vec3 a, Vec3 b) {

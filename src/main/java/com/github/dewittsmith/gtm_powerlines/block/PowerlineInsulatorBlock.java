@@ -1,5 +1,8 @@
 package com.github.dewittsmith.gtm_powerlines.block;
 
+import com.gregtechceu.gtceu.api.capability.forge.GTCapability;
+import com.gregtechceu.gtceu.common.blockentity.CableBlockEntity;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
@@ -57,7 +60,7 @@ public class PowerlineInsulatorBlock extends Block implements EntityBlock {
         var facing = ctx.getClickedFace();
         var supportPos = ctx.getClickedPos().relative(facing.getOpposite());
 
-        if (canSupportCenter(level, supportPos, facing)) {
+        if (canAttachTo(level, supportPos, facing)) {
             return defaultBlockState().setValue(DIRECTION, facing);
         }
 
@@ -68,7 +71,14 @@ public class PowerlineInsulatorBlock extends Block implements EntityBlock {
     public boolean canSurvive(BlockState state, LevelReader level, BlockPos pos) {
         var facing = state.getValue(DIRECTION);
         var supportPos = pos.relative(facing.getOpposite());
-        return canSupportCenter(level, supportPos, facing);
+        return canAttachTo(level, supportPos, facing);
+    }
+
+    private boolean canAttachTo(LevelReader level, BlockPos supportPos, Direction facing) {
+        if (canSupportCenter(level, supportPos, facing)) return true;
+        var support = level.getBlockEntity(supportPos);
+        return support instanceof CableBlockEntity &&
+                support.getCapability(GTCapability.CAPABILITY_ENERGY_CONTAINER, facing).isPresent();
     }
 
     @Override
