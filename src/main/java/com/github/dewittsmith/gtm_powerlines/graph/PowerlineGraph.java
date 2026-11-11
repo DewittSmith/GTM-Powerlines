@@ -1,5 +1,8 @@
 package com.github.dewittsmith.gtm_powerlines.graph;
 
+import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
+import com.github.dewittsmith.gtm_powerlines.wire.WireStats;
+import it.unimi.dsi.fastutil.longs.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.SectionPos;
@@ -10,12 +13,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.ChunkPos;
 
-import com.github.dewittsmith.gtm_powerlines.wire.WireStats;
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
-import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
-import it.unimi.dsi.fastutil.longs.LongSet;
-
+import javax.annotation.Nullable;
 import java.util.*;
 
 public class PowerlineGraph {
@@ -53,9 +51,6 @@ public class PowerlineGraph {
             return Mth.ceil(length(a, dirA, b, dirB));
         }
 
-        public void uninsulateCable() {
-        }
-
         public int wireCount() {
             return wireCount(a, dirA, b, dirB);
         }
@@ -63,10 +58,13 @@ public class PowerlineGraph {
         public BlockPos other(BlockPos p) {
             return p.equals(a) ? b : a;
         }
+
+        public Direction dirAt(BlockPos p) {
+            return p.equals(a) ? dirA : dirB;
+        }
     }
 
-    private final Set<BlockPos> nodes = new HashSet<>();
-    private final List<Edge> edges = new ArrayList<>();
+    private final Set<Edge> edges = new LinkedHashSet<>();
     private final Long2ObjectMap<List<Edge>> byPos = new Long2ObjectOpenHashMap<>();
     private final Long2ObjectMap<List<Edge>> byChunk = new Long2ObjectOpenHashMap<>();
 
@@ -122,48 +120,39 @@ public class PowerlineGraph {
         return result;
     }
 
-    private void add(Edge edge) {
+    public boolean add(Edge edge) {
+        if (edge.a.equals(edge.b) || getEdge(edge.a, edge.b).isPresent()) return false;
         edges.add(edge);
         byPos.computeIfAbsent(edge.a.asLong(), PowerlineGraph::arrayFactory).add(edge);
         byPos.computeIfAbsent(edge.b.asLong(), PowerlineGraph::arrayFactory).add(edge);
-
         for (var chunk : getChunksCrossed(edge.a, edge.b)) {
             byChunk.computeIfAbsent(chunk, PowerlineGraph::arrayFactory).add(edge);
         }
-
-        nodes.add(edge.a);
-        nodes.add(edge.b);
+        return true;
     }
 
     private void remove(Edge edge) {
         edges.remove(edge);
-        byPos.computeIfAbsent(edge.a.asLong(), PowerlineGraph::arrayFactory).remove(edge);
-        byPos.computeIfAbsent(edge.b.asLong(), PowerlineGraph::arrayFactory).remove(edge);
-
+        removeFromBucket(byPos, edge.a.asLong(), edge);
+        removeFromBucket(byPos, edge.b.asLong(), edge);
         for (var chunk : getChunksCrossed(edge.a, edge.b)) {
-            byChunk.computeIfAbsent(chunk, PowerlineGraph::arrayFactory).remove(edge);
+            removeFromBucket(byChunk, chunk, edge);
         }
     }
 
-    public Set<BlockPos> allNodes() {
-        return nodes;
+    private static void removeFromBucket(Long2ObjectMap<List<Edge>> map, long key, Edge edge) {
+        var bucket = map.get(key);
+        if (bucket == null) return;
+        bucket.remove(edge);
+        if (bucket.isEmpty()) map.remove(key);
     }
 
-    public List<Edge> all() {
-        return edges;
+    public Collection<Edge> all() {
+        return Collections.unmodifiableCollection(edges);
     }
 
-    public Optional<Edge> getEdge(BlockPos start, BlockPos end) {
-        return byPos.getOrDefault(start.asLong(), Collections.emptyList()).stream()
-                .filter(x -> x.a.equals(end) || x.b.equals(end)).findFirst();
-    }
-
-    public List<Edge> atBlock(int x, int y, int z) {
-        return byPos.getOrDefault(BlockPos.asLong(x, y, z), Collections.emptyList());
-    }
-
-    public List<Edge> atBlock(BlockPos pos) {
-        return atBlock(pos.getX(), pos.getY(), pos.getZ());
+    public Long2ObjectMap<List<Edge>> byChunk() {
+        return Long2ObjectMaps.unmodifiable(byChunk);
     }
 
     public List<Edge> atChunk(int x, int z) {
@@ -174,37 +163,40 @@ public class PowerlineGraph {
         return atChunk(pos.x, pos.z);
     }
 
-    public boolean connect(BlockPos a, Direction dirA, BlockPos b, Direction dirB, ResourceLocation wire) {
-        if (a.equals(b) || atBlock(a).stream().anyMatch(e -> e.other(a).equals(b))) return false;
-        add(Edge.of(a, dirA, b, dirB, wire));
-        return true;
+    public Optional<Edge> getEdge(BlockPos start, BlockPos end) {
+        for (var edge : atBlock(start)) {
+            if (edge.other(start).equals(end)) return Optional.of(edge);
+        }
+        return Optional.empty();
     }
 
-    public boolean disconnect(BlockPos a, BlockPos b) {
-        for (var edge : atBlock(a)) {
-            if (edge.other(a).equals(b)) {
-                remove(edge);
-                return true;
-            }
-        }
-        return false;
+    public List<Edge> atBlock(BlockPos pos) {
+        return byPos.getOrDefault(pos.asLong(), Collections.emptyList());
+    }
+
+    public boolean connect(BlockPos a, Direction dirA, BlockPos b, Direction dirB, ResourceLocation wire) {
+        return add(Edge.of(a, dirA, b, dirB, wire));
+    }
+
+    public @Nullable Edge disconnect(BlockPos a, BlockPos b) {
+        var edge = getEdge(a, b).orElse(null);
+        if (edge != null) remove(edge);
+        return edge;
     }
 
     public List<Edge> disconnectAll(BlockPos pos) {
-        var bucket = atBlock(pos);
-        if (bucket.isEmpty()) return Collections.emptyList();
-
-        var removed = new ArrayList<>(bucket);
-        for (var edge : removed) {
-            remove(edge);
-        }
-
+        var removed = List.copyOf(atBlock(pos));
+        removed.forEach(this::remove);
         return removed;
     }
 
-    public static CompoundTag serialize(PowerlineGraph graph, CompoundTag tag) {
-        if (graph == null) return tag;
+    public void clear() {
+        edges.clear();
+        byPos.clear();
+        byChunk.clear();
+    }
 
+    public static CompoundTag serialize(PowerlineGraph graph, CompoundTag tag) {
         var list = new ListTag();
         for (var edge : graph.edges) {
             var e = new CompoundTag();
@@ -224,12 +216,17 @@ public class PowerlineGraph {
         var graph = new PowerlineGraph();
         for (var raw : tag.getList("edges", Tag.TAG_COMPOUND)) {
             var t = (CompoundTag) raw;
-            graph.add(Edge.of(
+            var edge = Edge.of(
                     BlockPos.of(t.getLong("a")),
                     Direction.byName(t.getString("dirA")),
                     BlockPos.of(t.getLong("b")),
                     Direction.byName(t.getString("dirB")),
-                    ResourceLocation.parse(t.getString("wire"))));
+                    ResourceLocation.parse(t.getString("wire")));
+            if (edge.stats() == null) {
+                GTMPowerlines.LOGGER.warn("Dropping powerline with unknown wire {}", edge.wire());
+                continue;
+            }
+            graph.add(edge);
         }
         return graph;
     }

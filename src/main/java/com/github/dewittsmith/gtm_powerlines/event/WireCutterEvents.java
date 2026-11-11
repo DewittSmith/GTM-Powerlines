@@ -98,7 +98,7 @@ public class WireCutterEvents {
             return true;
         }
 
-        var hit = WireTargeting.find(level, be.getBlockPos(), be.getConnections(), player.getEyePosition(),
+        var hit = WireTargeting.find(be.getBlockPos(), be.getConnections(), player.getEyePosition(),
                 player.getViewVector(1f));
         if (hit == null) {
             WireCutSelection.clear(player);

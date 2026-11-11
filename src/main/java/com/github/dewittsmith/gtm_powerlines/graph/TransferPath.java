@@ -1,13 +1,15 @@
 package com.github.dewittsmith.gtm_powerlines.graph;
 
+import com.gregtechceu.gtceu.api.capability.GTCapabilityHelper;
+import com.gregtechceu.gtceu.api.capability.IEnergyContainer;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.util.Mth;
+import net.minecraft.world.level.Level;
 
-import it.unimi.dsi.fastutil.longs.Long2FloatOpenHashMap;
-import it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap;
+import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
-import lombok.Getter;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -16,111 +18,60 @@ import java.util.PriorityQueue;
 
 import javax.annotation.Nullable;
 
-public class TransferPath {
+public record TransferPath(BlockPos targetPos, Direction targetFacing, PowerlineGraph.Edge[] path, int distance,
+                           long maxLoss) {
 
-    public record Edge(BlockPos a, Direction dirA, BlockPos b, Direction dirB, float loss, long voltage, long amperage,
-                       boolean isCable, PowerlineGraph.Edge graphEdge) {}
+    private record Visit(BlockPos pos, int distance) {}
 
-    private record PathEntry(BlockPos pos, PowerlineGraph.Edge edge, float totalLoss) {}
-
-    @Getter
-    private final BlockPos start;
-
-    @Getter
-    private final BlockPos end;
-
-    @Getter
-    private final List<Edge> edges = new ArrayList<>();
-
-    @Getter
-    private float totalLoss = 0f;
-
-    public TransferPath(BlockPos start, BlockPos end) {
-        this.start = start;
-        this.end = end;
+    public @Nullable IEnergyContainer getHandler(Level level) {
+        var pos = targetPos.relative(targetFacing);
+        if (!level.isLoaded(pos)) return null;
+        return GTCapabilityHelper.getEnergyContainer(level, pos, targetFacing.getOpposite());
     }
 
-    public @Nullable Edge lastEdge() {
-        if (!hasPath()) return null;
-        return edges.get(edges.size() - 1);
-    }
+    public static List<TransferPath> walk(PowerlineGraph graph, BlockPos source) {
+        var distances = new Long2IntOpenHashMap();
+        distances.defaultReturnValue(Integer.MAX_VALUE);
+        var parents = new Long2ObjectOpenHashMap<PowerlineGraph.Edge>();
+        var reached = new ArrayList<BlockPos>();
 
-    public boolean hasPath() {
-        return !edges.isEmpty();
-    }
-
-    public boolean rebuild(PowerlineGraph graph) {
-        edges.clear();
-        totalLoss = 0f;
-
-        var atStart = graph.atBlock(start);
-        if (atStart.isEmpty()) return false;
-
-        var atEnd = graph.atBlock(end);
-        if (atEnd.isEmpty()) return false;
-
-        var visited = new LongOpenHashSet();
-        var distances = new Long2FloatOpenHashMap();
-        var backtracks = new Long2LongOpenHashMap();
-        var backtrackEdges = new Long2ObjectOpenHashMap<PowerlineGraph.Edge>();
-
-        distances.put(start.asLong(), 0);
-
-        var queue = new PriorityQueue<>(Comparator.comparingDouble(PathEntry::totalLoss));
-        for (var edge : atStart) {
-            queue.offer(new PathEntry(start, edge, edge.loss()));
-        }
+        var queue = new PriorityQueue<>(Comparator.comparingInt(Visit::distance));
+        distances.put(source.asLong(), 0);
+        queue.add(new Visit(source, 0));
 
         while (!queue.isEmpty()) {
-            var current = queue.poll();
-            var currentL = current.pos.asLong();
+            var visit = queue.poll();
+            if (visit.distance > distances.get(visit.pos.asLong())) continue;
+            if (!visit.pos.equals(source)) reached.add(visit.pos);
 
-            var target = current.edge.other(current.pos);
-            var targetL = target.asLong();
-
-            if (current.totalLoss < distances.getOrDefault(targetL, Float.MAX_VALUE)) {
-                distances.put(targetL, current.totalLoss);
-                backtracks.put(targetL, currentL);
-                backtrackEdges.put(targetL, current.edge);
-            }
-
-            if (!visited.add(currentL)) continue;
-
-            var currentProps = current.edge.stats().props();
-            for (var edge : graph.atBlock(target)) {
-                var edgeProps = edge.stats().props();
-                if (edgeProps.getVoltage() <= currentProps.getVoltage()) {
-                    queue.offer(new PathEntry(target, edge, current.totalLoss + edge.loss()));
+            for (var edge : graph.atBlock(visit.pos)) {
+                var next = edge.other(visit.pos);
+                var distance = visit.distance + edge.wireCount();
+                if (distance < distances.get(next.asLong())) {
+                    distances.put(next.asLong(), distance);
+                    parents.put(next.asLong(), edge);
+                    queue.add(new Visit(next, distance));
                 }
             }
         }
 
-        var current = end.asLong();
-        while (current != start.asLong()) {
-            if (!backtracks.containsKey(current)) {
-                edges.clear();
-                return false;
+        var routes = new ArrayList<TransferPath>(reached.size());
+        for (var target : reached) {
+            var path = new ArrayList<PowerlineGraph.Edge>();
+            var loss = 0f;
+            for (var pos = target; !pos.equals(source);) {
+                var edge = parents.get(pos.asLong());
+                path.add(edge);
+                loss += edge.loss();
+                pos = edge.other(pos);
             }
 
-            var edge = backtrackEdges.get(current);
-            var swapAB = edge.a().asLong() == current;
+            var edges = new PowerlineGraph.Edge[path.size()];
+            for (int i = 0; i < edges.length; i++) edges[i] = path.get(edges.length - 1 - i);
 
-            var props = edge.stats().props();
-            var insulation = edge.stats().insulation();
-            edges.add(0, new Edge(
-                    swapAB ? edge.b() : edge.a(),
-                    swapAB ? edge.dirB() : edge.dirA(),
-                    swapAB ? edge.a() : edge.b(),
-                    swapAB ? edge.dirA() : edge.dirB(),
-                    edge.loss(),
-                    props.getVoltage(),
-                    props.getAmperage(),
-                    insulation.isCable,
-                    edge));
-            totalLoss += edge.loss();
-            current = backtracks.get(current);
+            var facing = edges[edges.length - 1].dirAt(target).getOpposite();
+            routes.add(new TransferPath(target, facing, edges, distances.get(target.asLong()), Mth.ceil(loss)));
         }
-
-        return true;
+        return routes;
     }
 }

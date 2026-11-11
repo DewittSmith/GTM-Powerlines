@@ -12,13 +12,13 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.level.ItemLike;
 import net.minecraftforge.registries.ForgeRegistries;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 public record WireStats(int color, WireProperties props, Insulation insulation) {
 
-    private static final Map<Item, WireStats> CACHED_INFO = new HashMap<>();
+    private static final Map<Item, Optional<WireStats>> CACHED_INFO = new ConcurrentHashMap<>();
 
     public static Optional<WireStats> of(ResourceLocation wireId) {
         var item = ForgeRegistries.ITEMS.getValue(wireId);
@@ -28,19 +28,16 @@ public record WireStats(int color, WireProperties props, Insulation insulation) 
     public static Optional<WireStats> of(ItemLike itemLike) {
         if (itemLike == null) return Optional.empty();
 
-        var result = CACHED_INFO.computeIfAbsent(itemLike.asItem(), item -> {
-            if (ChemicalHelper.getPrefix(item) != TagPrefix.wireFine) return null;
+        return CACHED_INFO.computeIfAbsent(itemLike.asItem(), item -> {
+            if (ChemicalHelper.getPrefix(item) != TagPrefix.wireFine) return Optional.empty();
             var stack = ChemicalHelper.getMaterialStack(item);
             var wire = stack.material().getProperty(PropertyKey.WIRE);
-            if (wire == null) return null;
-            wire = Insulation.WIRE_SINGLE.modifyProperties(wire);
+            if (wire == null) return Optional.empty();
 
             var color = 0xFF000000 | stack.material().getMaterialRGB();
-            return new WireStats(color, wire, Insulation.WIRE_SINGLE);
+            return Optional.of(new WireStats(color, Insulation.WIRE_SINGLE.modifyProperties(wire),
+                    Insulation.WIRE_SINGLE));
         });
-
-        if (result == null) return Optional.empty();
-        return Optional.of(result);
     }
 
     public int tier() {

@@ -18,7 +18,9 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
 
 import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
+import com.github.dewittsmith.gtm_powerlines.block.PowerlineInsulatorBlock;
 import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
+import com.github.dewittsmith.gtm_powerlines.graph.PowerlineGraph;
 import com.github.dewittsmith.gtm_powerlines.util.ItemUtils;
 import com.github.dewittsmith.gtm_powerlines.wire.WireAttachment;
 import com.github.dewittsmith.gtm_powerlines.wire.WireStats;
@@ -123,21 +125,19 @@ public class PowerlineWireEvents {
             return;
         }
 
+        var count = PowerlineGraph.Edge.wireCount(attach.pos(),
+                fromBe.getBlockState().getValue(PowerlineInsulatorBlock.DIRECTION), pos,
+                clickedBe.getBlockState().getValue(PowerlineInsulatorBlock.DIRECTION));
+        var haveCount = ItemUtils.countAvailable(player, held);
+        if (haveCount < count) {
+            message(player, "message.gtm_powerlines.wire.not_enough", haveCount, count);
+            finish(event);
+            return;
+        }
+
         var connectResult = fromBe.connect(pos, wire);
         switch (connectResult.status()) {
             case SUCCESS -> {
-                clickedBe.connect(attach.pos(), wire);
-
-                var count = connectResult.edge().wireCount();
-                var haveCount = ItemUtils.countAvailable(player, held);
-                if (haveCount < count) {
-                    fromBe.disconnectFrom(pos);
-                    clickedBe.disconnectFrom(attach.pos());
-                    message(player, "message.gtm_powerlines.wire.not_enough", haveCount, count);
-                    finish(event);
-                    return;
-                }
-
                 ItemUtils.consume(player, held, count);
 
                 if (clickedBe.hasConnectionCapacity())

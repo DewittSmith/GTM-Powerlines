@@ -12,6 +12,8 @@ import com.github.dewittsmith.gtm_powerlines.graph.PowerlineNetwork;
 public class PowerlineInsulatorEnergy implements IEnergyContainer {
 
     private final PowerlineInsulatorBlockEntity blockEntity;
+    // per-handler re-entrancy guard, same as GTCEu's EnergyNetHandler
+    private boolean transfer;
 
     public PowerlineInsulatorEnergy(PowerlineInsulatorBlockEntity blockEntity) {
         this.blockEntity = blockEntity;
@@ -23,9 +25,16 @@ public class PowerlineInsulatorEnergy implements IEnergyContainer {
 
     @Override
     public long acceptEnergyFromNetwork(Direction side, long voltage, long amperage) {
-        if (side != mountedSide()) return 0;
+        if (transfer || voltage <= 0 || amperage <= 0) return 0;
+        if (side != null && side != mountedSide()) return 0;
         if (!(blockEntity.getLevel() instanceof ServerLevel level)) return 0;
-        return PowerlineNetwork.get(level).sendEnergy(blockEntity.getBlockPos(), voltage, amperage);
+
+        transfer = true;
+        try {
+            return PowerlineNetwork.get(level).acceptEnergy(blockEntity.getBlockPos(), voltage, amperage);
+        } finally {
+            transfer = false;
+        }
     }
 
     @Override
@@ -49,17 +58,29 @@ public class PowerlineInsulatorEnergy implements IEnergyContainer {
     }
 
     @Override
+    public long getEnergyCanBeInserted() {
+        return getEnergyCapacity();
+    }
+
+    @Override
     public long getEnergyCapacity() {
-        return Long.MAX_VALUE;
+        return getInputVoltage() * getInputAmperage();
     }
 
     @Override
     public long getInputAmperage() {
-        return Long.MAX_VALUE;
+        var props = blockEntity.getWireProperties();
+        return props == null ? 0 : props.getAmperage();
     }
 
     @Override
     public long getInputVoltage() {
-        return Long.MAX_VALUE;
+        var props = blockEntity.getWireProperties();
+        return props == null ? 0 : props.getVoltage();
+    }
+
+    @Override
+    public boolean isOneProbeHidden() {
+        return true;
     }
 }

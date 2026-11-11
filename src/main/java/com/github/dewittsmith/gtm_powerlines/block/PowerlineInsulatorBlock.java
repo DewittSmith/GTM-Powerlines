@@ -36,7 +36,7 @@ public class PowerlineInsulatorBlock extends Block implements EntityBlock {
             Direction.WEST, box(0, 5, 5, 16, 11, 11),
             Direction.EAST, box(0, 5, 5, 16, 11, 11));
 
-    public static DirectionProperty DIRECTION = DirectionProperty.create("direction");
+    public static final DirectionProperty DIRECTION = DirectionProperty.create("direction");
 
     public PowerlineInsulatorBlock(Properties properties) {
         super(properties);

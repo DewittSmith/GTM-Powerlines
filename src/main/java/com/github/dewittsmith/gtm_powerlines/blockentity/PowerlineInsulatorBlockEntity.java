@@ -2,6 +2,8 @@ package com.github.dewittsmith.gtm_powerlines.blockentity;
 
 import com.gregtechceu.gtceu.api.capability.IEnergyContainer;
 import com.gregtechceu.gtceu.api.capability.forge.GTCapability;
+import com.gregtechceu.gtceu.api.data.chemical.material.properties.WireProperties;
+import com.gregtechceu.gtceu.utils.GTUtil;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -24,12 +26,14 @@ import com.github.dewittsmith.gtm_powerlines.graph.PowerlineNetwork;
 import com.github.dewittsmith.gtm_powerlines.machines.PowerlineTransformerMachine;
 import com.github.dewittsmith.gtm_powerlines.registry.GTMPowerlinesRegistries;
 import com.github.dewittsmith.gtm_powerlines.util.BlockUtils;
+import com.github.dewittsmith.gtm_powerlines.wire.ClientWires;
 import com.github.dewittsmith.gtm_powerlines.wire.WireConnectionResult;
 import com.github.dewittsmith.gtm_powerlines.wire.WireStats;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import java.util.Optional;
 
 import javax.annotation.Nullable;
 
@@ -55,16 +59,21 @@ public class PowerlineInsulatorBlockEntity extends BlockEntity {
         setChanged();
     }
 
-    private PowerlineNetwork network() {
-        return PowerlineNetwork.get((ServerLevel) level);
-    }
-
-    private boolean isServer() {
-        return level instanceof ServerLevel;
-    }
-
     public List<PowerlineGraph.Edge> getConnections() {
-        return isServer() ? network().getGraph().atBlock(worldPosition) : List.of();
+        if (level instanceof ServerLevel serverLevel) {
+            return PowerlineNetwork.get(serverLevel).getGraph().atBlock(worldPosition);
+        }
+        return level == null ? List.of() : ClientWires.at(worldPosition);
+    }
+
+    public @Nullable WireProperties getWireProperties() {
+        var connections = getConnections();
+        return connections.isEmpty() ? null : connections.get(0).stats().props();
+    }
+
+    private Optional<PowerlineTransformerMachine> getTransformer() {
+        return controller == null ? Optional.empty() :
+                BlockUtils.instanceOf(level, controller, PowerlineTransformerMachine.class);
     }
 
     public int getElevation() {
@@ -87,8 +96,7 @@ public class PowerlineInsulatorBlockEntity extends BlockEntity {
     }
 
     public float maxConnectionRange() {
-        if (controller != null &&
-                BlockUtils.instanceOf(level, controller, PowerlineTransformerMachine.class).isPresent()) {
+        if (getTransformer().isPresent()) {
             return Mth.clamp(8, GTMPowerlinesConfig.INSTANCE.wire.minWireRange,
                     GTMPowerlinesConfig.INSTANCE.wire.maxWireRange);
         }
@@ -98,8 +106,7 @@ public class PowerlineInsulatorBlockEntity extends BlockEntity {
     }
 
     public int maxConnections() {
-        if (controller != null &&
-                BlockUtils.instanceOf(level, controller, PowerlineTransformerMachine.class).isPresent()) {
+        if (getTransformer().isPresent()) {
             return 1;
         }
 
@@ -116,42 +123,43 @@ public class PowerlineInsulatorBlockEntity extends BlockEntity {
 
     public int getWireTier() {
         if (controller == null) return -1;
-        var transformer = BlockUtils.instanceOf(level, controller, PowerlineTransformerMachine.class);
+        var transformer = getTransformer();
         if (transformer.isPresent()) return transformer.get().getTier();
-        var connections = getConnections();
-        if (connections.isEmpty()) return -1;
-        var wireInfoOpt = WireStats.of(connections.get(0).wire());
-        return wireInfoOpt.map(WireStats::tier).orElse(-1);
+        var props = getWireProperties();
+        return props == null ? -1 : GTUtil.getFloorTierByVoltage(props.getVoltage());
     }
 
     public WireConnectionResult connect(BlockPos target, ResourceLocation wire) {
-        if (!isServer()) return WireConnectionResult.TOO_MANY_CONNECTIONS;
+        if (!(level instanceof ServerLevel serverLevel)) return WireConnectionResult.TOO_MANY_CONNECTIONS;
         if (target.equals(worldPosition)) return WireConnectionResult.SAME_BLOCK;
         if (getConnections().stream().anyMatch(e -> e.other(worldPosition).equals(target)))
             return WireConnectionResult.ALREADY_CONNECTED;
         if (!hasConnectionCapacity()) return WireConnectionResult.TOO_MANY_CONNECTIONS;
-        var other = BlockUtils.instanceOf(level, target, PowerlineInsulatorBlockEntity.class);
-        if (other.isEmpty() || !other.get().hasConnectionCapacity()) return WireConnectionResult.TOO_MANY_CONNECTIONS;
+        var other = BlockUtils.instanceOf(level, target, PowerlineInsulatorBlockEntity.class).orElse(null);
+        if (other == null || !other.hasConnectionCapacity()) return WireConnectionResult.TOO_MANY_CONNECTIONS;
 
-        var tier = getWireTier();
-        var wireInfoOpt = WireStats.of(wire);
-        if (wireInfoOpt.isEmpty()) return WireConnectionResult.TOO_MANY_CONNECTIONS;
-        if (tier != -1 && tier != wireInfoOpt.get().tier()) return WireConnectionResult.incompatibleTier(tier);
+        var stats = WireStats.of(wire).orElse(null);
+        if (stats == null) return WireConnectionResult.TOO_MANY_CONNECTIONS;
+        for (var tier : new int[] { getWireTier(), other.getWireTier() }) {
+            if (tier != -1 && tier != stats.tier()) return WireConnectionResult.incompatibleTier(tier);
+        }
 
         var startDir = getBlockState().getValue(PowerlineInsulatorBlock.DIRECTION);
-        var targetDir = level.getBlockState(target).getValue(PowerlineInsulatorBlock.DIRECTION);
+        var targetDir = other.getBlockState().getValue(PowerlineInsulatorBlock.DIRECTION);
 
-        var success = network().connect(worldPosition, startDir, target, targetDir, wire);
-        var edge = network().getGraph().getEdge(worldPosition, target).orElse(null);
-        return success ? WireConnectionResult.success(edge) : WireConnectionResult.ALREADY_CONNECTED;
+        var edge = PowerlineNetwork.get(serverLevel).connect(worldPosition, startDir, target, targetDir, wire);
+        return edge != null ? WireConnectionResult.success(edge) : WireConnectionResult.ALREADY_CONNECTED;
     }
 
     public boolean disconnectFrom(BlockPos target) {
-        return isServer() && network().disconnect(worldPosition, target);
+        return level instanceof ServerLevel serverLevel &&
+                PowerlineNetwork.get(serverLevel).disconnect(worldPosition, target);
     }
 
     public List<PowerlineGraph.Edge> disconnectAll() {
-        return isServer() ? network().disconnectAll(worldPosition) : List.of();
+        return level instanceof ServerLevel serverLevel ?
+                PowerlineNetwork.get(serverLevel).disconnectAll(worldPosition) :
+                List.of();
     }
 
     @Override

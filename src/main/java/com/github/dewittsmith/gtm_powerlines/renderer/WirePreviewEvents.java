@@ -80,7 +80,7 @@ public class WirePreviewEvents {
             LevelRenderer.renderLineBox(pose, buffer, box, 1f, 1f, 0f, 1f);
         }
 
-        var hit = WireTargeting.find(level, sel.pos(), ClientWires.at(sel.pos()),
+        var hit = WireTargeting.find(sel.pos(), ClientWires.at(sel.pos()),
                 player.getEyePosition(event.getPartialTick()), player.getViewVector(event.getPartialTick()));
         if (hit != null) {
             AABB dot = new AABB(hit.point(), hit.point()).inflate(0.1).move(-cam.x, -cam.y, -cam.z);
