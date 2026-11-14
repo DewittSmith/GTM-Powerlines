@@ -2,6 +2,7 @@ package com.github.dewittsmith.gtm_powerlines.renderer;
 
 import com.gregtechceu.gtceu.GTCEu;
 
+import com.gregtechceu.gtceu.common.pipelike.cable.Insulation;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -9,20 +10,17 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 
 import com.github.dewittsmith.gtm_powerlines.wire.WireGeometry;
+import com.github.dewittsmith.gtm_powerlines.wire.WireStats;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
 public class PowerlineWireRenderer {
 
     private static final ResourceLocation WIRE_TEXTURE = GTCEu.id("block/cable/insulation_5");
-
-    public static final float BLOCK_PIXEL_SIZE = 16;
-    public static final float PIXEL_SIZE = 1.99f;
-    public static final float BLOCK_SIZE = PIXEL_SIZE / BLOCK_PIXEL_SIZE;
-    public static final float HALF_SIZE = BLOCK_SIZE / 2;
 
     public enum Caps {
         NONE,
@@ -35,8 +33,12 @@ public class PowerlineWireRenderer {
         return RenderType.entityCutout(TextureAtlas.LOCATION_BLOCKS);
     }
 
-    public static void renderTube(PoseStack poseStack, MultiBufferSource buffers, Vec3 start, Vec3 end, int argb,
-                                  int light, Caps caps) {
+    public static void renderTube(PoseStack poseStack, MultiBufferSource buffers, Vec3 start, Vec3 end,
+                                  int light, Caps caps, WireStats stats) {
+        var pixelSize = WireGeometry.pixelSize(stats);
+        var halfSize = pixelSize / 16f / 2;
+        var argb = stats.color();
+
         VertexConsumer consumer = buffers.getBuffer(wireRenderType());
         TextureAtlasSprite sprite = Minecraft.getInstance().getTextureAtlas(TextureAtlas.LOCATION_BLOCKS)
                 .apply(WIRE_TEXTURE);
@@ -52,17 +54,17 @@ public class PowerlineWireRenderer {
 
         float u0 = sprite.getU0(), v0 = sprite.getV0(), u1 = sprite.getU1(), v1 = sprite.getV1();
         float w = u1 - u0, h = v1 - v0;
-        float tw = w / BLOCK_PIXEL_SIZE, th = h / BLOCK_PIXEL_SIZE;
+        float tw = w / 16, th = h / 16;
         u0 += tw;
         v0 += th;
-        u1 = u0 + tw * PIXEL_SIZE;
+        u1 = u0 + tw * pixelSize;
         v1 -= th;
 
         if (caps == Caps.START || caps == Caps.BOTH) {
-            Vec3 pr = pRight.scale(HALF_SIZE), pu = pUp.scale(HALF_SIZE);
+            Vec3 pr = pRight.scale(halfSize), pu = pUp.scale(halfSize);
             Vec3 pLD = pPos.subtract(pr).subtract(pu), pLU = pPos.subtract(pr).add(pu);
             Vec3 pRD = pPos.add(pr).subtract(pu), pRU = pPos.add(pr).add(pu);
-            var cv1 = v0 + th * PIXEL_SIZE;
+            var cv1 = v0 + th * pixelSize;
             quad(consumer, pose, pLD, pLU, pRU, pRD, argb, u0, v0, u1, cv1, light, pFwd.reverse());
         }
 
@@ -81,8 +83,8 @@ public class PowerlineWireRenderer {
             Vec3 right = fwd.cross(ref).normalize();
             Vec3 up = right.cross(fwd).normalize();
 
-            Vec3 pr = pRight.scale(HALF_SIZE), pu = pUp.scale(HALF_SIZE);
-            Vec3 cr = right.scale(HALF_SIZE), cu = up.scale(HALF_SIZE);
+            Vec3 pr = pRight.scale(halfSize), pu = pUp.scale(halfSize);
+            Vec3 cr = right.scale(halfSize), cu = up.scale(halfSize);
 
             Vec3 pTL = pPos.subtract(pr).add(pu), pTR = pPos.add(pr).add(pu);
             Vec3 pBL = pPos.subtract(pr).subtract(pu), pBR = pPos.add(pr).subtract(pu);
@@ -110,16 +112,20 @@ public class PowerlineWireRenderer {
         }
 
         if (caps == Caps.END || caps == Caps.BOTH) {
-            Vec3 pr = pRight.scale(HALF_SIZE), pu = pUp.scale(HALF_SIZE);
+            Vec3 pr = pRight.scale(halfSize), pu = pUp.scale(halfSize);
             Vec3 pLD = pPos.subtract(pr).subtract(pu), pLU = pPos.subtract(pr).add(pu);
             Vec3 pRD = pPos.add(pr).subtract(pu), pRU = pPos.add(pr).add(pu);
-            var cv1 = v0 + th * PIXEL_SIZE;
+            var cv1 = v0 + th * pixelSize;
             quad(consumer, pose, pLD, pLU, pRU, pRD, argb, u0, v0, u1, cv1, light, pFwd);
         }
     }
 
-    public static void renderBillboard(PoseStack poseStack, MultiBufferSource buffers, Vec3 start, Vec3 end, int argb,
-                                       int light, Vec3 cameraPos) {
+    public static void renderBillboard(PoseStack poseStack, MultiBufferSource buffers, Vec3 start, Vec3 end,
+                                       int light, Vec3 cameraPos, WireStats stats) {
+        var pixelSize = WireGeometry.pixelSize(stats);
+        var halfSize = pixelSize / 16f / 2;
+        var argb = stats.color();
+
         VertexConsumer consumer = buffers.getBuffer(wireRenderType());
         TextureAtlasSprite sprite = Minecraft.getInstance().getTextureAtlas(TextureAtlas.LOCATION_BLOCKS)
                 .apply(WIRE_TEXTURE);
@@ -129,11 +135,11 @@ public class PowerlineWireRenderer {
 
         float u0 = sprite.getU0(), v0 = sprite.getV0(), u1 = sprite.getU1(), v1 = sprite.getV1();
         float w = u1 - u0, h = v1 - v0;
-        float tw = w / BLOCK_PIXEL_SIZE, th = h / BLOCK_PIXEL_SIZE;
+        float tw = w / 16, th = h / 16;
 
         u0 += tw;
         v0 += th;
-        u1 = u0 + tw * PIXEL_SIZE;
+        u1 = u0 + tw * pixelSize;
         v1 -= th;
 
         Vec3 pPos = WireGeometry.sample(start, end, 0, sag);
@@ -146,7 +152,7 @@ public class PowerlineWireRenderer {
             pRight = pForward.cross(ref).normalize();
         }
 
-        Vec3 pOffset = pRight.scale(HALF_SIZE);
+        Vec3 pOffset = pRight.scale(halfSize);
 
         Vec3 pTL = pPos.add(pOffset);
         Vec3 pTR = pPos.subtract(pOffset);
@@ -171,7 +177,7 @@ public class PowerlineWireRenderer {
                 right = forward.cross(ref).normalize();
             }
 
-            Vec3 offset = right.scale(HALF_SIZE);
+            Vec3 offset = right.scale(halfSize);
             Vec3 cTL = pos.add(offset);
             Vec3 cTR = pos.subtract(offset);
             Vec3 normal = right.cross(forward).normalize();

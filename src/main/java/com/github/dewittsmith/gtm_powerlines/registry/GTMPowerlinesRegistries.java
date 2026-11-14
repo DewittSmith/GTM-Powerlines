@@ -16,10 +16,8 @@ import com.gregtechceu.gtceu.common.data.GTRecipeTypes;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.tags.BlockTags;
-import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.Mth;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SoundType;
@@ -30,8 +28,6 @@ import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlock
 import com.github.dewittsmith.gtm_powerlines.machines.PowerlineTransformerMachine;
 import com.github.dewittsmith.gtm_powerlines.util.CoilEfficiency;
 import com.github.dewittsmith.gtm_powerlines.util.PowerlinePredicates;
-import com.github.dewittsmith.gtm_powerlines.wire.WireStats;
-import com.tterrag.registrate.providers.ProviderType;
 import com.tterrag.registrate.util.entry.BlockEntityEntry;
 import com.tterrag.registrate.util.entry.BlockEntry;
 
@@ -45,26 +41,12 @@ import static com.gregtechceu.gtceu.common.data.GTBlocks.*;
 
 public class GTMPowerlinesRegistries {
 
-    public static final TagKey<Item> POWERLINE_WIRE = ItemTags.create(GTMPowerlines.id("powerline_wire"));
-
     public static final TagKey<Block> WIRE_PASSTHROUGH = BlockTags.create(GTMPowerlines.id("wire_passthrough"));
 
-    public static final TagKey<Block> INSULATOR_SURFACE_IGNORE = BlockTags
-            .create(GTMPowerlines.id("insulator_surface_ignore"));
+    public static final TagKey<Block> SURFACE = BlockTags.create(GTMPowerlines.id("surface"));
 
     static {
         POWERLINE_REGISTRATE.creativeModeTab(() -> POWERLINE_CREATIVE_TAB);
-
-        POWERLINE_REGISTRATE.addDataGenerator(ProviderType.ITEM_TAGS, prov -> {
-            var tag = prov.addTag(POWERLINE_WIRE);
-            for (var material : GTCEuAPI.materialManager.getRegisteredMaterials()) {
-                var stack = ChemicalHelper.get(TagPrefix.wireFine, material);
-                if (stack.isEmpty()) continue;
-                if (WireStats.of(stack.getItem()).isPresent()) {
-                    tag.add(stack.getItem());
-                }
-            }
-        });
     }
 
     public static final BlockEntry<PowerlineInsulatorBlock> POWERLINE_INSULATOR = POWERLINE_REGISTRATE

@@ -183,8 +183,8 @@ public class PowerlineNetwork extends SavedData {
     }
 
     private void spawnHeatParticles(PowerlineGraph.Edge edge, boolean burned) {
-        var start = WireGeometry.getAttachmentPoint(edge.a(), edge.dirA());
-        var end = WireGeometry.getAttachmentPoint(edge.b(), edge.dirB());
+        var start = WireGeometry.getAttachmentPoint(edge.a(), edge.dirA(), edge.stats());
+        var end = WireGeometry.getAttachmentPoint(edge.b(), edge.dirB(), edge.stats());
 
         var sag = WireGeometry.sag(start, end);
         var samples = Mth.ceil(WireGeometry.samples(WireGeometry.length(start, end, sag)));

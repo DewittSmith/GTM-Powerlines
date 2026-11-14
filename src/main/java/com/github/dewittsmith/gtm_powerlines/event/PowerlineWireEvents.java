@@ -79,7 +79,7 @@ public class PowerlineWireEvents {
                 return;
             }
 
-            WireAttachment.set(player, level, pos, wireItem, wireInfo.color());
+            WireAttachment.set(player, level, pos, wireItem, wireInfo);
             message(player, "message.gtm_powerlines.wire.attached_click_another");
             finish(event);
             return;
@@ -111,7 +111,7 @@ public class PowerlineWireEvents {
                 return;
             }
 
-            WireAttachment.set(player, level, pos, wireItem, wireInfo.color());
+            WireAttachment.set(player, level, pos, wireItem, wireInfo);
             message(player, "message.gtm_powerlines.wire.attached_click_another");
             finish(event);
             return;
@@ -141,7 +141,7 @@ public class PowerlineWireEvents {
                 ItemUtils.consume(player, held, count);
 
                 if (clickedBe.hasConnectionCapacity())
-                    WireAttachment.set(player, level, pos, wireItem, wireInfo.color());
+                    WireAttachment.set(player, level, pos, wireItem, wireInfo);
                 message(player, "message.gtm_powerlines.wire.connected");
                 finish(event);
             }

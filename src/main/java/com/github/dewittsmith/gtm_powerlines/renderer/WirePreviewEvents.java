@@ -45,7 +45,7 @@ public class WirePreviewEvents {
         if (!player.getMainHandItem().is(attachment.wire())) return;
         if (!(level.getBlockEntity(attachment.pos()) instanceof PowerlineInsulatorBlockEntity)) return;
 
-        Vec3 start = WireGeometry.getAttachmentPoint(level, attachment.pos());
+        Vec3 start = WireGeometry.getAttachmentPoint(level, attachment.pos(), attachment.stats());
         Vec3 end = player.getRopeHoldPosition(event.getPartialTick());
         Vec3 cameraPos = event.getCamera().getPosition();
 
@@ -54,10 +54,12 @@ public class WirePreviewEvents {
 
         poseStack.pushPose();
         poseStack.translate(-cameraPos.x, -cameraPos.y, -cameraPos.z);
+
+        var wireInfo = attachment.stats();
         if (GTMPowerlinesConfig.INSTANCE.rendering.useFlatWires) PowerlineWireRenderer.renderBillboard(poseStack,
-                bufferSource, start, end, attachment.argb(), LightTexture.FULL_BRIGHT, cameraPos);
-        else PowerlineWireRenderer.renderTube(poseStack, bufferSource, start, end, attachment.argb(),
-                LightTexture.FULL_BRIGHT, PowerlineWireRenderer.Caps.END);
+                bufferSource, start, end, LightTexture.FULL_BRIGHT, cameraPos, wireInfo);
+        else PowerlineWireRenderer.renderTube(poseStack, bufferSource, start, end, LightTexture.FULL_BRIGHT,
+                PowerlineWireRenderer.Caps.END, wireInfo);
         poseStack.popPose();
         bufferSource.endBatch(PowerlineWireRenderer.wireRenderType());
     }

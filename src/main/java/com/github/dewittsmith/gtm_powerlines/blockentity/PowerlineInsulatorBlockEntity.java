@@ -84,7 +84,7 @@ public class PowerlineInsulatorBlockEntity extends BlockEntity {
         for (var i = 0; i < maxElevation; ++i) {
             cursor.move(0, -1, 0);
             var bs = level.getBlockState(cursor);
-            if (bs.isAir() || bs.is(GTMPowerlinesRegistries.INSULATOR_SURFACE_IGNORE)) continue;
+            if (bs.isAir() || !bs.is(GTMPowerlinesRegistries.SURFACE)) continue;
             return worldPosition.getY() - cursor.getY();
         }
 

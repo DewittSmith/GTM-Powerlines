@@ -22,9 +22,9 @@ public final class WireTargeting {
         double bestDist = MAX_DISTANCE;
 
         for (var edge : edges) {
-            var from = WireGeometry.getAttachmentPoint(origin, edge.dirAt(origin));
+            var from = WireGeometry.getAttachmentPoint(origin, edge.dirAt(origin), edge.stats());
             var other = edge.other(origin);
-            var to = WireGeometry.getAttachmentPoint(other, edge.dirAt(other));
+            var to = WireGeometry.getAttachmentPoint(other, edge.dirAt(other), edge.stats());
             double sag = WireGeometry.sag(from, to);
             int n = Math.max(2, (int) WireGeometry.samples(WireGeometry.length(from, to, sag)));
 

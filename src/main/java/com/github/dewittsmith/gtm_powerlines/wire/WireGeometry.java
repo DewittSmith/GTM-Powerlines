@@ -1,5 +1,6 @@
 package com.github.dewittsmith.gtm_powerlines.wire;
 
+import com.github.dewittsmith.gtm_powerlines.block.PowerlineInsulatorBlock;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
@@ -7,9 +8,18 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.Vec3;
 
-import com.github.dewittsmith.gtm_powerlines.block.PowerlineInsulatorBlock;
-
 public final class WireGeometry {
+
+    private static final float INDENT = 0.01f;
+
+    private static final float[] WIRE_SIZES = {
+            1, 2, 2, 3, 4,
+            1, 2, 2, 3, 4
+    };
+
+    public static float pixelSize(WireStats stats) {
+        return WIRE_SIZES[stats.insulation().ordinal()] - INDENT;
+    }
 
     public static double sag(Vec3 a, Vec3 b) {
         return Math.min(a.distanceTo(b) * 0.06, 2.0);
@@ -48,22 +58,22 @@ public final class WireGeometry {
                 b.z - a.z).normalize();
     }
 
-    public static Vec3 getAttachmentPoint(BlockEntity be) {
+    public static Vec3 getAttachmentPoint(BlockEntity be, WireStats wire) {
         if (be == null) return Vec3.ZERO;
         var dir = be.getBlockState().getValue(PowerlineInsulatorBlock.DIRECTION);
-        return getAttachmentPoint(be.getBlockPos(), dir);
+        return getAttachmentPoint(be.getBlockPos(), dir, wire);
     }
 
-    public static Vec3 getAttachmentPoint(Level level, BlockPos pos) {
+    public static Vec3 getAttachmentPoint(Level level, BlockPos pos, WireStats wire) {
         if (!level.isLoaded(pos)) return pos.getCenter();
         var be = level.getBlockEntity(pos);
-        return WireGeometry.getAttachmentPoint(be);
+        return getAttachmentPoint(be, wire);
     }
 
-    public static Vec3 getAttachmentPoint(BlockPos pos, Direction direction) {
-        final float OFFSET = 6f / 16f;
-        return pos.getCenter().add(direction.getStepX() * OFFSET, direction.getStepY() * OFFSET,
-                direction.getStepZ() * OFFSET);
+    public static Vec3 getAttachmentPoint(BlockPos pos, Direction direction, WireStats wire) {
+        float offset = (6f - pixelSize(wire) / 2) / 16f;
+        return pos.getCenter().add(direction.getStepX() * offset, direction.getStepY() * offset,
+                direction.getStepZ() * offset);
     }
 
     public static double distanceToSegment(Vec3 p, Vec3 a, Vec3 b) {

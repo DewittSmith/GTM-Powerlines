@@ -18,7 +18,7 @@ import javax.annotation.Nullable;
 
 public final class WireAttachment {
 
-    public record Attach(ResourceKey<Level> dimension, BlockPos pos, Item wire, int argb) {}
+    public record Attach(ResourceKey<Level> dimension, BlockPos pos, Item wire, WireStats stats) {}
 
     private static final Map<UUID, Attach> ATTACH = new HashMap<>();
     private static @Nullable Attach clientAttachment;
@@ -27,8 +27,8 @@ public final class WireAttachment {
         return p.level().isClientSide ? clientAttachment : ATTACH.get(p.getUUID());
     }
 
-    public static void set(Player p, Level l, BlockPos pos, Item wire, int argb) {
-        var attachment = new Attach(l.dimension(), pos.immutable(), wire, argb);
+    public static void set(Player p, Level l, BlockPos pos, Item wire, WireStats stats) {
+        var attachment = new Attach(l.dimension(), pos.immutable(), wire, stats);
         ATTACH.put(p.getUUID(), attachment);
         if (p instanceof ServerPlayer sp) Net.sendToPlayer(sp, new WireAttachmentPacket(attachment));
     }

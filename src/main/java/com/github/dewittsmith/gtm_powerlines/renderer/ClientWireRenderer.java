@@ -44,7 +44,6 @@ public final class ClientWireRenderer {
         RENDERED.clear();
         for (var chunk : ClientWires.byChunk().long2ObjectEntrySet()) {
             var key = chunk.getLongKey();
-            // ClientLevel#hasChunk always returns true
             if (!level.getChunkSource().hasChunk(ChunkPos.getX(key), ChunkPos.getZ(key))) continue;
 
             for (var e : chunk.getValue()) {
@@ -61,8 +60,8 @@ public final class ClientWireRenderer {
         var wireInfo = e.stats();
         if (wireInfo == null) return;
 
-        Vec3 a = WireGeometry.getAttachmentPoint(e.a(), e.dirA()),
-                b = WireGeometry.getAttachmentPoint(e.b(), e.dirB());
+        Vec3 a = WireGeometry.getAttachmentPoint(e.a(), e.dirA(), e.stats()),
+                b = WireGeometry.getAttachmentPoint(e.b(), e.dirB(), e.stats());
         if (!frustum.isVisible(new AABB(a, b).inflate(2.0))) return;
 
         var distance = WireGeometry.distanceToSegment(cam, a, b);
@@ -73,10 +72,9 @@ public final class ClientWireRenderer {
         pose.translate(-cam.x, -cam.y, -cam.z);
 
         switch (lod) {
-            case TUBE -> PowerlineWireRenderer.renderTube(pose, buffers, a, b, wireInfo.color(), light,
-                    PowerlineWireRenderer.Caps.NONE);
-            case BILLBOARD -> PowerlineWireRenderer.renderBillboard(pose, buffers, a, b, wireInfo.color(), light,
-                    cam);
+            case TUBE -> PowerlineWireRenderer.renderTube(pose, buffers, a, b, light, PowerlineWireRenderer.Caps.NONE,
+                    wireInfo);
+            case BILLBOARD -> PowerlineWireRenderer.renderBillboard(pose, buffers, a, b, light, cam, wireInfo);
         }
 
         pose.popPose();

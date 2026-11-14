@@ -1,9 +1,0 @@
-﻿{
-	"replace": false,
-	"values": [
-		"gtm_powerlines:powerline_insulator",
-		"#minecraft:leaves",
-		"#forge:frames",
-		"#forge:fences"
-	]
-}

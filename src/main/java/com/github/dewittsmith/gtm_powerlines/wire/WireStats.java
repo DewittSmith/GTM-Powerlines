@@ -1,9 +1,9 @@
 package com.github.dewittsmith.gtm_powerlines.wire;
 
-import com.gregtechceu.gtceu.api.data.chemical.ChemicalHelper;
 import com.gregtechceu.gtceu.api.data.chemical.material.properties.PropertyKey;
 import com.gregtechceu.gtceu.api.data.chemical.material.properties.WireProperties;
-import com.gregtechceu.gtceu.api.data.tag.TagPrefix;
+import com.gregtechceu.gtceu.api.item.MaterialPipeBlockItem;
+import com.gregtechceu.gtceu.common.block.CableBlock;
 import com.gregtechceu.gtceu.common.pipelike.cable.Insulation;
 import com.gregtechceu.gtceu.utils.GTUtil;
 
@@ -29,14 +29,15 @@ public record WireStats(int color, WireProperties props, Insulation insulation) 
         if (itemLike == null) return Optional.empty();
 
         return CACHED_INFO.computeIfAbsent(itemLike.asItem(), item -> {
-            if (ChemicalHelper.getPrefix(item) != TagPrefix.wireFine) return Optional.empty();
-            var stack = ChemicalHelper.getMaterialStack(item);
-            var wire = stack.material().getProperty(PropertyKey.WIRE);
+            if (!(item instanceof MaterialPipeBlockItem pipeItem)) return Optional.empty();
+            var pipeBlock = pipeItem.getBlock();
+            if (!(pipeBlock instanceof CableBlock cableBlock)) return Optional.empty();
+
+            var wire = cableBlock.material.getProperty(PropertyKey.WIRE);
             if (wire == null) return Optional.empty();
 
-            var color = 0xFF000000 | stack.material().getMaterialRGB();
-            return Optional.of(new WireStats(color, Insulation.WIRE_SINGLE.modifyProperties(wire),
-                    Insulation.WIRE_SINGLE));
+            var color = cableBlock.pipeType.isCable ? 0xFF404040 : cableBlock.material.getMaterialARGB();
+            return Optional.of(new WireStats(color, cableBlock.pipeType.modifyProperties(wire), cableBlock.pipeType));
         });
     }
 

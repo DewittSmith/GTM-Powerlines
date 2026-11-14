@@ -1,8 +1,5 @@
 package com.github.dewittsmith.gtm_powerlines.graph;
 
-import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
-import com.github.dewittsmith.gtm_powerlines.wire.WireStats;
-import it.unimi.dsi.fastutil.longs.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.SectionPos;
@@ -13,8 +10,13 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.ChunkPos;
 
-import javax.annotation.Nullable;
+import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
+import com.github.dewittsmith.gtm_powerlines.wire.WireStats;
+import it.unimi.dsi.fastutil.longs.*;
+
 import java.util.*;
+
+import javax.annotation.Nullable;
 
 public class PowerlineGraph {
 
