@@ -23,6 +23,9 @@ import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlock
 import com.github.dewittsmith.gtm_powerlines.graph.PowerlineGraph;
 import com.github.dewittsmith.gtm_powerlines.util.ItemUtils;
 import com.github.dewittsmith.gtm_powerlines.wire.WireAttachment;
+import java.util.List;
+import com.github.dewittsmith.gtm_powerlines.network.ObstructionHighlightPacket;
+import com.github.dewittsmith.gtm_powerlines.network.Net;
 import com.github.dewittsmith.gtm_powerlines.wire.WireGeometry;
 import com.github.dewittsmith.gtm_powerlines.wire.WireObstruction;
 import com.github.dewittsmith.gtm_powerlines.wire.WireStats;
@@ -134,9 +137,10 @@ public class PowerlineWireEvents {
                     WireGeometry.getAttachmentPoint(attach.pos(), fromDir, wireInfo),
                     WireGeometry.getAttachmentPoint(pos, toDir, wireInfo));
             if (!blocked.isEmpty()) {
-                var first = blocked.get(0);
-                message(player, "message.gtm_powerlines.wire.blocked", blocked.size(),
-                        first.getX() + ", " + first.getY() + ", " + first.getZ());
+                message(player, "message.gtm_powerlines.wire.blocked");
+                if (player instanceof ServerPlayer serverPlayer) {
+                    Net.sendToPlayer(serverPlayer, new ObstructionHighlightPacket(blocked, List.of()));
+                }
                 finish(event);
                 return;
             }

@@ -1,6 +1,8 @@
 package com.github.dewittsmith.gtm_powerlines.renderer;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.resources.ResourceLocation;
@@ -11,6 +13,8 @@ import net.minecraft.world.phys.Vec3;
 import com.github.dewittsmith.gtm_powerlines.wire.WireGeometry;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+
+import java.util.List;
 
 /** Small geometry helpers shared by the client renderers. Positions are camera-relative. */
 public final class PowerlineRenderUtil {
@@ -120,5 +124,23 @@ public final class PowerlineRenderUtil {
                 .uv2(light)
                 .normal(pose.normal(), (float) n.x, (float) n.y, (float) n.z)
                 .endVertex();
+    }
+
+    /** Renders one line strip (camera-relative points) as its own batch so it never joins other strips. */
+    public static void lineStrip(MultiBufferSource.BufferSource buffers, PoseStack.Pose pose, List<Vec3> points,
+                                 float r, float g, float b, float a) {
+        if (points.size() < 2) return;
+        var type = RenderType.lineStrip();
+        var consumer = buffers.getBuffer(type);
+        for (int i = 0; i < points.size(); i++) {
+            var p = points.get(i);
+            var n = (i + 1 < points.size() ? points.get(i + 1).subtract(p) : p.subtract(points.get(i - 1)))
+                    .normalize();
+            consumer.vertex(pose.pose(), (float) p.x, (float) p.y, (float) p.z)
+                    .color(r, g, b, a)
+                    .normal(pose.normal(), (float) n.x, (float) n.y, (float) n.z)
+                    .endVertex();
+        }
+        buffers.endBatch(type);
     }
 }

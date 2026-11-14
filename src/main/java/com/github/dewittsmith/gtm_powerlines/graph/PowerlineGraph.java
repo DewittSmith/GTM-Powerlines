@@ -115,43 +115,36 @@ public class PowerlineGraph {
 
         int x = SectionPos.blockToSectionCoord(a.getX()), z = SectionPos.blockToSectionCoord(a.getZ());
         int endX = SectionPos.blockToSectionCoord(b.getX()), endZ = SectionPos.blockToSectionCoord(b.getZ());
-
-        int dx = b.getX() - a.getX(), dz = b.getZ() - a.getZ();
-        int stepX = Integer.compare(dx, 0), stepZ = Integer.compare(dz, 0);
-
-        // Distance to the next chunk boundary, in block coordinates.
-        int distX = stepX > 0 ? SectionPos.sectionToBlockCoord(x + 1) - a.getX() :
-                a.getX() - SectionPos.sectionToBlockCoord(x);
-
-        int distZ = stepZ > 0 ? SectionPos.sectionToBlockCoord(z + 1) - a.getZ() :
-                a.getZ() - SectionPos.sectionToBlockCoord(z);
-
         result.add(ChunkPos.asLong(x, z));
 
-        while (x != endX || z != endZ) {
-            if (stepX == 0) {
-                z += stepZ;
-                distZ += SectionPos.SECTION_SIZE;
-            } else if (stepZ == 0) {
-                x += stepX;
-                distX += SectionPos.SECTION_SIZE;
-            } else {
-                long crossX = (long) distX * Math.abs(dz), crossZ = (long) distZ * Math.abs(dx);
+        // grid traversal from block centre to block centre; it takes exactly one step per chunk border crossed, so
+        // it always ends on (endX, endZ) and can never run away
+        double ax = a.getX() + 0.5, az = a.getZ() + 0.5;
+        double dx = b.getX() + 0.5 - ax, dz = b.getZ() + 0.5 - az;
+        int stepX = Integer.signum(endX - x), stepZ = Integer.signum(endZ - z);
 
-                if (crossX < crossZ) {
-                    x += stepX;
-                    distX += SectionPos.SECTION_SIZE;
-                } else if (crossZ < crossX) {
-                    z += stepZ;
-                    distZ += SectionPos.SECTION_SIZE;
-                } else {
-                    x += stepX;
-                    z += stepZ;
-                    distX += SectionPos.SECTION_SIZE;
-                    distZ += SectionPos.SECTION_SIZE;
-                }
+        double tMaxX = stepX == 0 ? Double.POSITIVE_INFINITY :
+                (SectionPos.sectionToBlockCoord(stepX > 0 ? x + 1 : x) - ax) / dx;
+        double tMaxZ = stepZ == 0 ? Double.POSITIVE_INFINITY :
+                (SectionPos.sectionToBlockCoord(stepZ > 0 ? z + 1 : z) - az) / dz;
+        double tDeltaX = stepX == 0 ? Double.POSITIVE_INFINITY : SectionPos.SECTION_SIZE / Math.abs(dx);
+        double tDeltaZ = stepZ == 0 ? Double.POSITIVE_INFINITY : SectionPos.SECTION_SIZE / Math.abs(dz);
+
+        int steps = Math.abs(endX - x) + Math.abs(endZ - z);
+        for (int i = 0; i < steps; i++) {
+            boolean moveX = x != endX && (z == endZ || tMaxX <= tMaxZ);
+            // passing exactly through a chunk corner: also include the chunk on the other side of it
+            if (x != endX && z != endZ && Math.abs(tMaxX - tMaxZ) < 1e-9) {
+                result.add(ChunkPos.asLong(x + stepX, z));
+                result.add(ChunkPos.asLong(x, z + stepZ));
             }
-
+            if (moveX) {
+                x += stepX;
+                tMaxX += tDeltaX;
+            } else {
+                z += stepZ;
+                tMaxZ += tDeltaZ;
+            }
             result.add(ChunkPos.asLong(x, z));
         }
 

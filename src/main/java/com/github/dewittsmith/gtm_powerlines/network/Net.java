@@ -14,7 +14,7 @@ import java.util.Optional;
 
 public final class Net {
 
-    private static final String PROTOCOL = "6";
+    private static final String PROTOCOL = "7";
 
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
             ResourceLocation.fromNamespaceAndPath(GTMPowerlines.MOD_ID, "main"),
@@ -38,6 +38,9 @@ public final class Net {
                 Optional.of(NetworkDirection.PLAY_TO_SERVER));
         CHANNEL.registerMessage(id++, WireStatsPacket.class,
                 WireStatsPacket::encode, WireStatsPacket::decode, WireStatsPacket::handle,
+                Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+        CHANNEL.registerMessage(id++, ObstructionHighlightPacket.class,
+                ObstructionHighlightPacket::encode, ObstructionHighlightPacket::decode, ObstructionHighlightPacket::handle,
                 Optional.of(NetworkDirection.PLAY_TO_CLIENT));
         CHANNEL.registerMessage(id++, MultimeterPathPacket.class,
                 MultimeterPathPacket::encode, MultimeterPathPacket::decode, MultimeterPathPacket::handle,
