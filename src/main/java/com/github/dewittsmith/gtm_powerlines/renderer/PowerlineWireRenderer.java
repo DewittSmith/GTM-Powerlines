@@ -2,7 +2,6 @@ package com.github.dewittsmith.gtm_powerlines.renderer;
 
 import com.gregtechceu.gtceu.GTCEu;
 
-import com.gregtechceu.gtceu.common.pipelike.cable.Insulation;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -10,7 +9,6 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 
 import com.github.dewittsmith.gtm_powerlines.wire.WireGeometry;
@@ -35,9 +33,13 @@ public class PowerlineWireRenderer {
 
     public static void renderTube(PoseStack poseStack, MultiBufferSource buffers, Vec3 start, Vec3 end,
                                   int light, Caps caps, WireStats stats) {
+        renderTube(poseStack, buffers, start, end, light, caps, stats, stats.color());
+    }
+
+    public static void renderTube(PoseStack poseStack, MultiBufferSource buffers, Vec3 start, Vec3 end,
+                                  int light, Caps caps, WireStats stats, int argb) {
         var pixelSize = WireGeometry.pixelSize(stats);
         var halfSize = pixelSize / 16f / 2;
-        var argb = stats.color();
 
         VertexConsumer consumer = buffers.getBuffer(wireRenderType());
         TextureAtlasSprite sprite = Minecraft.getInstance().getTextureAtlas(TextureAtlas.LOCATION_BLOCKS)
@@ -122,9 +124,13 @@ public class PowerlineWireRenderer {
 
     public static void renderBillboard(PoseStack poseStack, MultiBufferSource buffers, Vec3 start, Vec3 end,
                                        int light, Vec3 cameraPos, WireStats stats) {
+        renderBillboard(poseStack, buffers, start, end, light, cameraPos, stats, stats.color());
+    }
+
+    public static void renderBillboard(PoseStack poseStack, MultiBufferSource buffers, Vec3 start, Vec3 end,
+                                       int light, Vec3 cameraPos, WireStats stats, int argb) {
         var pixelSize = WireGeometry.pixelSize(stats);
         var halfSize = pixelSize / 16f / 2;
-        var argb = stats.color();
 
         VertexConsumer consumer = buffers.getBuffer(wireRenderType());
         TextureAtlasSprite sprite = Minecraft.getInstance().getTextureAtlas(TextureAtlas.LOCATION_BLOCKS)

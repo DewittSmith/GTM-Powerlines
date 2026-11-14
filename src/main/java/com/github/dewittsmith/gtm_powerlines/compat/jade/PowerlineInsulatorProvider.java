@@ -15,6 +15,7 @@ import snownee.jade.api.BlockAccessor;
 import snownee.jade.api.IBlockComponentProvider;
 import snownee.jade.api.IServerDataProvider;
 import snownee.jade.api.ITooltip;
+import snownee.jade.api.TooltipPosition;
 import snownee.jade.api.config.IPluginConfig;
 import snownee.jade.api.ui.IElementHelper;
 
@@ -25,7 +26,10 @@ public class PowerlineInsulatorProvider implements IBlockComponentProvider, ISer
 
     @Override
     public void appendServerData(CompoundTag data, BlockAccessor accessor) {
-        if (!(accessor.getBlockEntity() instanceof PowerlineInsulatorBlockEntity insulator)) return;
+        // fake accessors target a cable, see PowerlineWireProvider
+        if (accessor.isFakeBlock() || !(accessor.getBlockEntity() instanceof PowerlineInsulatorBlockEntity insulator)) {
+            return;
+        }
 
         data.putInt("MaxConnections", insulator.maxConnections());
         data.putFloat("MaxRange", insulator.maxConnectionRange());
@@ -50,6 +54,7 @@ public class PowerlineInsulatorProvider implements IBlockComponentProvider, ISer
 
     @Override
     public void appendTooltip(ITooltip tooltip, BlockAccessor accessor, IPluginConfig config) {
+        if (accessor.isFakeBlock()) return;
         var data = accessor.getServerData();
         if (!data.contains("Connections")) return;
 
@@ -74,6 +79,12 @@ public class PowerlineInsulatorProvider implements IBlockComponentProvider, ISer
             tooltip.add(helper.item(stack, 0.5f));
             tooltip.append(Component.literal(" " + t.getInt("Count") + "x ").append(stack.getHoverName()));
         }
+    }
+
+    /** Before GTCEu's providers (all at BODY), so GT's paint colour line stays last, like on GT blocks. */
+    @Override
+    public int getDefaultPriority() {
+        return TooltipPosition.BODY - 100;
     }
 
     @Override

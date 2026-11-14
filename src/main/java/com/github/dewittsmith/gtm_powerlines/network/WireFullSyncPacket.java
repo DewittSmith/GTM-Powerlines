@@ -39,10 +39,11 @@ public record WireFullSyncPacket(List<PowerlineGraph.Edge> edges) {
         buf.writeBlockPos(e.b());
         buf.writeEnum(e.dirB());
         buf.writeResourceLocation(e.wire());
+        buf.writeInt(e.paint());
     }
 
     public static PowerlineGraph.Edge readEdge(FriendlyByteBuf buf) {
         return PowerlineGraph.Edge.of(buf.readBlockPos(), buf.readEnum(Direction.class), buf.readBlockPos(),
-                buf.readEnum(Direction.class), buf.readResourceLocation());
+                buf.readEnum(Direction.class), buf.readResourceLocation(), buf.readInt());
     }
 }

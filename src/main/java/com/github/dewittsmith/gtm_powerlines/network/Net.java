@@ -14,7 +14,7 @@ import java.util.Optional;
 
 public final class Net {
 
-    private static final String PROTOCOL = "1";
+    private static final String PROTOCOL = "6";
 
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
             ResourceLocation.fromNamespaceAndPath(GTMPowerlines.MOD_ID, "main"),
@@ -33,12 +33,22 @@ public final class Net {
         CHANNEL.registerMessage(id++, WireDeltaPacket.class,
                 WireDeltaPacket::encode, WireDeltaPacket::decode, WireDeltaPacket::handle,
                 Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+        CHANNEL.registerMessage(id++, WireStatsRequestPacket.class,
+                WireStatsRequestPacket::encode, WireStatsRequestPacket::decode, WireStatsRequestPacket::handle,
+                Optional.of(NetworkDirection.PLAY_TO_SERVER));
+        CHANNEL.registerMessage(id++, WireStatsPacket.class,
+                WireStatsPacket::encode, WireStatsPacket::decode, WireStatsPacket::handle,
+                Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+        CHANNEL.registerMessage(id++, MultimeterPathPacket.class,
+                MultimeterPathPacket::encode, MultimeterPathPacket::decode, MultimeterPathPacket::handle,
+                Optional.of(NetworkDirection.PLAY_TO_CLIENT));
         CHANNEL.registerMessage(id++, WireAttachmentPacket.class,
                 WireAttachmentPacket::encode, WireAttachmentPacket::decode, WireAttachmentPacket::handle,
                 Optional.of(NetworkDirection.PLAY_TO_CLIENT));
-        CHANNEL.registerMessage(id++, WireCutSelectionPacket.class,
-                WireCutSelectionPacket::encode, WireCutSelectionPacket::decode, WireCutSelectionPacket::handle,
-                Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+    }
+
+    public static void sendToServer(Object packet) {
+        CHANNEL.sendToServer(packet);
     }
 
     public static void sendToPlayer(ServerPlayer player, Object packet) {

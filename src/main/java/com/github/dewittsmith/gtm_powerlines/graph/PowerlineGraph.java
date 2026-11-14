@@ -1,5 +1,7 @@
 package com.github.dewittsmith.gtm_powerlines.graph;
 
+import com.gregtechceu.gtceu.api.blockentity.IPaintable;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.SectionPos;
@@ -20,12 +22,35 @@ import javax.annotation.Nullable;
 
 public class PowerlineGraph {
 
-    public record Edge(BlockPos a, Direction dirA, BlockPos b, Direction dirB, ResourceLocation wire, WireStats stats) {
+    /**
+     * A single suspended cable between two insulators. Equality is defined by the two endpoints only, so that a
+     * recoloured edge still matches the heat/amperage bookkeeping of the original one.
+     */
+    public record Edge(BlockPos a, Direction dirA, BlockPos b, Direction dirB, ResourceLocation wire, WireStats stats,
+                       int paint) {
 
         public static Edge of(BlockPos a, Direction dirA, BlockPos b, Direction dirB, ResourceLocation wire) {
+            return of(a, dirA, b, dirB, wire, IPaintable.UNPAINTED_COLOR);
+        }
+
+        public static Edge of(BlockPos a, Direction dirA, BlockPos b, Direction dirB, ResourceLocation wire,
+                              int paint) {
             var stats = WireStats.of(wire).orElse(null);
-            return a.asLong() <= b.asLong() ? new Edge(a.immutable(), dirA, b.immutable(), dirB, wire, stats) :
-                    new Edge(b.immutable(), dirB, a.immutable(), dirA, wire, stats);
+            return a.asLong() <= b.asLong() ? new Edge(a.immutable(), dirA, b.immutable(), dirB, wire, stats, paint) :
+                    new Edge(b.immutable(), dirB, a.immutable(), dirA, wire, stats, paint);
+        }
+
+        public Edge withPaint(int paint) {
+            return new Edge(a, dirA, b, dirB, wire, stats, paint);
+        }
+
+        public boolean isPainted() {
+            return paint != IPaintable.UNPAINTED_COLOR;
+        }
+
+        /** ARGB colour the cable should be rendered with. */
+        public int renderColor() {
+            return isPainted() ? 0xFF000000 | paint : stats.color();
         }
 
         public static float length(BlockPos a, Direction dirA, BlockPos b, Direction dirB) {
@@ -64,6 +89,16 @@ public class PowerlineGraph {
         public Direction dirAt(BlockPos p) {
             return p.equals(a) ? dirA : dirB;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            return this == o || (o instanceof Edge e && a.equals(e.a) && b.equals(e.b));
+        }
+
+        @Override
+        public int hashCode() {
+            return 31 * a.hashCode() + b.hashCode();
+        }
     }
 
     private final Set<Edge> edges = new LinkedHashSet<>();
@@ -74,7 +109,8 @@ public class PowerlineGraph {
         return new ArrayList<>();
     }
 
-    private static LongSet getChunksCrossed(BlockPos a, BlockPos b) {
+    /** Chunks (as {@link ChunkPos#asLong}) the XZ projection of the segment a-b passes through. */
+    public static LongSet getChunksCrossed(BlockPos a, BlockPos b) {
         var result = new LongOpenHashSet();
 
         int x = SectionPos.blockToSectionCoord(a.getX()), z = SectionPos.blockToSectionCoord(a.getZ());
@@ -172,12 +208,42 @@ public class PowerlineGraph {
         return Optional.empty();
     }
 
+    /** Positions (as longs) of every insulator with at least one connection. */
+    public LongSet nodes() {
+        return LongSets.unmodifiable(byPos.keySet());
+    }
+
     public List<Edge> atBlock(BlockPos pos) {
         return byPos.getOrDefault(pos.asLong(), Collections.emptyList());
     }
 
     public boolean connect(BlockPos a, Direction dirA, BlockPos b, Direction dirB, ResourceLocation wire) {
         return add(Edge.of(a, dirA, b, dirB, wire));
+    }
+
+    /**
+     * Swaps the stored edge with the same endpoints for {@code edge} (e.g. after repainting).
+     *
+     * @return false if no such edge exists
+     */
+    public boolean replace(Edge edge) {
+        var old = getEdge(edge.a, edge.b).orElse(null);
+        if (old == null) return false;
+        edges.remove(old);
+        edges.add(edge);
+        replaceInBucket(byPos, edge.a.asLong(), edge);
+        replaceInBucket(byPos, edge.b.asLong(), edge);
+        for (var chunk : getChunksCrossed(edge.a, edge.b)) {
+            replaceInBucket(byChunk, chunk, edge);
+        }
+        return true;
+    }
+
+    private static void replaceInBucket(Long2ObjectMap<List<Edge>> map, long key, Edge edge) {
+        var bucket = map.get(key);
+        if (bucket == null) return;
+        var index = bucket.indexOf(edge);
+        if (index >= 0) bucket.set(index, edge);
     }
 
     public @Nullable Edge disconnect(BlockPos a, BlockPos b) {
@@ -207,6 +273,7 @@ public class PowerlineGraph {
             e.putLong("b", edge.b.asLong());
             e.putString("dirB", edge.dirB.getName());
             e.putString("wire", edge.wire.toString());
+            if (edge.isPainted()) e.putInt("paint", edge.paint);
             list.add(e);
         }
 
@@ -223,7 +290,8 @@ public class PowerlineGraph {
                     Direction.byName(t.getString("dirA")),
                     BlockPos.of(t.getLong("b")),
                     Direction.byName(t.getString("dirB")),
-                    ResourceLocation.parse(t.getString("wire")));
+                    ResourceLocation.parse(t.getString("wire")),
+                    t.contains("paint", Tag.TAG_INT) ? t.getInt("paint") : IPaintable.UNPAINTED_COLOR);
             if (edge.stats() == null) {
                 GTMPowerlines.LOGGER.warn("Dropping powerline with unknown wire {}", edge.wire());
                 continue;

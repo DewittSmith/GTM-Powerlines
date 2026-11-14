@@ -6,9 +6,10 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
+import com.github.dewittsmith.gtm_powerlines.wire.ClientWireStats;
 import com.github.dewittsmith.gtm_powerlines.wire.ClientWires;
+import com.github.dewittsmith.gtm_powerlines.wire.MultimeterHighlight;
 import com.github.dewittsmith.gtm_powerlines.wire.WireAttachment;
-import com.github.dewittsmith.gtm_powerlines.wire.WireCutSelection;
 
 @Mod.EventBusSubscriber(modid = GTMPowerlines.MOD_ID, value = Dist.CLIENT)
 public final class ClientWireEvents {
@@ -17,6 +18,7 @@ public final class ClientWireEvents {
     public static void onLogout(ClientPlayerNetworkEvent.LoggingOut e) {
         ClientWires.clear();
         WireAttachment.setClient(null);
-        WireCutSelection.setClient(null);
+        MultimeterHighlight.clear();
+        ClientWireStats.clear();
     }
 }

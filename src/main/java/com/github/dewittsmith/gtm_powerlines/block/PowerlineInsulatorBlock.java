@@ -1,10 +1,13 @@
 package com.github.dewittsmith.gtm_powerlines.block;
 
-import com.gregtechceu.gtceu.api.capability.forge.GTCapability;
+import com.gregtechceu.gtceu.common.block.CableBlock;
 import com.gregtechceu.gtceu.common.blockentity.CableBlockEntity;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
@@ -21,6 +24,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.registries.ForgeRegistries;
 
 import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
+import com.github.dewittsmith.gtm_powerlines.graph.PowerlineNetwork;
 import com.github.dewittsmith.gtm_powerlines.registry.GTMPowerlinesRegistries;
 import org.jetbrains.annotations.Nullable;
 
@@ -35,6 +39,9 @@ public class PowerlineInsulatorBlock extends Block implements EntityBlock {
             Direction.SOUTH, box(5, 5, 0, 11, 11, 16),
             Direction.WEST, box(0, 5, 5, 16, 11, 11),
             Direction.EAST, box(0, 5, 5, 16, 11, 11));
+
+    /** Ticks to wait before checking the supporting cable's connection (lets GT finish swapping cables). */
+    private static final int CONNECTION_CHECK_DELAY = 2;
 
     public static final DirectionProperty DIRECTION = DirectionProperty.create("direction");
 
@@ -67,6 +74,21 @@ public class PowerlineInsulatorBlock extends Block implements EntityBlock {
         return null;
     }
 
+    /**
+     * Like GT machines: placing an insulator against a cable opens the cable on that side.
+     */
+    @Override
+    public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer,
+                            ItemStack stack) {
+        super.setPlacedBy(level, pos, state, placer, stack);
+        if (level.isClientSide) return;
+        var facing = state.getValue(DIRECTION);
+        if (level.getBlockEntity(pos.relative(facing.getOpposite())) instanceof CableBlockEntity cable) {
+            cable.setConnection(facing, true, false);
+        }
+    }
+
+    /** Structural check only: a sturdy face or any GT cable. Cable connections are checked in {@link #tick}. */
     @Override
     public boolean canSurvive(BlockState state, LevelReader level, BlockPos pos) {
         var facing = state.getValue(DIRECTION);
@@ -76,16 +98,48 @@ public class PowerlineInsulatorBlock extends Block implements EntityBlock {
 
     private boolean canAttachTo(LevelReader level, BlockPos supportPos, Direction facing) {
         if (canSupportCenter(level, supportPos, facing)) return true;
-        var support = level.getBlockEntity(supportPos);
-        return support instanceof CableBlockEntity &&
-                support.getCapability(GTCapability.CAPABILITY_ENERGY_CONTAINER, facing).isPresent();
+        return level.getBlockEntity(supportPos) instanceof CableBlockEntity;
     }
 
     @Override
     public BlockState updateShape(BlockState state, Direction dir, BlockState neighbor,
                                   LevelAccessor level, BlockPos pos, BlockPos neighborPos) {
-        return dir == state.getValue(DIRECTION).getOpposite() && !state.canSurvive(level, pos) ?
-                Blocks.AIR.defaultBlockState() : super.updateShape(state, dir, neighbor, level, pos, neighborPos);
+        if (dir != state.getValue(DIRECTION).getOpposite()) {
+            return super.updateShape(state, dir, neighbor, level, pos, neighborPos);
+        }
+
+        if (!state.canSurvive(level, pos)) {
+            // the cable we hang on melted: our wires burn with it instead of dropping
+            if (neighbor.getBlock() instanceof BaseFireBlock &&
+                    level.getBlockEntity(pos) instanceof PowerlineInsulatorBlockEntity insulator) {
+                insulator.markBurned();
+            }
+            return Blocks.AIR.defaultBlockState();
+        }
+
+        // a GT cable may have been swapped (e.g. its insulation burned off); re-check the connection a bit later,
+        // once the new cable restored its sides
+        if (neighbor.getBlock() instanceof CableBlock) level.scheduleTick(pos, this, CONNECTION_CHECK_DELAY);
+        return state;
+    }
+
+    @Override
+    public void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, BlockPos neighborPos,
+                                boolean movedByPiston) {
+        super.neighborChanged(state, level, pos, neighborBlock, neighborPos, movedByPiston);
+        if (!level.isClientSide && neighborPos.equals(pos.relative(state.getValue(DIRECTION).getOpposite()))) {
+            level.scheduleTick(pos, this, CONNECTION_CHECK_DELAY);
+        }
+    }
+
+    /** Breaks the insulator when the cable it hangs on is no longer connected on its side. */
+    @Override
+    public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
+        var facing = state.getValue(DIRECTION);
+        if (level.getBlockEntity(pos.relative(facing.getOpposite())) instanceof CableBlockEntity cable &&
+                !cable.isConnected(facing)) {
+            level.destroyBlock(pos, true);
+        }
     }
 
     @Override
@@ -109,12 +163,19 @@ public class PowerlineInsulatorBlock extends Block implements EntityBlock {
                 level.getBlockEntity(pos) instanceof PowerlineInsulatorBlockEntity blockEntity) {
 
             var direction = state.getValue(DIRECTION);
-            for (var edge : blockEntity.getConnections()) {
-                var item = ForgeRegistries.ITEMS.getValue(edge.wire());
-                if (item == null) continue;
-                Block.popResourceFromFace(level, pos, direction, new ItemStack(item, edge.wireCount()));
+            if (!blockEntity.isBurned()) {
+                for (var edge : blockEntity.getConnections()) {
+                    var item = ForgeRegistries.ITEMS.getValue(edge.wire());
+                    if (item == null) continue;
+                    Block.popResourceFromFace(level, pos, direction, new ItemStack(item, edge.wireCount()));
+                }
             }
-            blockEntity.disconnectAll();
+            if (level instanceof ServerLevel serverLevel) {
+                var network = PowerlineNetwork.get(serverLevel);
+                if (blockEntity.isBurned()) network.burnAll(pos);
+                else blockEntity.disconnectAll();
+                network.setTransformerNode(pos, null);
+            }
         }
         super.onRemove(state, level, pos, newState, moved);
     }

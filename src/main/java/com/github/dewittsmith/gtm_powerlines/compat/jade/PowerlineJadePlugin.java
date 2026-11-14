@@ -11,6 +11,7 @@ import snownee.jade.api.WailaPlugin;
 public class PowerlineJadePlugin implements IWailaPlugin {
 
     private final PowerlineInsulatorProvider insulatorProvider = new PowerlineInsulatorProvider();
+    private final PowerlineWireProvider wireProvider = new PowerlineWireProvider();
 
     @Override
     public void register(IWailaCommonRegistration registration) {
@@ -20,5 +21,9 @@ public class PowerlineJadePlugin implements IWailaPlugin {
     @Override
     public void registerClient(IWailaClientRegistration registration) {
         registration.registerBlockComponent(insulatorProvider, PowerlineInsulatorBlock.class);
+
+        wireProvider.setClientRegistration(registration);
+        registration.registerBlockComponent(wireProvider, PowerlineInsulatorBlock.class);
+        registration.addRayTraceCallback(wireProvider::onRayTrace);
     }
 }

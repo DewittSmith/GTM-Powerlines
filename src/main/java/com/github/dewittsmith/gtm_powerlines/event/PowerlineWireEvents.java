@@ -23,6 +23,8 @@ import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlock
 import com.github.dewittsmith.gtm_powerlines.graph.PowerlineGraph;
 import com.github.dewittsmith.gtm_powerlines.util.ItemUtils;
 import com.github.dewittsmith.gtm_powerlines.wire.WireAttachment;
+import com.github.dewittsmith.gtm_powerlines.wire.WireGeometry;
+import com.github.dewittsmith.gtm_powerlines.wire.WireObstruction;
 import com.github.dewittsmith.gtm_powerlines.wire.WireStats;
 
 import java.util.HashMap;
@@ -123,6 +125,21 @@ public class PowerlineWireEvents {
             message(player, "message.gtm_powerlines.wire.too_long", Mth.ceil(flatDistance), Mth.floor(maxDistance));
             finish(event);
             return;
+        }
+
+        if (WireObstruction.enabled()) {
+            var fromDir = fromBe.getBlockState().getValue(PowerlineInsulatorBlock.DIRECTION);
+            var toDir = clickedBe.getBlockState().getValue(PowerlineInsulatorBlock.DIRECTION);
+            var blocked = WireObstruction.find(level,
+                    WireGeometry.getAttachmentPoint(attach.pos(), fromDir, wireInfo),
+                    WireGeometry.getAttachmentPoint(pos, toDir, wireInfo));
+            if (!blocked.isEmpty()) {
+                var first = blocked.get(0);
+                message(player, "message.gtm_powerlines.wire.blocked", blocked.size(),
+                        first.getX() + ", " + first.getY() + ", " + first.getZ());
+                finish(event);
+                return;
+            }
         }
 
         var count = PowerlineGraph.Edge.wireCount(attach.pos(),

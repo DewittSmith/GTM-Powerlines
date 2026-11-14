@@ -3,6 +3,7 @@ package com.github.dewittsmith.gtm_powerlines.wire;
 import net.minecraft.core.BlockPos;
 
 import com.github.dewittsmith.gtm_powerlines.graph.PowerlineGraph;
+import com.github.dewittsmith.gtm_powerlines.network.WireDeltaPacket;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 
 import java.util.Collection;
@@ -17,9 +18,16 @@ public final class ClientWires {
         all.forEach(GRAPH::add);
     }
 
-    public static void apply(boolean add, PowerlineGraph.Edge e) {
-        if (add) GRAPH.add(e);
-        else GRAPH.disconnect(e.a(), e.b());
+    public static void apply(WireDeltaPacket.Op op, PowerlineGraph.Edge e) {
+        switch (op) {
+            case ADD -> GRAPH.add(e);
+            case REMOVE -> GRAPH.disconnect(e.a(), e.b());
+            case UPDATE -> GRAPH.replace(e);
+        }
+    }
+
+    public static PowerlineGraph graph() {
+        return GRAPH;
     }
 
     public static List<PowerlineGraph.Edge> at(BlockPos pos) {

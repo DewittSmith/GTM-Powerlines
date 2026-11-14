@@ -1,7 +1,11 @@
 package com.github.dewittsmith.gtm_powerlines.graph;
 
+import com.gregtechceu.gtceu.api.item.MaterialPipeBlockItem;
+import com.gregtechceu.gtceu.common.block.CableBlock;
 import com.gregtechceu.gtceu.common.blockentity.CableBlockEntity;
+import com.gregtechceu.gtceu.common.data.GTMaterialBlocks;
 import com.gregtechceu.gtceu.common.pipelike.cable.AveragingPerTickCounter;
+import com.gregtechceu.gtceu.common.pipelike.cable.Insulation;
 import com.gregtechceu.gtceu.utils.GTMath;
 import com.gregtechceu.gtceu.utils.GTUtil;
 import com.gregtechceu.gtceu.utils.TaskHandler;
@@ -16,13 +20,13 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.saveddata.SavedData;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import com.github.dewittsmith.gtm_powerlines.network.Net;
 import com.github.dewittsmith.gtm_powerlines.network.WireDeltaPacket;
 import com.github.dewittsmith.gtm_powerlines.wire.WireGeometry;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
-import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -36,6 +40,8 @@ public class PowerlineNetwork extends SavedData {
 
     private static final String DATA_NAME = "gtm_powerlines_network";
     public static final int DEFAULT_TEMP = 293;
+    /** Temperature at which GT cables lose their insulation. */
+    public static final int INSULATION_BURN_TEMP = 1500;
 
     private static final class WireHeat {
 
@@ -47,13 +53,26 @@ public class PowerlineNetwork extends SavedData {
         }
     }
 
-    @Getter
+    /**
+     * All routes reachable from one source insulator.
+     *
+     * @param dedicated true when the source belongs to a transformer line: such a line only carries energy between
+     *                  transformers, machines attached to its insulators can neither feed nor tap it
+     */
+    public record RouteSet(List<TransferPath> paths, boolean dedicated) {}
+
     private final PowerlineGraph graph;
 
     private final ServerLevel level;
 
-    private final Long2ObjectMap<List<TransferPath>> routes = new Long2ObjectOpenHashMap<>();
+    /** insulator position -> controller position of the transformer that insulator belongs to */
+    private final Long2ObjectMap<BlockPos> transformerNodes = new Long2ObjectOpenHashMap<>();
+
+    private final Long2ObjectMap<RouteSet> routes = new Long2ObjectOpenHashMap<>();
     private final Map<PowerlineGraph.Edge, AveragingPerTickCounter> amperageCounters = new HashMap<>();
+    private final Map<PowerlineGraph.Edge, AveragingPerTickCounter> energyCounters = new HashMap<>();
+    /** edge -> {game time, highest voltage that tick} */
+    private final Map<PowerlineGraph.Edge, long[]> voltages = new HashMap<>();
     private final Map<PowerlineGraph.Edge, WireHeat> heat = new HashMap<>();
     private boolean heatTicking;
 
@@ -69,19 +88,63 @@ public class PowerlineNetwork extends SavedData {
                 DATA_NAME);
     }
 
-    private List<TransferPath> getRoutes(BlockPos source) {
+    public PowerlineGraph getGraph() {
+        return graph;
+    }
+
+    // region transformer nodes
+
+    public void setTransformerNode(BlockPos insulator, @Nullable BlockPos controller) {
+        var key = insulator.asLong();
+        var previous = controller == null ? transformerNodes.remove(key) :
+                transformerNodes.put(key, controller.immutable());
+        if (controller == null ? previous == null : controller.equals(previous)) return;
+        routes.clear();
+        setDirty();
+    }
+
+    public boolean isTransformerNode(BlockPos insulator) {
+        return transformerNodes.containsKey(insulator.asLong());
+    }
+
+    public @Nullable BlockPos getTransformerController(BlockPos insulator) {
+        return transformerNodes.get(insulator.asLong());
+    }
+
+    // endregion
+
+    // region routing & energy
+
+    public RouteSet getRoutes(BlockPos source) {
         var key = source.asLong();
         var result = routes.get(key);
         if (result == null) {
-            result = TransferPath.walk(graph, source);
+            var paths = TransferPath.walk(graph, source, this::isTransformerNode);
+            var dedicated = isTransformerNode(source) ||
+                    paths.stream().anyMatch(path -> isTransformerNode(path.targetPos()));
+            result = new RouteSet(paths, dedicated);
             routes.put(key, result);
         }
         return result;
     }
 
+    public @Nullable TransferPath findRoute(BlockPos from, BlockPos to) {
+        for (var path : getRoutes(from).paths()) {
+            if (path.targetPos().equals(to)) return path;
+        }
+        return null;
+    }
+
+    /**
+     * Energy pushed into an insulator by the machine/cable it is mounted on. Behaves like a GT cable network:
+     * distributes to every reachable machine, losing {@code lossPerBlock} volts per block of euclidean wire length.
+     */
     public long acceptEnergy(BlockPos source, long voltage, long amperage) {
+        var routeSet = getRoutes(source);
+        if (routeSet.dedicated()) return 0;
+
         long amperesUsed = 0L;
-        for (var route : getRoutes(source)) {
+        for (var route : routeSet.paths()) {
             if (route.maxLoss() >= voltage) continue;
 
             var dest = route.getHandler(level);
@@ -90,29 +153,55 @@ public class PowerlineNetwork extends SavedData {
             var facing = route.targetFacing().getOpposite();
             if (!dest.inputsEnergy(facing) || dest.getEnergyCanBeInserted() <= 0) continue;
 
-            long pathVoltage = voltage - route.maxLoss();
-            for (var edge : route.path()) {
-                long maxVoltage = edge.stats().props().getVoltage();
-                if (maxVoltage < voltage) {
-                    applyHeat(edge, overvoltageHeat(voltage, maxVoltage));
-                    pathVoltage = Math.min(maxVoltage, pathVoltage);
-                }
-            }
-
+            long pathVoltage = applyVoltageLimit(route, voltage, voltage - route.maxLoss());
             long amps = dest.acceptEnergyFromNetwork(facing, pathVoltage, amperage - amperesUsed);
             if (amps == 0) continue;
 
             amperesUsed += amps;
-            float voltageTraveled = voltage;
-            for (var edge : route.path()) {
-                voltageTraveled -= edge.loss();
-                if (voltageTraveled <= 0) break;
-                incrementAmperage(edge, amps);
-            }
+            recordFlow(route, voltage, amps, 1f);
 
             if (amperage == amperesUsed) break;
         }
         return amperesUsed;
+    }
+
+    /**
+     * Heats every wire on the route whose voltage rating is below {@code voltage}, like GT cables do.
+     *
+     * @return {@code pathVoltage} clamped to the weakest wire on the route
+     */
+    public long applyVoltageLimit(TransferPath route, long voltage, long pathVoltage) {
+        for (var edge : route.path()) {
+            long maxVoltage = edge.stats().props().getVoltage();
+            if (maxVoltage < voltage) {
+                applyHeat(edge, overvoltageHeat(voltage, maxVoltage));
+                pathVoltage = Math.min(maxVoltage, pathVoltage);
+            }
+        }
+        return pathVoltage;
+    }
+
+    /**
+     * Records {@code amps} flowing along the route, heating every wire whose amperage rating is exceeded.
+     *
+     * @param lossScale multiplier for the per-block loss (1 for regular lines, reduced by transformer coils)
+     */
+    public void recordFlow(TransferPath route, long voltage, long amps, float lossScale) {
+        float voltageTraveled = voltage;
+        for (var edge : route.path()) {
+            voltageTraveled -= edge.loss() * lossScale;
+            if (voltageTraveled <= 0) break;
+            incrementAmperage(edge, amps);
+            var seen = voltages.computeIfAbsent(edge, unused -> new long[2]);
+            long now = level.getGameTime();
+            if (seen[0] != now) {
+                seen[0] = now;
+                seen[1] = 0;
+            }
+            seen[1] = Math.max(seen[1], voltage);
+            energyCounters.computeIfAbsent(edge, unused -> new AveragingPerTickCounter())
+                    .increment(level, (long) voltageTraveled * amps);
+        }
     }
 
     private static int overvoltageHeat(long voltage, long maxVoltage) {
@@ -126,6 +215,35 @@ public class PowerlineNetwork extends SavedData {
         int dif = GTMath.saturatedCast(counter.getLast(level) - edge.stats().props().getAmperage());
         if (dif > 0) applyHeat(edge, dif * 40);
     }
+
+    // endregion
+
+    // region live stats (multimeter)
+
+    public double getAverageAmperage(PowerlineGraph.Edge edge) {
+        var counter = amperageCounters.get(edge);
+        return counter == null ? 0 : counter.getAverage(level);
+    }
+
+    public double getAverageEnergy(PowerlineGraph.Edge edge) {
+        var counter = energyCounters.get(edge);
+        return counter == null ? 0 : counter.getAverage(level);
+    }
+
+    /** Highest voltage that went through the cable during the last second, or 0. */
+    public long getCurrentVoltage(PowerlineGraph.Edge edge) {
+        var seen = voltages.get(edge);
+        return seen == null || level.getGameTime() - seen[0] > 20 ? 0 : seen[1];
+    }
+
+    public int getTemperature(PowerlineGraph.Edge edge) {
+        var wire = heat.get(edge);
+        return wire == null ? DEFAULT_TEMP : wire.temperature;
+    }
+
+    // endregion
+
+    // region heat
 
     private void applyHeat(PowerlineGraph.Edge edge, int amount) {
         if (amount <= 0) return;
@@ -141,6 +259,7 @@ public class PowerlineNetwork extends SavedData {
 
     private void tickHeat() {
         List<PowerlineGraph.Edge> melted = null;
+        List<PowerlineGraph.Edge> stripped = null;
         var iterator = heat.entrySet().iterator();
         while (iterator.hasNext()) {
             var entry = iterator.next();
@@ -161,6 +280,15 @@ public class PowerlineNetwork extends SavedData {
                 continue;
             }
 
+            // like GT cables: insulation burns off first, the bare wire keeps heating and melts later
+            if (edge.stats().insulation().insulationLevel >= 0 && wire.temperature >= INSULATION_BURN_TEMP &&
+                    level.random.nextFloat() < 0.1f) {
+                if (stripped == null) stripped = new ArrayList<>();
+                stripped.add(edge);
+                wire.heatQueue = 0;
+                continue;
+            }
+
             if (wire.heatQueue == 0) {
                 wire.temperature = (int) (wire.temperature - Math.pow(wire.temperature - DEFAULT_TEMP, 0.35));
             } else {
@@ -169,6 +297,8 @@ public class PowerlineNetwork extends SavedData {
 
             if (wire.temperature >= 500 && level.getGameTime() % 5 == 0) spawnHeatParticles(edge, false);
         }
+
+        if (stripped != null) stripped.forEach(this::uninsulate);
 
         if (melted != null) {
             for (var edge : melted) {
@@ -182,12 +312,55 @@ public class PowerlineNetwork extends SavedData {
         else TaskHandler.enqueueServerTask(level, this::tickHeat, 0);
     }
 
+    /** Replaces an insulated cable with the bare wire of the same material, keeping its heat. */
+    private void uninsulate(PowerlineGraph.Edge edge) {
+        var bare = bareWire(edge.wire(), edge.stats().insulation());
+        if (bare == null) return;
+        var replacement = PowerlineGraph.Edge.of(edge.a(), edge.dirA(), edge.b(), edge.dirB(), bare);
+        if (replacement.stats() == null || !graph.replace(replacement)) return;
+
+        // rekey bookkeeping so it refers to the new wire's stats (keys compare by endpoints)
+        rekey(heat, replacement);
+        rekey(amperageCounters, replacement);
+        rekey(energyCounters, replacement);
+        rekey(voltages, replacement);
+
+        spawnHeatParticles(replacement, false);
+        routes.clear();
+        setDirty();
+        Net.sendToDimension(level, new WireDeltaPacket(WireDeltaPacket.Op.UPDATE, replacement));
+    }
+
+    private static <V> void rekey(Map<PowerlineGraph.Edge, V> map, PowerlineGraph.Edge edge) {
+        var value = map.remove(edge);
+        if (value != null) map.put(edge, value);
+    }
+
+    private static @Nullable ResourceLocation bareWire(ResourceLocation wire, Insulation insulation) {
+        if (insulation.insulationLevel < 0) return null;
+        if (!(ForgeRegistries.ITEMS.getValue(wire) instanceof MaterialPipeBlockItem item) ||
+                !(item.getBlock() instanceof CableBlock cable)) {
+            return null;
+        }
+        var entry = GTMaterialBlocks.CABLE_BLOCKS.get(Insulation.values()[insulation.insulationLevel].tagPrefix,
+                cable.material);
+        return entry == null ? null : ForgeRegistries.ITEMS.getKey(entry.get().asItem());
+    }
+
+    /** Removes every cable on an insulator as burned: smoke, no drops. */
+    public void burnAll(BlockPos pos) {
+        for (var edge : List.copyOf(graph.atBlock(pos))) {
+            spawnHeatParticles(edge, true);
+            disconnect(edge.a(), edge.b());
+        }
+    }
+
     private void spawnHeatParticles(PowerlineGraph.Edge edge, boolean burned) {
         var start = WireGeometry.getAttachmentPoint(edge.a(), edge.dirA(), edge.stats());
         var end = WireGeometry.getAttachmentPoint(edge.b(), edge.dirB(), edge.stats());
 
         var sag = WireGeometry.sag(start, end);
-        var samples = Mth.ceil(WireGeometry.samples(WireGeometry.length(start, end, sag)));
+        var samples = Math.max(2, Mth.ceil(WireGeometry.samples(WireGeometry.length(start, end, sag))));
 
         for (var index = 0; index < samples; ++index) {
             var point = WireGeometry.sample(start, end, index / (samples - 1.0), sag);
@@ -197,11 +370,15 @@ public class PowerlineNetwork extends SavedData {
         }
     }
 
+    // endregion
+
+    // region graph mutation
+
     public @Nullable PowerlineGraph.Edge connect(BlockPos start, Direction startDir, BlockPos end, Direction endDir,
                                                  ResourceLocation wire) {
         var edge = PowerlineGraph.Edge.of(start, startDir, end, endDir, wire);
         if (edge.stats() == null || !graph.add(edge)) return null;
-        onChanged(new WireDeltaPacket(true, edge));
+        onChanged(new WireDeltaPacket(WireDeltaPacket.Op.ADD, edge));
         return edge;
     }
 
@@ -218,10 +395,27 @@ public class PowerlineNetwork extends SavedData {
         return removed;
     }
 
+    /**
+     * Repaints a cable. Pass {@link com.gregtechceu.gtceu.api.blockentity.IPaintable#UNPAINTED_COLOR} to clear it.
+     *
+     * @return true if the colour changed
+     */
+    public boolean repaint(PowerlineGraph.Edge edge, int paint) {
+        var current = graph.getEdge(edge.a(), edge.b()).orElse(null);
+        if (current == null || current.paint() == paint) return false;
+        var painted = current.withPaint(paint);
+        graph.replace(painted);
+        setDirty();
+        Net.sendToDimension(level, new WireDeltaPacket(WireDeltaPacket.Op.UPDATE, painted));
+        return true;
+    }
+
     private void onRemoved(PowerlineGraph.Edge edge) {
         heat.remove(edge);
         amperageCounters.remove(edge);
-        onChanged(new WireDeltaPacket(false, edge));
+        energyCounters.remove(edge);
+        voltages.remove(edge);
+        onChanged(new WireDeltaPacket(WireDeltaPacket.Op.REMOVE, edge));
     }
 
     private void onChanged(WireDeltaPacket packet) {
@@ -229,6 +423,8 @@ public class PowerlineNetwork extends SavedData {
         setDirty();
         Net.sendToDimension(level, packet);
     }
+
+    // endregion
 
     @Override
     public @NotNull CompoundTag save(@NotNull CompoundTag tag) {
@@ -243,6 +439,15 @@ public class PowerlineNetwork extends SavedData {
             heatList.add(entry);
         });
         tag.put("wireHeat", heatList);
+
+        var nodeList = new ListTag();
+        for (var entry : transformerNodes.long2ObjectEntrySet()) {
+            var node = new CompoundTag();
+            node.putLong("insulator", entry.getLongKey());
+            node.putLong("controller", entry.getValue().asLong());
+            nodeList.add(node);
+        }
+        tag.put("transformerNodes", nodeList);
         return tag;
     }
 
@@ -255,6 +460,11 @@ public class PowerlineNetwork extends SavedData {
             if (temperature <= DEFAULT_TEMP) continue;
             network.graph.getEdge(BlockPos.of(entry.getLong("a")), BlockPos.of(entry.getLong("b")))
                     .ifPresent(edge -> network.heat.put(edge, new WireHeat(temperature)));
+        }
+
+        for (var raw : tag.getList("transformerNodes", Tag.TAG_COMPOUND)) {
+            var node = (CompoundTag) raw;
+            network.transformerNodes.put(node.getLong("insulator"), BlockPos.of(node.getLong("controller")));
         }
 
         network.startHeatTicking();

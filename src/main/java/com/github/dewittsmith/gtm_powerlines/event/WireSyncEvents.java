@@ -10,7 +10,6 @@ import com.github.dewittsmith.gtm_powerlines.graph.PowerlineNetwork;
 import com.github.dewittsmith.gtm_powerlines.network.Net;
 import com.github.dewittsmith.gtm_powerlines.network.WireFullSyncPacket;
 import com.github.dewittsmith.gtm_powerlines.wire.WireAttachment;
-import com.github.dewittsmith.gtm_powerlines.wire.WireCutSelection;
 
 import java.util.List;
 
@@ -36,13 +35,11 @@ public final class WireSyncEvents {
     public static void onLogout(PlayerEvent.PlayerLoggedOutEvent e) {
         if (e.getEntity() instanceof ServerPlayer p) {
             WireAttachment.clear(p);
-            WireCutSelection.clear(p);
         }
     }
 
     private static void fullSync(ServerPlayer p) {
         WireAttachment.clear(p);
-        WireCutSelection.clear(p);
         var network = PowerlineNetwork.get(p.serverLevel());
         Net.sendToPlayer(p, new WireFullSyncPacket(List.copyOf(network.getGraph().all())));
     }

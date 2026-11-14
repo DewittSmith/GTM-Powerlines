@@ -15,11 +15,20 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.PriorityQueue;
+import java.util.function.Predicate;
 
 import javax.annotation.Nullable;
 
+/**
+ * Shortest route (by wire length) from a source insulator to another insulator.
+ *
+ * @param loss        sum of the raw per-amp loss of every edge, before any transformer efficiency is applied
+ * @param maxLoss     {@code ceil(loss)}, the per-amp loss GT-style networks use
+ * @param minVoltage  lowest voltage rating of any wire on the route
+ * @param minAmperage lowest amperage rating of any wire on the route
+ */
 public record TransferPath(BlockPos targetPos, Direction targetFacing, PowerlineGraph.Edge[] path, int distance,
-                           long maxLoss) {
+                           float loss, long maxLoss, long minVoltage, long minAmperage) {
 
     private record Visit(BlockPos pos, int distance) {}
 
@@ -29,7 +38,22 @@ public record TransferPath(BlockPos targetPos, Direction targetFacing, Powerline
         return GTCapabilityHelper.getEnergyContainer(level, pos, targetFacing.getOpposite());
     }
 
+    public float length() {
+        var total = 0f;
+        for (var edge : path) total += edge.length();
+        return total;
+    }
+
     public static List<TransferPath> walk(PowerlineGraph graph, BlockPos source) {
+        return walk(graph, source, pos -> false);
+    }
+
+    /**
+     * Dijkstra over the powerline graph.
+     *
+     * @param terminal nodes that can be reached but never travelled through (e.g. transformer insulators)
+     */
+    public static List<TransferPath> walk(PowerlineGraph graph, BlockPos source, Predicate<BlockPos> terminal) {
         var distances = new Long2IntOpenHashMap();
         distances.defaultReturnValue(Integer.MAX_VALUE);
         var parents = new Long2ObjectOpenHashMap<PowerlineGraph.Edge>();
@@ -42,7 +66,11 @@ public record TransferPath(BlockPos targetPos, Direction targetFacing, Powerline
         while (!queue.isEmpty()) {
             var visit = queue.poll();
             if (visit.distance > distances.get(visit.pos.asLong())) continue;
-            if (!visit.pos.equals(source)) reached.add(visit.pos);
+            var isSource = visit.pos.equals(source);
+            if (!isSource) {
+                reached.add(visit.pos);
+                if (terminal.test(visit.pos)) continue;
+            }
 
             for (var edge : graph.atBlock(visit.pos)) {
                 var next = edge.other(visit.pos);
@@ -59,10 +87,14 @@ public record TransferPath(BlockPos targetPos, Direction targetFacing, Powerline
         for (var target : reached) {
             var path = new ArrayList<PowerlineGraph.Edge>();
             var loss = 0f;
+            var minVoltage = Long.MAX_VALUE;
+            var minAmperage = Long.MAX_VALUE;
             for (var pos = target; !pos.equals(source);) {
                 var edge = parents.get(pos.asLong());
                 path.add(edge);
                 loss += edge.loss();
+                minVoltage = Math.min(minVoltage, edge.stats().props().getVoltage());
+                minAmperage = Math.min(minAmperage, edge.stats().props().getAmperage());
                 pos = edge.other(pos);
             }
 
@@ -70,7 +102,8 @@ public record TransferPath(BlockPos targetPos, Direction targetFacing, Powerline
             for (int i = 0; i < edges.length; i++) edges[i] = path.get(edges.length - 1 - i);
 
             var facing = edges[edges.length - 1].dirAt(target).getOpposite();
-            routes.add(new TransferPath(target, facing, edges, distances.get(target.asLong()), Mth.ceil(loss)));
+            routes.add(new TransferPath(target, facing, edges, distances.get(target.asLong()), loss, Mth.ceil(loss),
+                    minVoltage, minAmperage));
         }
         return routes;
     }

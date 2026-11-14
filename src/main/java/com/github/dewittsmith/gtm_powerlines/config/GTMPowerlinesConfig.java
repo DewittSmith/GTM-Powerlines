@@ -57,6 +57,12 @@ public class GTMPowerlinesConfig {
         @Configurable.DecimalRange(min = 0f)
         @Configurable.Synchronized
         public float maxWireRange = 64f;
+
+        @Configurable
+        @Configurable.Comment(value = { "Whether blocks may not stand in a wire's way",
+                "Blocks tagged gtm_powerlines:wire_passthrough are always allowed" }, localize = true)
+        @Configurable.Synchronized
+        public boolean checkObstructions = true;
     }
 
     public static class InsulatorConfig {
@@ -88,6 +94,12 @@ public class GTMPowerlinesConfig {
         @Configurable
         @Configurable.DecimalRange(min = 0f)
         public float flatWireLODDistance = 128;
+
+        @Configurable
+        @Configurable.DecimalRange(min = 0f)
+        @Configurable.Comment(value = { "How long the multimeter path highlight stays visible, in seconds" },
+                              localize = true)
+        public float multimeterHighlightSeconds = 5;
     }
 
     public static TagExprFilter.TagExprParser.MatchExpr getTagExpr(String[] tags, String fallback) {

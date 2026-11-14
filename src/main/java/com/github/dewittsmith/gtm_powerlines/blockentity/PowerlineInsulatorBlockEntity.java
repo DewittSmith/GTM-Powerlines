@@ -1,5 +1,6 @@
 package com.github.dewittsmith.gtm_powerlines.blockentity;
 
+import com.gregtechceu.gtceu.api.blockentity.IPaintable;
 import com.gregtechceu.gtceu.api.capability.IEnergyContainer;
 import com.gregtechceu.gtceu.api.capability.forge.GTCapability;
 import com.gregtechceu.gtceu.api.data.chemical.material.properties.WireProperties;
@@ -9,6 +10,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
+import net.minecraft.nbt.Tag;
+import net.minecraft.network.Connection;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
@@ -29,7 +33,6 @@ import com.github.dewittsmith.gtm_powerlines.util.BlockUtils;
 import com.github.dewittsmith.gtm_powerlines.wire.ClientWires;
 import com.github.dewittsmith.gtm_powerlines.wire.WireConnectionResult;
 import com.github.dewittsmith.gtm_powerlines.wire.WireStats;
-import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -37,11 +40,16 @@ import java.util.Optional;
 
 import javax.annotation.Nullable;
 
-public class PowerlineInsulatorBlockEntity extends BlockEntity {
+public class PowerlineInsulatorBlockEntity extends BlockEntity implements IPaintable {
 
-    @Getter
     @Nullable
     private BlockPos controller;
+
+    /** Tint of the insulator discs, set with a GT spray can. */
+    private int paintingColor = UNPAINTED_COLOR;
+
+    /** Set when the supporting cable melted: the attached wires burn instead of dropping. Not saved. */
+    private boolean burned;
 
     private final int maxElevation;
 
@@ -54,10 +62,53 @@ public class PowerlineInsulatorBlockEntity extends BlockEntity {
                 1f / GTMPowerlinesConfig.INSTANCE.insulator.rangePower));
     }
 
+    public void markBurned() {
+        burned = true;
+    }
+
+    public boolean isBurned() {
+        return burned;
+    }
+
+    public @Nullable BlockPos getController() {
+        return controller;
+    }
+
     public void setController(@Nullable BlockPos controller) {
         this.controller = controller == null ? null : controller.immutable();
+        if (level instanceof ServerLevel serverLevel) {
+            PowerlineNetwork.get(serverLevel).setTransformerNode(worldPosition, this.controller);
+        }
         setChanged();
     }
+
+    // region IPaintable
+
+    @Override
+    public int getPaintingColor() {
+        return paintingColor;
+    }
+
+    @Override
+    public void setPaintingColor(int color) {
+        if (paintingColor == color) return;
+        paintingColor = color;
+        setChanged();
+        if (level == null) return;
+        if (level.isClientSide) {
+            // the spray can also runs client-side: re-bake right away, the server update will then match
+            requestRerender();
+        } else {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+        }
+    }
+
+    @Override
+    public int getDefaultPaintingColor() {
+        return UNPAINTED_COLOR;
+    }
+
+    // endregion
 
     public List<PowerlineGraph.Edge> getConnections() {
         if (level instanceof ServerLevel serverLevel) {
@@ -166,12 +217,42 @@ public class PowerlineInsulatorBlockEntity extends BlockEntity {
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
         if (controller != null) tag.put("controller", NbtUtils.writeBlockPos(controller));
+        if (isPainted()) tag.putInt("paint", paintingColor);
     }
 
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
         controller = tag.contains("controller") ? NbtUtils.readBlockPos(tag.getCompound("controller")) : null;
+        var oldPaint = paintingColor;
+        paintingColor = tag.contains("paint", Tag.TAG_INT) ? tag.getInt("paint") : UNPAINTED_COLOR;
+        if (oldPaint != paintingColor && level != null && level.isClientSide) requestRerender();
+    }
+
+    /** Re-bakes the chunk section so the disc tint (a block colour) updates. Client only. */
+    private void requestRerender() {
+        if (level != null && level.isClientSide) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 8);
+        }
+    }
+
+    @Override
+    public CompoundTag getUpdateTag() {
+        var tag = super.getUpdateTag();
+        if (controller != null) tag.put("controller", NbtUtils.writeBlockPos(controller));
+        if (isPainted()) tag.putInt("paint", paintingColor);
+        return tag;
+    }
+
+    @Override
+    public ClientboundBlockEntityDataPacket getUpdatePacket() {
+        return ClientboundBlockEntityDataPacket.create(this);
+    }
+
+    @Override
+    public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt) {
+        var tag = pkt.getTag();
+        load(tag == null ? new CompoundTag() : tag);
     }
 
     @Override

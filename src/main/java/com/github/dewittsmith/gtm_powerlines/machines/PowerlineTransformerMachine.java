@@ -28,12 +28,15 @@ import com.lowdragmc.lowdraglib.gui.widget.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
 import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
-import lombok.Getter;
+import com.github.dewittsmith.gtm_powerlines.graph.PowerlineNetwork;
+import com.github.dewittsmith.gtm_powerlines.util.BlockUtils;
+import com.github.dewittsmith.gtm_powerlines.util.CoilEfficiency;
 
 import java.util.*;
 
@@ -44,30 +47,80 @@ import static com.github.dewittsmith.gtm_powerlines.registry.GTMPowerlinesRegist
 public class PowerlineTransformerMachine extends WorkableMultiblockMachine
                                          implements IFancyUIMachine, IDisplayUIMachine, ITieredMachine {
 
-    @Getter
     private ICoilType coilType = CoilBlock.CoilType.CUPRONICKEL;
 
-    @Getter
+    /** EU per second that arrived at receiving transformers (after line loss). */
     private long networkOutputPerSec;
 
-    @Getter
+    /** EU per second drained from this transformer's energy hatches. */
     private long energyOutputPerSec;
 
-    private EnergyContainerList energyContainer;
+    private long networkOutput;
+    private long energyOutput;
+
+    private List<IEnergyContainer> hatches = Collections.emptyList();
+    private @Nullable EnergyContainerList energyContainer;
     private Collection<BlockPos> insulators = Collections.emptyList();
 
     private @Nullable TickableSubscription transferSub;
+
+    /** Why the last transfer tick did (not) move energy; shown in the controller UI. */
+    public enum TransferStatus {
+
+        IDLE,
+        NO_ENERGY,
+        NO_INSULATORS,
+        NO_RECEIVER,
+        RECEIVER_UNLOADED,
+        RECEIVER_FULL,
+        LOSS_TOO_HIGH,
+        TRANSFERRING;
+
+        public String translationKey() {
+            return "multiblock.gtm_powerlines.powerline_transformer.status." + name().toLowerCase(Locale.ROOT);
+        }
+    }
+
+    private TransferStatus status = TransferStatus.IDLE;
+    private int receivers;
 
     public PowerlineTransformerMachine(IMachineBlockEntity holder) {
         super(holder);
     }
 
+    public ICoilType getCoilType() {
+        return coilType;
+    }
+
+    public long getNetworkOutputPerSec() {
+        return networkOutputPerSec;
+    }
+
+    public long getEnergyOutputPerSec() {
+        return energyOutputPerSec;
+    }
+
+    public TransferStatus getStatus() {
+        return status;
+    }
+
+    /** Number of step-down transformers that received energy during the last tick. */
+    public int getReceivers() {
+        return receivers;
+    }
+
+    public int getInsulatorCount() {
+        return insulators.size();
+    }
+
     @Override
     public void onStructureFormed() {
         super.onStructureFormed();
-        energyContainer = getEnergyContainer();
+        refreshEnergyContainer();
 
-        insulators = getMultiblockState().getMatchContext().getOrDefault("insulators", Collections.emptyList());
+        // copy (and dedupe): the match context list belongs to the pattern matcher
+        insulators = Set.copyOf(getMultiblockState().getMatchContext().getOrDefault("insulators",
+                Collections.<BlockPos>emptyList()));
         setInsulatorsConnected(insulators, true);
 
         var type = getMultiblockState().getMatchContext().get("CoilType");
@@ -75,12 +128,9 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine
             this.coilType = coil;
         }
 
-        if (getLevel() instanceof ServerLevel level) {
-            if (isInput() && transferSub == null) {
-                transferSub = subscribeServerTick(this::transferTick);
-            }
-
-            // PowerlineNetwork.get(level).setTransferDirty();
+        // always tick while formed: the hatch setup decides each tick whether this is the sending side
+        if (getLevel() instanceof ServerLevel && transferSub == null) {
+            transferSub = subscribeServerTick(this::transferTick);
         }
     }
 
@@ -97,26 +147,21 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine
         insulators = Collections.emptyList();
 
         coilType = CoilBlock.CoilType.CUPRONICKEL;
+        hatches = Collections.emptyList();
         energyContainer = null;
-
-        // if (getLevel() instanceof ServerLevel level) {
-        // PowerlineNetwork.get(level).setTransferDirty();
-        // }
+        networkOutputPerSec = energyOutputPerSec = networkOutput = energyOutput = 0;
+        status = TransferStatus.IDLE;
+        receivers = 0;
     }
 
     @Override
-    public int getTier() {
-        if (energyContainer == null) energyContainer = getEnergyContainer();
-        if (isInput()) return GTUtil.getFloorTierByVoltage(energyContainer.getInputVoltage());
-        else return GTUtil.getFloorTierByVoltage(energyContainer.getOutputVoltage());
+    public void onUnload() {
+        super.onUnload();
+        // MetaMachine drops all tick subscriptions on unload
+        transferSub = null;
     }
 
-    public long getEnergyInput() {
-        if (energyContainer == null) energyContainer = getEnergyContainer();
-        return energyContainer.getInputPerSec() / 20;
-    }
-
-    private EnergyContainerList getEnergyContainer() {
+    private void refreshEnergyContainer() {
         List<IEnergyContainer> containers = new ArrayList<>();
         var handlers = getCapabilitiesFlat(IO.IN, EURecipeCapability.CAP);
         if (handlers.isEmpty()) handlers = getCapabilitiesFlat(IO.OUT, EURecipeCapability.CAP);
@@ -125,87 +170,150 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine
                 containers.add(container);
             }
         }
-        return new EnergyContainerList(containers);
+        hatches = containers;
+        energyContainer = new EnergyContainerList(containers);
     }
 
-    private long networkOutput;
-    private long energyOutput;
+    private EnergyContainerList energy() {
+        if (energyContainer == null) refreshEnergyContainer();
+        return energyContainer;
+    }
 
+    /**
+     * Voltage of a single energy hatch. Unlike {@link EnergyContainerList#getInputVoltage()} this does not merge
+     * several hatches into a higher "virtual" voltage, so the line tier always equals the hatch tier.
+     */
+    public long getLineVoltage() {
+        energy();
+        long voltage = 0;
+        for (var hatch : hatches) {
+            voltage = Math.max(voltage, isInput() ? hatch.getInputVoltage() : hatch.getOutputVoltage());
+        }
+        return voltage;
+    }
+
+    /** Total amperage of all hatches running at {@link #getLineVoltage()}. */
+    public long getLineAmperage() {
+        long voltage = getLineVoltage();
+        long amperage = 0;
+        for (var hatch : hatches) {
+            if (isInput() ? hatch.getInputVoltage() == voltage : hatch.getOutputVoltage() == voltage) {
+                amperage += isInput() ? hatch.getInputAmperage() : hatch.getOutputAmperage();
+            }
+        }
+        return amperage;
+    }
+
+    @Override
+    public int getTier() {
+        return GTUtil.getFloorTierByVoltage(getLineVoltage());
+    }
+
+    public long getEnergyInput() {
+        return energy().getInputPerSec() / 20;
+    }
+
+    /**
+     * Step-up side: pushes energy from the input hatches, over the powerline, into every reachable step-down
+     * transformer. Loss per block is reduced by the average coil efficiency of both transformers.
+     */
     private void transferTick() {
-        // if (!(getLevel() instanceof ServerLevel level) || isOutput()) return;
-        // if (energyContainer.getEnergyStored() == 0) return;
-        //
-        // if (getOffsetTimer() % 20 == 0) {
-        // networkOutputPerSec = networkOutput;
-        // energyOutputPerSec = energyOutput;
-        //
-        // networkOutput = 0;
-        // energyOutput = 0;
-        // }
-        //
-        // var network = PowerlineNetwork.get(level);
-        // network.rebuildTransferEdgesIfDirty(level);
-        //
-        // var efficiency = CoilEfficiency.of(coilType);
-        //
-        // for (var insulator : insulators) {
-        // var insulatorBeOpt = BlockUtils.instanceOf(level, insulator, PowerlineInsulatorBlockEntity.class);
-        // if (insulatorBeOpt.isEmpty()) continue;
-        // if (insulatorBeOpt.get().getWireTier() != getTier()) continue;
-        //
-        // for (var edge : network.transferAt(insulator)) {
-        // var stored = energyContainer.getEnergyStored();
-        // if (stored <= 0) return;
-        //
-        // var otherOpt = BlockUtils.instanceOf(level, edge.b(), PowerlineInsulatorBlockEntity.class);
-        // if (otherOpt.isEmpty()) continue;
-        // if (otherOpt.get().getWireTier() != getTier()) continue;
-        //
-        // var controller = otherOpt.get().getController();
-        // if (controller == null) continue;
-        // var other = BlockUtils.instanceOf(level, controller, PowerlineTransformerMachine.class);
-        // if (other.isEmpty()) continue;
-        // var otherContainer = other.get().energyContainer;
-        //
-        // long room = otherContainer.getEnergyCanBeInserted();
-        // long rate = otherContainer.getOutputVoltage() * otherContainer.getOutputAmperage();
-        // long needed = Math.min(room, rate);
-        // if (needed <= 0) continue;
-        //
-        // long sendRate = energyContainer.getInputVoltage() * energyContainer.getInputAmperage();
-        // needed = Math.min(needed, sendRate);
-        //
-        // long voltage = Math.max(1, energyContainer.getInputVoltage());
-        // var penalty = 1f - (efficiency + CoilEfficiency.of(other.get().coilType)) / 2;
-        // long lossPerAmp = Mth.ceil(edge.totalLoss() * penalty);
-        //
-        // long amps = (needed + voltage - 1) / voltage;
-        // long cost = needed + lossPerAmp * amps;
-        //
-        // if (cost > stored) {
-        // needed = needed * stored / cost;
-        // amps = (needed + voltage - 1) / voltage;
-        // cost = Math.min(stored, needed + lossPerAmp * amps);
-        // }
-        // if (needed <= 0) continue;
-        //
-        // long added = otherContainer.addEnergy(needed);
-        // long drawn = added == needed ? cost :
-        // Math.min(stored, added + lossPerAmp * ((added + voltage - 1) / voltage));
-        // energyContainer.removeEnergy(drawn);
-        //
-        // networkOutput += added;
-        // energyOutput += drawn;
-        // }
-        // }
+        if (!(getLevel() instanceof ServerLevel level) || !isFormed() || !level.shouldTickBlocksAt(getPos())) return;
+        if (hatches.isEmpty()) refreshEnergyContainer();
+        if (!isInput()) {
+            status = TransferStatus.IDLE;
+            return;
+        }
+
+        if (getOffsetTimer() % 20 == 0) {
+            networkOutputPerSec = networkOutput;
+            energyOutputPerSec = energyOutput;
+            networkOutput = 0;
+            energyOutput = 0;
+        }
+
+        if (insulators.isEmpty()) {
+            status = TransferStatus.NO_INSULATORS;
+            return;
+        }
+
+        var source = energy();
+        long voltage = getLineVoltage();
+        long ampsLeft = voltage <= 0 ? 0 : Math.min(getLineAmperage(), source.getEnergyStored() / voltage);
+        if (ampsLeft <= 0) {
+            status = TransferStatus.NO_ENERGY;
+            return;
+        }
+
+        var network = PowerlineNetwork.get(level);
+        var efficiency = CoilEfficiency.of(coilType);
+
+        // the most informative reason something was skipped, in case nothing gets sent
+        var blocked = TransferStatus.NO_RECEIVER;
+        var served = new HashSet<BlockPos>();
+
+        for (var insulator : insulators) {
+            for (var route : network.getRoutes(insulator).paths()) {
+                if (ampsLeft <= 0) break;
+
+                var destPos = network.getTransformerController(route.targetPos());
+                if (destPos == null || destPos.equals(getPos())) continue;
+                // the receiver must be in a ticking (properly loaded) chunk, not just a border/lazy one
+                if (!level.isLoaded(destPos) || !level.shouldTickBlocksAt(destPos)) {
+                    blocked = worse(blocked, TransferStatus.RECEIVER_UNLOADED);
+                    continue;
+                }
+                var dest = BlockUtils.instanceOf(level, destPos, PowerlineTransformerMachine.class).orElse(null);
+                if (dest == null || !dest.isFormed() || !dest.isOutput()) continue;
+
+                var sink = dest.energy();
+                long room = sink.getEnergyCanBeInserted();
+                if (room <= 0) {
+                    blocked = worse(blocked, TransferStatus.RECEIVER_FULL);
+                    continue;
+                }
+
+                var lossScale = 1f - (efficiency + CoilEfficiency.of(dest.coilType)) / 2f;
+                long lossPerAmp = Mth.ceil(route.loss() * lossScale);
+                if (lossPerAmp >= voltage) {
+                    blocked = worse(blocked, TransferStatus.LOSS_TOO_HIGH);
+                    continue;
+                }
+
+                long arriving = network.applyVoltageLimit(route, voltage, voltage - lossPerAmp);
+                if (arriving <= 0) continue;
+
+                long amps = Math.min(ampsLeft, room / arriving);
+                if (amps <= 0) {
+                    blocked = worse(blocked, TransferStatus.RECEIVER_FULL);
+                    continue;
+                }
+
+                long added = sink.changeEnergy(amps * arriving);
+                source.changeEnergy(-amps * voltage);
+                network.recordFlow(route, voltage, amps, lossScale);
+
+                ampsLeft -= amps;
+                networkOutput += added;
+                energyOutput += amps * voltage;
+                served.add(destPos);
+            }
+        }
+
+        receivers = served.size();
+        status = served.isEmpty() ? blocked : TransferStatus.TRANSFERRING;
+    }
+
+    private static TransferStatus worse(TransferStatus current, TransferStatus candidate) {
+        return candidate.ordinal() > current.ordinal() ? candidate : current;
     }
 
     public boolean isInput() {
-        return energyContainer != null && energyContainer.getInputVoltage() > 0;
+        return energy().getInputVoltage() > 0;
     }
 
     public boolean isOutput() {
-        return energyContainer != null && energyContainer.getOutputVoltage() > 0;
+        return energy().getOutputVoltage() > 0;
     }
 
     public IO getIO() {
@@ -216,8 +324,12 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine
 
     private void setInsulatorsConnected(Collection<BlockPos> positions, boolean connected) {
         Level level = getLevel();
-        if (level == null || level.isClientSide) return;
+        if (!(level instanceof ServerLevel serverLevel)) return;
+        var network = PowerlineNetwork.get(serverLevel);
         for (BlockPos pos : positions) {
+            // always update the network, even if the insulator block is already gone
+            network.setTransformerNode(pos, connected ? getPos() : null);
+
             BlockState state = level.getBlockState(pos);
             if (!state.is(POWERLINE_INSULATOR.get())) continue;
 

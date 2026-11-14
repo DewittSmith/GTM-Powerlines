@@ -13,6 +13,7 @@ import com.gregtechceu.gtceu.common.data.GTMachines;
 import com.gregtechceu.gtceu.common.data.GTMaterials;
 import com.gregtechceu.gtceu.common.data.GTRecipeTypes;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.tags.BlockTags;
@@ -25,11 +26,14 @@ import net.minecraft.world.level.block.SoundType;
 import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
 import com.github.dewittsmith.gtm_powerlines.block.PowerlineInsulatorBlock;
 import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
+import com.github.dewittsmith.gtm_powerlines.item.MultimeterItem;
 import com.github.dewittsmith.gtm_powerlines.machines.PowerlineTransformerMachine;
 import com.github.dewittsmith.gtm_powerlines.util.CoilEfficiency;
 import com.github.dewittsmith.gtm_powerlines.util.PowerlinePredicates;
 import com.tterrag.registrate.util.entry.BlockEntityEntry;
 import com.tterrag.registrate.util.entry.BlockEntry;
+import com.tterrag.registrate.util.entry.ItemEntry;
+import com.tterrag.registrate.util.nullness.NonNullBiConsumer;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -60,6 +64,13 @@ public class GTMPowerlinesRegistries {
     public static final BlockEntityEntry<PowerlineInsulatorBlockEntity> POWERLINE_INSULATOR_BLOCK_ENTITY = POWERLINE_REGISTRATE
             .blockEntity("powerline_insulator", PowerlineInsulatorBlockEntity::new)
             .validBlock(POWERLINE_INSULATOR)
+            .register();
+
+    public static final ItemEntry<MultimeterItem> MULTIMETER = POWERLINE_REGISTRATE
+            .item("multimeter", MultimeterItem::new)
+            .properties(p -> p.stacksTo(1))
+            // model is hand-written in src/main/resources
+            .model(NonNullBiConsumer.noop())
             .register();
 
     public static final MultiblockMachineDefinition POWERLINE_TRANSFORMER = POWERLINE_REGISTRATE
@@ -131,7 +142,16 @@ public class GTMPowerlinesRegistries {
                 components.add(Component.translatable("multiblock.gtm_powerlines.powerline_transformer.mode")
                         .append(Component.translatable(transformerMachine.getIO().tooltip)));
 
+                components.add(Component.translatable("multiblock.gtm_powerlines.powerline_transformer.insulators",
+                        transformerMachine.getInsulatorCount()));
+
                 if (transformerMachine.isInput()) {
+                    var status = transformerMachine.getStatus();
+                    components.add(Component.translatable("multiblock.gtm_powerlines.powerline_transformer.status")
+                            .append(Component.translatable(status.translationKey(),
+                                    transformerMachine.getReceivers())
+                                    .withStyle(status == PowerlineTransformerMachine.TransferStatus.TRANSFERRING ?
+                                            ChatFormatting.GREEN : ChatFormatting.RED)));
                     components
                             .add(Component.translatable("multiblock.gtm_powerlines.powerline_transformer.energy_output",
                                     transformerMachine.getEnergyOutputPerSec() / 20));

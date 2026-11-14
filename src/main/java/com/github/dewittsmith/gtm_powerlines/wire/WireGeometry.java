@@ -1,12 +1,13 @@
 package com.github.dewittsmith.gtm_powerlines.wire;
 
-import com.github.dewittsmith.gtm_powerlines.block.PowerlineInsulatorBlock;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.Vec3;
+
+import com.github.dewittsmith.gtm_powerlines.block.PowerlineInsulatorBlock;
 
 public final class WireGeometry {
 
