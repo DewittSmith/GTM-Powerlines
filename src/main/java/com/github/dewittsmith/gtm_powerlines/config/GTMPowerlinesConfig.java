@@ -97,12 +97,6 @@ public class GTMPowerlinesConfig {
 
         @Configurable
         @Configurable.DecimalRange(min = 0f)
-        @Configurable.Comment(value = { "How long the multimeter path highlight stays visible, in seconds" },
-                              localize = true)
-        public float multimeterHighlightSeconds = 5;
-
-        @Configurable
-        @Configurable.DecimalRange(min = 0f)
         @Configurable.Comment(value = { "How long blocks or wires that are in the way stay highlighted, in seconds" },
                               localize = true)
         public float obstructionHighlightSeconds = 5;

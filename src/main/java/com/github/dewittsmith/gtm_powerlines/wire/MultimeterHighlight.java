@@ -6,18 +6,19 @@ import java.util.List;
 
 import javax.annotation.Nullable;
 
-/** Client-side state of the last multimeter measurement, rendered as a fading line strip. */
+/**
+ * Client-side state of the last multimeter measurement, rendered as a line strip.
+ * Stays until the multimeter is used again or the player switches items.
+ */
 public final class MultimeterHighlight {
 
-    public record Path(List<BlockPos> insulators, long startMillis) {}
-
-    private static @Nullable Path current;
+    private static @Nullable List<BlockPos> current;
 
     public static void show(List<BlockPos> insulators) {
-        current = insulators.size() < 2 ? null : new Path(List.copyOf(insulators), System.currentTimeMillis());
+        current = insulators.size() < 2 ? null : List.copyOf(insulators);
     }
 
-    public static @Nullable Path get() {
+    public static @Nullable List<BlockPos> get() {
         return current;
     }
 

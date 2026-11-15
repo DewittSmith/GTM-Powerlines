@@ -40,7 +40,8 @@ public final class Net {
                 WireStatsPacket::encode, WireStatsPacket::decode, WireStatsPacket::handle,
                 Optional.of(NetworkDirection.PLAY_TO_CLIENT));
         CHANNEL.registerMessage(id++, ObstructionHighlightPacket.class,
-                ObstructionHighlightPacket::encode, ObstructionHighlightPacket::decode, ObstructionHighlightPacket::handle,
+                ObstructionHighlightPacket::encode, ObstructionHighlightPacket::decode,
+                ObstructionHighlightPacket::handle,
                 Optional.of(NetworkDirection.PLAY_TO_CLIENT));
         CHANNEL.registerMessage(id++, MultimeterPathPacket.class,
                 MultimeterPathPacket::encode, MultimeterPathPacket::decode, MultimeterPathPacket::handle,

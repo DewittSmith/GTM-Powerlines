@@ -129,8 +129,13 @@ public final class PowerlineRenderUtil {
     /** Renders one line strip (camera-relative points) as its own batch so it never joins other strips. */
     public static void lineStrip(MultiBufferSource.BufferSource buffers, PoseStack.Pose pose, List<Vec3> points,
                                  float r, float g, float b, float a) {
+        lineStrip(buffers, RenderType.lineStrip(), pose, points, r, g, b, a);
+    }
+
+    /** Same as above with a custom line strip render type, e.g. {@link PowerlineRenderTypes#LINE_STRIP_ON_TOP}. */
+    public static void lineStrip(MultiBufferSource.BufferSource buffers, RenderType type, PoseStack.Pose pose,
+                                 List<Vec3> points, float r, float g, float b, float a) {
         if (points.size() < 2) return;
-        var type = RenderType.lineStrip();
         var consumer = buffers.getBuffer(type);
         for (int i = 0; i < points.size(); i++) {
             var p = points.get(i);

@@ -1,8 +1,8 @@
 package com.github.dewittsmith.gtm_powerlines.event;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraftforge.event.level.BlockEvent;

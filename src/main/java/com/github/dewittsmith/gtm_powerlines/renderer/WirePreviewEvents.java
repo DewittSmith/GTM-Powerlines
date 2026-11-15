@@ -33,23 +33,28 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import java.util.ArrayList;
-import java.util.List;
 
 import javax.annotation.Nullable;
 
 @Mod.EventBusSubscriber(modid = GTMPowerlines.MOD_ID, value = Dist.CLIENT)
 public class WirePreviewEvents {
 
-    /** Flat-colour texel used for the spray outline (the hull is tinted with the paint colour). */
+    /**
+     * Flat-colour texel used for the spray outline (the hull is tinted with the paint colour).
+     */
     private static final ResourceLocation OUTLINE_TEXTURE = ResourceLocation.parse("minecraft:block/white_concrete");
-    /** How much thicker than the cable the spray outline is, in blocks. */
+    /**
+     * How much thicker than the cable the spray outline is, in blocks.
+     */
     private static final double OUTLINE_MARGIN = 1 / 32.0;
-    /** Colour of a cleared (solvent) outline. */
+    /**
+     * Colour of a cleared (solvent) outline.
+     */
     private static final int SOLVENT_OUTLINE_COLOR = 0xFFFFFF;
 
     @SubscribeEvent
     public static void onRenderLevel(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_ENTITIES) return;
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES) return;
 
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
@@ -62,7 +67,9 @@ public class WirePreviewEvents {
         renderMultimeterPath(event, mc);
     }
 
-    /** Hide the block outline while a cable in front of it is the actual target. */
+    /**
+     * Hide the block outline while a cable in front of it is the actual target.
+     */
     @SubscribeEvent
     public static void onHighlightBlock(RenderHighlightEvent.Block event) {
         var player = Minecraft.getInstance().player;
@@ -77,7 +84,7 @@ public class WirePreviewEvents {
     private static void renderDraggingWire(RenderLevelStageEvent event, Minecraft mc, LocalPlayer player, Level level) {
         var attachment = WireAttachment.get(player);
         if (attachment == null || !attachment.dimension().equals(level.dimension())) return;
-        if (!player.getMainHandItem().is(attachment.wire())) return;
+        if (!player.getMainHandItem().is(attachment.wire()) && !player.getOffhandItem().is(attachment.wire())) return;
         if (!(level.getBlockEntity(attachment.pos()) instanceof PowerlineInsulatorBlockEntity)) return;
 
         Vec3 start = WireGeometry.getAttachmentPoint(level, attachment.pos(), attachment.stats());
@@ -123,7 +130,9 @@ public class WirePreviewEvents {
 
     // region connection preview
 
-    /** Wire cable texture used by the regular renderer. */
+    /**
+     * Wire cable texture used by the regular renderer.
+     */
     private static final ResourceLocation CABLE_TEXTURE = ResourceLocation.parse("gtceu:block/cable/insulation_5");
 
     /**
@@ -148,21 +157,23 @@ public class WirePreviewEvents {
         var blocked = WireObstruction.find(level, start, end);
         if (blocked.isEmpty()) return;
 
-        var consumer = buffers.getBuffer(RenderType.lines());
+        var consumer = buffers.getBuffer(PowerlineRenderTypes.LINES_ON_TOP);
         for (var pos : blocked) {
             var shape = level.getBlockState(pos).getCollisionShape(level, pos);
             var box = (shape.isEmpty() ? new AABB(BlockPos.ZERO) : shape.bounds())
                     .move(pos.getX() - cam.x, pos.getY() - cam.y, pos.getZ() - cam.z).inflate(0.002);
             LevelRenderer.renderLineBox(event.getPoseStack(), consumer, box, 1f, 0f, 0f, 1f);
         }
-        buffers.endBatch(RenderType.lines());
+        buffers.endBatch(PowerlineRenderTypes.LINES_ON_TOP);
     }
 
     // endregion
 
     // region wire cutter: square around the cut point
 
-    /** Draws a red square (one closed line strip) around the cable where the cut would happen. */
+    /**
+     * Draws a red square (one closed line strip) around the cable where the cut would happen.
+     */
     private static void renderCutSquare(RenderLevelStageEvent event, Minecraft mc, WireTargeting.Hit hit) {
         Vec3 cam = event.getCamera().getPosition();
         Vec3 forward = hit.tangent();
@@ -253,7 +264,9 @@ public class WirePreviewEvents {
         buffers.endBatch(type);
     }
 
-    /** Emits a quad wound so that its front face points towards {@code axis} (into the hull). */
+    /**
+     * Emits a quad wound so that its front face points towards {@code axis} (into the hull).
+     */
     private static void insideQuad(VertexConsumer vc, PoseStack.Pose pose, Vec3 axis, Vec3 a, Vec3 b, Vec3 c, Vec3 d,
                                    int r, int g, int bl, float u, float v) {
         Vec3 mid = a.add(b).add(c).add(d).scale(0.25);
@@ -279,23 +292,14 @@ public class WirePreviewEvents {
 
     // endregion
 
-    // region multimeter: fading path between insulators
+    // region multimeter: path between insulators
 
     private static void renderMultimeterPath(RenderLevelStageEvent event, Minecraft mc) {
-        var path = MultimeterHighlight.get();
-        if (path == null) return;
-
-        double duration = GTMPowerlinesConfig.INSTANCE.rendering.multimeterHighlightSeconds * 1000.0;
-        double elapsed = System.currentTimeMillis() - path.startMillis();
-        if (duration <= 0 || elapsed >= duration) {
-            MultimeterHighlight.clear();
-            return;
-        }
-        float alpha = (float) (1 - elapsed / duration);
+        var insulators = MultimeterHighlight.get();
+        if (insulators == null) return;
 
         Vec3 cam = event.getCamera().getPosition();
         var graph = ClientWires.graph();
-        var insulators = path.insulators();
         var points = new ArrayList<Vec3>(insulators.size());
         for (int i = 0; i < insulators.size(); i++) {
             var pos = insulators.get(i);
@@ -303,7 +307,8 @@ public class WirePreviewEvents {
             points.add(attachmentPoint(graph, pos, neighbor).subtract(cam));
         }
 
-        lineStrip(mc, event.getPoseStack().last(), points, 1f, 0.85f, 0f, alpha);
+        PowerlineRenderUtil.lineStrip(mc.renderBuffers().bufferSource(), PowerlineRenderTypes.LINE_STRIP_ON_TOP,
+                event.getPoseStack().last(), points, 1f, 0.85f, 0f, 1f);
     }
 
     private static Vec3 attachmentPoint(PowerlineGraph graph, BlockPos pos, BlockPos neighbor) {
@@ -313,24 +318,4 @@ public class WirePreviewEvents {
     }
 
     // endregion
-
-    /** Renders one line strip (camera-relative points) as its own batch so it never joins other strips. */
-    private static void lineStrip(Minecraft mc, PoseStack.Pose pose, List<Vec3> points, float r, float g, float b,
-                                  float a) {
-        if (points.size() < 2) return;
-        var buffers = mc.renderBuffers().bufferSource();
-        var type = RenderType.lineStrip();
-        var consumer = buffers.getBuffer(type);
-        for (int i = 0; i < points.size(); i++) {
-            var p = points.get(i);
-            var next = i + 1 < points.size() ? points.get(i + 1) : p;
-            var prev = i > 0 ? points.get(i - 1) : p;
-            var n = (i + 1 < points.size() ? next.subtract(p) : p.subtract(prev)).normalize();
-            consumer.vertex(pose.pose(), (float) p.x, (float) p.y, (float) p.z)
-                    .color(r, g, b, a)
-                    .normal(pose.normal(), (float) n.x, (float) n.y, (float) n.z)
-                    .endVertex();
-        }
-        buffers.endBatch(type);
-    }
 }

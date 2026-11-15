@@ -2,7 +2,6 @@ package com.github.dewittsmith.gtm_powerlines.renderer;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -28,7 +27,7 @@ public final class ObstructionHighlightRenderer {
 
     @SubscribeEvent
     public static void onRenderLevel(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_ENTITIES) return;
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES) return;
         var highlight = ObstructionHighlight.get();
         var mc = Minecraft.getInstance();
         if (highlight == null || mc.level == null) return;
@@ -47,14 +46,14 @@ public final class ObstructionHighlightRenderer {
 
         // blocks: red outline of their collision box
         if (!highlight.blocks().isEmpty()) {
-            var consumer = buffers.getBuffer(RenderType.lines());
+            var consumer = buffers.getBuffer(PowerlineRenderTypes.LINES_ON_TOP);
             for (var pos : highlight.blocks()) {
                 var shape = mc.level.getBlockState(pos).getCollisionShape(mc.level, pos);
                 var box = (shape.isEmpty() ? new AABB(0, 0, 0, 1, 1, 1) : shape.bounds())
                         .move(pos.getX() - cam.x, pos.getY() - cam.y, pos.getZ() - cam.z).inflate(0.002);
                 LevelRenderer.renderLineBox(event.getPoseStack(), consumer, box, 1f, 0f, 0f, alpha);
             }
-            buffers.endBatch(RenderType.lines());
+            buffers.endBatch(PowerlineRenderTypes.LINES_ON_TOP);
         }
 
         // wires: red line strip along the sagging cable
@@ -70,7 +69,8 @@ public final class ObstructionHighlightRenderer {
             var points = new ArrayList<Vec3>(n);
             for (int k = 0; k < n; k++) points.add(WireGeometry.sample(start, end, k / (n - 1.0), sag).subtract(cam));
 
-            PowerlineRenderUtil.lineStrip(buffers, pose, points, 1f, 0f, 0f, alpha);
+            PowerlineRenderUtil.lineStrip(buffers, PowerlineRenderTypes.LINE_STRIP_ON_TOP, pose, points, 1f, 0f, 0f,
+                    alpha);
         }
     }
 }

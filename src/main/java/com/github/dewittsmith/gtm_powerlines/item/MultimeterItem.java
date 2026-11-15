@@ -34,6 +34,7 @@ import com.github.dewittsmith.gtm_powerlines.network.MultimeterPathPacket;
 import com.github.dewittsmith.gtm_powerlines.network.Net;
 import com.github.dewittsmith.gtm_powerlines.util.BlockUtils;
 import com.github.dewittsmith.gtm_powerlines.util.CoilEfficiency;
+import com.github.dewittsmith.gtm_powerlines.wire.MultimeterHighlight;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -64,7 +65,10 @@ public class MultimeterItem extends Item {
         if (player == null || !(level.getBlockEntity(pos) instanceof PowerlineInsulatorBlockEntity)) {
             return InteractionResult.PASS;
         }
-        if (!(level instanceof ServerLevel serverLevel)) return InteractionResult.SUCCESS;
+        if (!(level instanceof ServerLevel serverLevel)) {
+            MultimeterHighlight.clear();
+            return InteractionResult.SUCCESS;
+        }
 
         var selected = getSelection(stack, level);
         if (selected == null || selected.equals(pos) || player.isShiftKeyDown()) {
@@ -82,6 +86,7 @@ public class MultimeterItem extends Item {
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         var stack = player.getItemInHand(hand);
+        if (level.isClientSide) MultimeterHighlight.clear();
         if (player.isShiftKeyDown() && stack.getTagElement(TAG_POS) != null) {
             if (!level.isClientSide) {
                 clearSelection(stack);

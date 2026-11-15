@@ -8,6 +8,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.Vec3;
 
 import com.github.dewittsmith.gtm_powerlines.block.PowerlineInsulatorBlock;
+import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
 
 public final class WireGeometry {
 
@@ -23,7 +24,10 @@ public final class WireGeometry {
     }
 
     public static double sag(Vec3 a, Vec3 b) {
-        return Math.min(a.distanceTo(b) * 0.06, 2.0);
+        var length = a.distanceTo(b);
+        var sag = Math.min(length * 0.06, 2.0);
+        var mul = Mth.sin((float) (Mth.PI * length / (2 * GTMPowerlinesConfig.INSTANCE.wire.maxWireRange)));
+        return sag * Mth.sqrt(mul);
     }
 
     public static double length(Vec3 a, Vec3 b, double sag) {
