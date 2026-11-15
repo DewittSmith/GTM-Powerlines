@@ -26,8 +26,11 @@ public final class WireGeometry {
     public static double sag(Vec3 a, Vec3 b) {
         var length = a.distanceTo(b);
         var sag = Math.min(length * 0.06, 2.0);
-        var mul = Mth.sin((float) (Mth.PI * length / (2 * GTMPowerlinesConfig.INSTANCE.wire.maxWireRange)));
-        return sag * Mth.sqrt(mul);
+        // 0 at length 0, 1 at maxWireRange, back to 0 at 2 * maxWireRange (the longest possible span) and beyond.
+        // Clamped so the sine never goes negative: sqrt of a negative value is NaN and the wire would vanish.
+        var t = Mth.clamp(length / (2 * GTMPowerlinesConfig.INSTANCE.wire.maxWireRange), 0, 1);
+        var mul = Math.max(0, Math.sin(Math.PI * t));
+        return sag * Math.sqrt(mul);
     }
 
     public static double length(Vec3 a, Vec3 b, double sag) {

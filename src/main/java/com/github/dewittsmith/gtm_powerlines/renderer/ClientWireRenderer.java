@@ -19,10 +19,10 @@ import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
 import com.github.dewittsmith.gtm_powerlines.block.PowerlineInsulatorBlock;
 import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
 import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
+import com.github.dewittsmith.gtm_powerlines.wire.WireStats;
 import com.github.dewittsmith.gtm_powerlines.graph.PowerlineGraph;
 import com.github.dewittsmith.gtm_powerlines.wire.ClientWires;
 import com.github.dewittsmith.gtm_powerlines.wire.WireGeometry;
-import com.github.dewittsmith.gtm_powerlines.wire.WireStats;
 import com.mojang.blaze3d.vertex.PoseStack;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 
@@ -125,7 +125,10 @@ public final class ClientWireRenderer {
 
         Vec3 a = WireGeometry.getAttachmentPoint(e.a(), e.dirA(), e.stats()),
                 b = WireGeometry.getAttachmentPoint(e.b(), e.dirB(), e.stats());
-        if (!frustum.isVisible(new AABB(a, b).inflate(2.0))) return;
+        // the cable hangs below the straight line between its ends: include the lowest point of the sag
+        double sag = WireGeometry.sag(a, b);
+        var bounds = new AABB(a, b).expandTowards(0, -Math.max(0, sag), 0).inflate(0.5);
+        if (!frustum.isVisible(bounds)) return;
 
         var distance = WireGeometry.distanceToSegment(cam, a, b);
         var lod = WireLOD.getLOD(distance);
