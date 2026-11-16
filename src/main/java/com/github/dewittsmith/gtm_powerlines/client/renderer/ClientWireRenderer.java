@@ -1,4 +1,4 @@
-package com.github.dewittsmith.gtm_powerlines.renderer;
+package com.github.dewittsmith.gtm_powerlines.client.renderer;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
@@ -19,10 +19,10 @@ import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
 import com.github.dewittsmith.gtm_powerlines.block.PowerlineInsulatorBlock;
 import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
 import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
-import com.github.dewittsmith.gtm_powerlines.wire.WireStats;
 import com.github.dewittsmith.gtm_powerlines.graph.PowerlineGraph;
 import com.github.dewittsmith.gtm_powerlines.wire.ClientWires;
 import com.github.dewittsmith.gtm_powerlines.wire.WireGeometry;
+import com.github.dewittsmith.gtm_powerlines.wire.WireStats;
 import com.mojang.blaze3d.vertex.PoseStack;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 
@@ -32,6 +32,7 @@ import java.util.Set;
 public final class ClientWireRenderer {
 
     private static final Set<PowerlineGraph.Edge> RENDERED = new ReferenceOpenHashSet<>();
+    private static final ResourceLocation TIE_TEXTURE = ResourceLocation.parse("gtceu:block/cable/insulation_5");
 
     @SubscribeEvent
     public static void onRenderLevel(RenderLevelStageEvent event) {
@@ -61,13 +62,6 @@ public final class ClientWireRenderer {
         buffers.endBatch(PowerlineWireRenderer.wireRenderType());
     }
 
-    /** Same texture the cables use. */
-    private static final ResourceLocation TIE_TEXTURE = ResourceLocation.parse("gtceu:block/cable/insulation_5");
-
-    /**
-     * Draws a small "tie" cube where the cables meet on every connected insulator. Its side is one pixel wider than
-     * the widest cable attached, and its colour is the average colour of the attached cables (including their paint).
-     */
     private static void renderTies(Level level, Frustum frustum, Vec3 cam, PoseStack pose, MultiBufferSource buffers) {
         var graph = ClientWires.graph();
         if (graph.nodes().isEmpty()) return;
@@ -102,7 +96,6 @@ public final class ClientWireRenderer {
 
             var direction = insulator.getBlockState().getValue(PowerlineInsulatorBlock.DIRECTION);
             var center = WireGeometry.getAttachmentPoint(pos, direction, widest);
-            // side = widest cable + 1 pixel; a hair larger to avoid z-fighting with the post
             double half = (Math.round(widestPixels) + 1) / 32.0 + 0.002;
             var box = new AABB(center, center).inflate(half);
             if (!frustum.isVisible(box)) continue;
@@ -111,7 +104,6 @@ public final class ClientWireRenderer {
             int color = 0xFF000000 | (int) (r / count) << 16 | (int) (g / count) << 8 | (int) (b / count);
             int light = LevelRenderer.getLightColor(level, pos);
             var strip = PowerlineRenderUtil.cableUV(TIE_TEXTURE, side);
-            // square patch of the texture (sprites are square, so u and v texel sizes match)
             var uv = new PowerlineRenderUtil.UV(strip.u0(), strip.v0(), strip.u1(),
                     strip.v0() + (strip.u1() - strip.u0()));
             PowerlineRenderUtil.box(consumer, pose.last(), box.move(-cam.x, -cam.y, -cam.z), color, uv, light);
@@ -125,7 +117,6 @@ public final class ClientWireRenderer {
 
         Vec3 a = WireGeometry.getAttachmentPoint(e.a(), e.dirA(), e.stats()),
                 b = WireGeometry.getAttachmentPoint(e.b(), e.dirB(), e.stats());
-        // the cable hangs below the straight line between its ends: include the lowest point of the sag
         double sag = WireGeometry.sag(a, b);
         var bounds = new AABB(a, b).expandTowards(0, -Math.max(0, sag), 0).inflate(0.5);
         if (!frustum.isVisible(bounds)) return;

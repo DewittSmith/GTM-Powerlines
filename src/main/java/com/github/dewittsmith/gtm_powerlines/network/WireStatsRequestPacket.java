@@ -8,10 +8,8 @@ import com.github.dewittsmith.gtm_powerlines.graph.PowerlineNetwork;
 
 import java.util.function.Supplier;
 
-/** Client asks for the live readings of one cable (for the Jade tooltip). */
 public record WireStatsRequestPacket(BlockPos a, BlockPos b) {
 
-    /** Players may only query cables reasonably close to them. */
     private static final double MAX_DISTANCE = 128;
 
     public static void encode(WireStatsRequestPacket p, FriendlyByteBuf buf) {

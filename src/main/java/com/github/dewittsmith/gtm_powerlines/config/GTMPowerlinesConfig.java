@@ -13,8 +13,14 @@ import java.util.Arrays;
 @Config(id = GTMPowerlines.MOD_ID)
 public class GTMPowerlinesConfig {
 
-    public static GTMPowerlinesConfig INSTANCE;
     private static final Object LOCK = new Object();
+    public static GTMPowerlinesConfig INSTANCE;
+    @Configurable
+    public WireConfig wire = new WireConfig();
+    @Configurable
+    public InsulatorConfig insulator = new InsulatorConfig();
+    @Configurable
+    public RenderingConfig rendering = new RenderingConfig();
 
     public static void init() {
         synchronized (LOCK) {
@@ -25,14 +31,12 @@ public class GTMPowerlinesConfig {
         }
     }
 
-    @Configurable
-    public WireConfig wire = new WireConfig();
-
-    @Configurable
-    public InsulatorConfig insulator = new InsulatorConfig();
-
-    @Configurable
-    public RenderingConfig rendering = new RenderingConfig();
+    public static TagExprFilter.TagExprParser.MatchExpr getTagExpr(String[] tags, String fallback) {
+        var combined = String.join("|", Arrays.stream(tags).map(s -> "(" + s + ")").toList());
+        var result = TagExprFilter.parseExpression(combined);
+        if (result == null) result = TagExprFilter.parseExpression(fallback);
+        return result;
+    }
 
     public static class WireConfig {
 
@@ -100,12 +104,5 @@ public class GTMPowerlinesConfig {
         @Configurable.Comment(value = { "How long blocks or wires that are in the way stay highlighted, in seconds" },
                               localize = true)
         public float obstructionHighlightSeconds = 5;
-    }
-
-    public static TagExprFilter.TagExprParser.MatchExpr getTagExpr(String[] tags, String fallback) {
-        var combined = String.join("|", Arrays.stream(tags).map(s -> "(" + s + ")").toList());
-        var result = TagExprFilter.parseExpression(combined);
-        if (result == null) result = TagExprFilter.parseExpression(fallback);
-        return result;
     }
 }

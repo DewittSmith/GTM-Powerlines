@@ -18,7 +18,6 @@ import com.github.dewittsmith.gtm_powerlines.wire.WireObstruction;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Stops blocks from being placed through an existing cable (unless tagged {@code wire_passthrough}). */
 @Mod.EventBusSubscriber(modid = GTMPowerlines.MOD_ID)
 public final class WireObstructionEvents {
 

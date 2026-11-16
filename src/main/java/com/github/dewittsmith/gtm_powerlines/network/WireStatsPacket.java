@@ -10,7 +10,6 @@ import com.github.dewittsmith.gtm_powerlines.wire.ClientWireStats;
 
 import java.util.function.Supplier;
 
-/** Live readings of one cable, answering {@link WireStatsRequestPacket}. */
 public record WireStatsPacket(BlockPos a, BlockPos b, long voltage, double amperage, int temperature) {
 
     public static void encode(WireStatsPacket p, FriendlyByteBuf buf) {

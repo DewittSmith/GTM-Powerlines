@@ -21,25 +21,13 @@ import com.github.dewittsmith.gtm_powerlines.registry.GTMPowerlinesRegistries;
 import com.github.dewittsmith.gtm_powerlines.wire.ClientWireStats;
 import com.github.dewittsmith.gtm_powerlines.wire.ClientWires;
 import com.github.dewittsmith.gtm_powerlines.wire.WireTargeting;
-import snownee.jade.api.Accessor;
-import snownee.jade.api.BlockAccessor;
-import snownee.jade.api.IBlockComponentProvider;
-import snownee.jade.api.ITooltip;
-import snownee.jade.api.IWailaClientRegistration;
+import snownee.jade.api.*;
 import snownee.jade.api.config.IPluginConfig;
 
 import javax.annotation.Nullable;
 
 import static com.gregtechceu.gtceu.utils.FormattingUtil.DECIMAL_FORMAT_1F;
 
-/**
- * Jade tooltip for suspended cables. Cables are neither blocks nor entities, so a ray-trace callback swaps the
- * target for a fake block accessor (shown as the wire item, without a block entity) whenever a cable is in front of
- * everything else. Live readings come from {@link ClientWireStats}.
- * <p>
- * Components follow GTCEu: voltage and amperage exactly as {@code CableBlockProvider} adds them, then the cable
- * length, then the paint colour as {@code StainedColorProvider} adds it.
- */
 public class PowerlineWireProvider implements IBlockComponentProvider {
 
     private @Nullable IWailaClientRegistration registration;
@@ -73,7 +61,6 @@ public class PowerlineWireProvider implements IBlockComponentProvider {
                 .blockState(GTMPowerlinesRegistries.POWERLINE_INSULATOR.getDefaultState())
                 .hit(blockHit)
                 .fakeBlock(new ItemStack(item))
-                // own empty data: otherwise Jade hands over the last real target's data (e.g. a painted insulator)
                 .serverData(new CompoundTag())
                 .serverConnected(false)
                 .showDetails(registration.isShowDetailsPressed())
@@ -90,7 +77,6 @@ public class PowerlineWireProvider implements IBlockComponentProvider {
         long voltage = live == null ? 0 : live.voltage();
         double amperage = live == null ? 0 : live.amperage();
 
-        // voltage & amperage: as GTCEu's CableBlockProvider
         iTooltip.add(Component.translatable("gtceu.top.cable_voltage"));
         if (voltage != 0) {
             iTooltip.append(Component.literal(GTValues.VNF[GTUtil.getTierByVoltage(voltage)]));
@@ -104,11 +90,9 @@ public class PowerlineWireProvider implements IBlockComponentProvider {
         }
         iTooltip.append(Component.literal(DECIMAL_FORMAT_1F.format((double) props.getAmperage()) + "A"));
 
-        // length: same shape as the lines above
         iTooltip.add(Component.translatable("gtm_powerlines.top.wire_length"));
         iTooltip.append(Component.literal(DECIMAL_FORMAT_1F.format(edge.length()) + "m"));
 
-        // colour: as GTCEu's StainedColorProvider
         int paintingColor = edge.paint();
         if (paintingColor != IPaintable.UNPAINTED_COLOR) {
             iTooltip.add(Component.translatable("gtceu.top.stained", String.format("#%06X", paintingColor))

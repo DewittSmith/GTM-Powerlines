@@ -43,10 +43,6 @@ import java.util.Locale;
 
 import javax.annotation.Nullable;
 
-/**
- * Use on one insulator, then on another: prints the stats of the cable route between them to chat.
- * Shift-use in the air clears the selection.
- */
 public class MultimeterItem extends Item {
 
     private static final String TAG_POS = "SelectedInsulator";
@@ -54,6 +50,117 @@ public class MultimeterItem extends Item {
 
     public MultimeterItem(Properties properties) {
         super(properties);
+    }
+
+    private static @Nullable BlockPos getSelection(ItemStack stack, Level level) {
+        var posTag = stack.getTagElement(TAG_POS);
+        var root = stack.getTag();
+        if (posTag == null || root == null) return null;
+        var dimension = ResourceKey.create(Registries.DIMENSION, ResourceLocation.parse(root.getString(TAG_DIM)));
+        return dimension.equals(level.dimension()) ? NbtUtils.readBlockPos(posTag) : null;
+    }
+
+    private static void setSelection(ItemStack stack, Level level, BlockPos pos) {
+        stack.getOrCreateTag().put(TAG_POS, NbtUtils.writeBlockPos(pos));
+        stack.getOrCreateTag().putString(TAG_DIM, level.dimension().location().toString());
+    }
+
+    private static void clearSelection(ItemStack stack) {
+        stack.removeTagKey(TAG_POS);
+        stack.removeTagKey(TAG_DIM);
+    }
+
+    private static void report(Player player, ServerLevel level, BlockPos from, BlockPos to) {
+        var network = PowerlineNetwork.get(level);
+        player.sendSystemMessage(Component.translatable("message.gtm_powerlines.multimeter.header",
+                formatPos(from), formatPos(to)).withStyle(ChatFormatting.GOLD));
+
+        TransferPath route = network.findRoute(from, to);
+        if (route == null) {
+            player.sendSystemMessage(Component.translatable("message.gtm_powerlines.multimeter.not_connected")
+                    .withStyle(ChatFormatting.RED));
+            return;
+        }
+
+        if (player instanceof ServerPlayer serverPlayer) {
+            var insulators = new ArrayList<BlockPos>(route.path().length + 1);
+            var cursor = from;
+            insulators.add(cursor);
+            for (var edge : route.path()) {
+                cursor = edge.other(cursor);
+                insulators.add(cursor);
+            }
+            Net.sendToPlayer(serverPlayer, new MultimeterPathPacket(insulators));
+        }
+
+        var dedicated = network.getRoutes(from).dedicated();
+        line(player, dedicated ? "message.gtm_powerlines.multimeter.line_transformer" :
+                "message.gtm_powerlines.multimeter.line_machines");
+
+        int items = 0;
+        var wires = new LinkedHashMap<ResourceLocation, Integer>();
+        for (var edge : route.path()) {
+            items += edge.wireCount();
+            wires.merge(edge.wire(), edge.wireCount(), Integer::sum);
+        }
+        line(player, "message.gtm_powerlines.multimeter.length", route.path().length,
+                fmt(route.length()), items);
+
+        MutableComponent wireList = Component.empty();
+        var first = true;
+        for (var entry : wires.entrySet()) {
+            var item = ForgeRegistries.ITEMS.getValue(entry.getKey());
+            if (!first) wireList.append(", ");
+            first = false;
+            wireList.append(item == null ? Component.literal(entry.getKey().toString()) :
+                    new ItemStack(item).getHoverName().copy());
+            wireList.append(" x" + entry.getValue());
+        }
+        line(player, "message.gtm_powerlines.multimeter.wires", wireList);
+
+        line(player, "message.gtm_powerlines.multimeter.limits", route.minVoltage(),
+                GTValues.VNF[GTUtil.getFloorTierByVoltage(route.minVoltage())], route.minAmperage());
+
+        var lossScale = transformerLossScale(level, network, from, to);
+        if (lossScale < 1f) {
+            line(player, "message.gtm_powerlines.multimeter.loss_transformer", fmt(route.loss()),
+                    Mth.floor((1f - lossScale) * 100), fmt(route.loss() * lossScale));
+        } else {
+            line(player, "message.gtm_powerlines.multimeter.loss", fmt(route.loss()));
+        }
+
+        double amps = 0, energy = 0;
+        int hottest = PowerlineNetwork.DEFAULT_TEMP;
+        for (var edge : route.path()) {
+            amps = Math.max(amps, network.getAverageAmperage(edge));
+            energy = Math.max(energy, network.getAverageEnergy(edge));
+            hottest = Math.max(hottest, network.getTemperature(edge));
+        }
+        line(player, "message.gtm_powerlines.multimeter.flow", fmt(amps), Math.round(energy));
+        line(player, "message.gtm_powerlines.multimeter.temperature", hottest, CableBlockEntity.getMeltTemp());
+    }
+
+    private static float transformerLossScale(ServerLevel level, PowerlineNetwork network, BlockPos from, BlockPos to) {
+        var a = network.getTransformerController(from);
+        var b = network.getTransformerController(to);
+        if (a == null || b == null || a.equals(b)) return 1f;
+        var ta = BlockUtils.instanceOf(level, a, PowerlineTransformerMachine.class).orElse(null);
+        var tb = BlockUtils.instanceOf(level, b, PowerlineTransformerMachine.class).orElse(null);
+        if (ta == null || tb == null || !ta.isFormed() || !tb.isFormed()) return 1f;
+        return 1f - (CoilEfficiency.of(ta.getCoilType()) + CoilEfficiency.of(tb.getCoilType())) / 2f;
+    }
+
+    private static void line(Player player, String key, Object... args) {
+        player.sendSystemMessage(Component.literal(" ").append(Component.translatable(key, args))
+                .withStyle(ChatFormatting.GRAY));
+    }
+
+    private static String fmt(double value) {
+        return String.format(Locale.ROOT, "%.2f", value);
+    }
+
+    private static String formatPos(BlockPos pos) {
+        return pos.getX() + ", " + pos.getY() + ", " + pos.getZ();
     }
 
     @Override
@@ -111,127 +218,5 @@ public class MultimeterItem extends Item {
     @Override
     public boolean isFoil(ItemStack stack) {
         return stack.getTagElement(TAG_POS) != null;
-    }
-
-    // region selection
-
-    private static @Nullable BlockPos getSelection(ItemStack stack, Level level) {
-        var posTag = stack.getTagElement(TAG_POS);
-        var root = stack.getTag();
-        if (posTag == null || root == null) return null;
-        var dimension = ResourceKey.create(Registries.DIMENSION, ResourceLocation.parse(root.getString(TAG_DIM)));
-        return dimension.equals(level.dimension()) ? NbtUtils.readBlockPos(posTag) : null;
-    }
-
-    private static void setSelection(ItemStack stack, Level level, BlockPos pos) {
-        stack.getOrCreateTag().put(TAG_POS, NbtUtils.writeBlockPos(pos));
-        stack.getOrCreateTag().putString(TAG_DIM, level.dimension().location().toString());
-    }
-
-    private static void clearSelection(ItemStack stack) {
-        stack.removeTagKey(TAG_POS);
-        stack.removeTagKey(TAG_DIM);
-    }
-
-    // endregion
-
-    private static void report(Player player, ServerLevel level, BlockPos from, BlockPos to) {
-        var network = PowerlineNetwork.get(level);
-        player.sendSystemMessage(Component.translatable("message.gtm_powerlines.multimeter.header",
-                formatPos(from), formatPos(to)).withStyle(ChatFormatting.GOLD));
-
-        TransferPath route = network.findRoute(from, to);
-        if (route == null) {
-            player.sendSystemMessage(Component.translatable("message.gtm_powerlines.multimeter.not_connected")
-                    .withStyle(ChatFormatting.RED));
-            return;
-        }
-
-        // highlight the route for the player
-        if (player instanceof ServerPlayer serverPlayer) {
-            var insulators = new ArrayList<BlockPos>(route.path().length + 1);
-            var cursor = from;
-            insulators.add(cursor);
-            for (var edge : route.path()) {
-                cursor = edge.other(cursor);
-                insulators.add(cursor);
-            }
-            Net.sendToPlayer(serverPlayer, new MultimeterPathPacket(insulators));
-        }
-
-        // line type
-        var dedicated = network.getRoutes(from).dedicated();
-        line(player, dedicated ? "message.gtm_powerlines.multimeter.line_transformer" :
-                "message.gtm_powerlines.multimeter.line_machines");
-
-        // geometry
-        int items = 0;
-        var wires = new LinkedHashMap<ResourceLocation, Integer>();
-        for (var edge : route.path()) {
-            items += edge.wireCount();
-            wires.merge(edge.wire(), edge.wireCount(), Integer::sum);
-        }
-        line(player, "message.gtm_powerlines.multimeter.length", route.path().length,
-                fmt(route.length()), items);
-
-        MutableComponent wireList = Component.empty();
-        var first = true;
-        for (var entry : wires.entrySet()) {
-            var item = ForgeRegistries.ITEMS.getValue(entry.getKey());
-            if (!first) wireList.append(", ");
-            first = false;
-            wireList.append(item == null ? Component.literal(entry.getKey().toString()) :
-                    new ItemStack(item).getHoverName().copy());
-            wireList.append(" x" + entry.getValue());
-        }
-        line(player, "message.gtm_powerlines.multimeter.wires", wireList);
-
-        // ratings
-        line(player, "message.gtm_powerlines.multimeter.limits", route.minVoltage(),
-                GTValues.VNF[GTUtil.getFloorTierByVoltage(route.minVoltage())], route.minAmperage());
-
-        // loss
-        var lossScale = transformerLossScale(level, network, from, to);
-        if (lossScale < 1f) {
-            line(player, "message.gtm_powerlines.multimeter.loss_transformer", fmt(route.loss()),
-                    Mth.floor((1f - lossScale) * 100), fmt(route.loss() * lossScale));
-        } else {
-            line(player, "message.gtm_powerlines.multimeter.loss", fmt(route.loss()));
-        }
-
-        // live readings
-        double amps = 0, energy = 0;
-        int hottest = PowerlineNetwork.DEFAULT_TEMP;
-        for (var edge : route.path()) {
-            amps = Math.max(amps, network.getAverageAmperage(edge));
-            energy = Math.max(energy, network.getAverageEnergy(edge));
-            hottest = Math.max(hottest, network.getTemperature(edge));
-        }
-        line(player, "message.gtm_powerlines.multimeter.flow", fmt(amps), Math.round(energy));
-        line(player, "message.gtm_powerlines.multimeter.temperature", hottest, CableBlockEntity.getMeltTemp());
-    }
-
-    /** Loss multiplier between two transformer insulators of different transformers, otherwise 1. */
-    private static float transformerLossScale(ServerLevel level, PowerlineNetwork network, BlockPos from, BlockPos to) {
-        var a = network.getTransformerController(from);
-        var b = network.getTransformerController(to);
-        if (a == null || b == null || a.equals(b)) return 1f;
-        var ta = BlockUtils.instanceOf(level, a, PowerlineTransformerMachine.class).orElse(null);
-        var tb = BlockUtils.instanceOf(level, b, PowerlineTransformerMachine.class).orElse(null);
-        if (ta == null || tb == null || !ta.isFormed() || !tb.isFormed()) return 1f;
-        return 1f - (CoilEfficiency.of(ta.getCoilType()) + CoilEfficiency.of(tb.getCoilType())) / 2f;
-    }
-
-    private static void line(Player player, String key, Object... args) {
-        player.sendSystemMessage(Component.literal(" ").append(Component.translatable(key, args))
-                .withStyle(ChatFormatting.GRAY));
-    }
-
-    private static String fmt(double value) {
-        return String.format(Locale.ROOT, "%.2f", value);
-    }
-
-    private static String formatPos(BlockPos pos) {
-        return pos.getX() + ", " + pos.getY() + ", " + pos.getZ();
     }
 }

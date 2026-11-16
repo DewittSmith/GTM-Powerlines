@@ -11,11 +11,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 
 import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
 import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
-import snownee.jade.api.BlockAccessor;
-import snownee.jade.api.IBlockComponentProvider;
-import snownee.jade.api.IServerDataProvider;
-import snownee.jade.api.ITooltip;
-import snownee.jade.api.TooltipPosition;
+import snownee.jade.api.*;
 import snownee.jade.api.config.IPluginConfig;
 import snownee.jade.api.ui.IElementHelper;
 
@@ -26,7 +22,6 @@ public class PowerlineInsulatorProvider implements IBlockComponentProvider, ISer
 
     @Override
     public void appendServerData(CompoundTag data, BlockAccessor accessor) {
-        // fake accessors target a cable, see PowerlineWireProvider
         if (accessor.isFakeBlock() || !(accessor.getBlockEntity() instanceof PowerlineInsulatorBlockEntity insulator)) {
             return;
         }
@@ -81,7 +76,6 @@ public class PowerlineInsulatorProvider implements IBlockComponentProvider, ISer
         }
     }
 
-    /** Before GTCEu's providers (all at BODY), so GT's paint colour line stays last, like on GT blocks. */
     @Override
     public int getDefaultPriority() {
         return TooltipPosition.BODY - 100;

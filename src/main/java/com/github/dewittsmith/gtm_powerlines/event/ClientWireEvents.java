@@ -9,18 +9,13 @@ import net.minecraftforge.fml.common.Mod;
 
 import com.github.dewittsmith.gtm_powerlines.GTMPowerlines;
 import com.github.dewittsmith.gtm_powerlines.item.MultimeterItem;
-import com.github.dewittsmith.gtm_powerlines.wire.ClientWireStats;
-import com.github.dewittsmith.gtm_powerlines.wire.ClientWires;
-import com.github.dewittsmith.gtm_powerlines.wire.MultimeterHighlight;
-import com.github.dewittsmith.gtm_powerlines.wire.ObstructionHighlight;
-import com.github.dewittsmith.gtm_powerlines.wire.WireAttachment;
+import com.github.dewittsmith.gtm_powerlines.wire.*;
 
 @Mod.EventBusSubscriber(modid = GTMPowerlines.MOD_ID, value = Dist.CLIENT)
 public final class ClientWireEvents {
 
     private static int lastSelectedSlot = -1;
 
-    /** Clears the multimeter path when the player switches hotbar slots or no longer holds a multimeter. */
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent e) {
         if (e.phase != TickEvent.Phase.END) return;

@@ -27,15 +27,6 @@ import com.github.dewittsmith.gtm_powerlines.wire.ClientWires;
 import com.github.dewittsmith.gtm_powerlines.wire.WireTargeting;
 import com.github.dewittsmith.gtm_powerlines.wire.WireTools;
 
-/**
- * Wire cutters and spray cans used on suspended cables.
- * <ul>
- * <li>Aim at a cable with wire cutters and use: the cable is removed and its wires are refunded.</li>
- * <li>Shift-use an insulator with wire cutters: every cable on it is removed and refunded.</li>
- * <li>Aim at a cable with a spray can and use: the cable is painted (solvent removes paint).</li>
- * </ul>
- * Runs on both sides so the client does not also predict a block interaction behind the cable.
- */
 @Mod.EventBusSubscriber(modid = GTMPowerlines.MOD_ID)
 public final class WireToolEvents {
 

@@ -1,4 +1,4 @@
-package com.github.dewittsmith.gtm_powerlines.renderer;
+package com.github.dewittsmith.gtm_powerlines.client.renderer;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -16,22 +16,16 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import java.util.List;
 
-/** Small geometry helpers shared by the client renderers. Positions are camera-relative. */
 public final class PowerlineRenderUtil {
 
-    /** A plain white texel; tinting it with a vertex colour gives a flat colour. */
     public static final ResourceLocation FLAT_TEXTURE = ResourceLocation.parse("minecraft:block/white_concrete");
 
-    public record UV(float u0, float v0, float u1, float v1) {}
-
-    /** UV of a single texel in the middle of {@link #FLAT_TEXTURE}. */
     public static UV flatUV() {
         var sprite = Minecraft.getInstance().getTextureAtlas(TextureAtlas.LOCATION_BLOCKS).apply(FLAT_TEXTURE);
         float u = (sprite.getU0() + sprite.getU1()) / 2, v = (sprite.getV0() + sprite.getV1()) / 2;
         return new UV(u, v, u, v);
     }
 
-    /** UV strip of a GT cable texture, as wide as the cable, like the regular wire renderer uses. */
     public static UV cableUV(ResourceLocation texture, float pixelSize) {
         var sprite = Minecraft.getInstance().getTextureAtlas(TextureAtlas.LOCATION_BLOCKS).apply(texture);
         float tw = (sprite.getU1() - sprite.getU0()) / 16, th = (sprite.getV1() - sprite.getV0()) / 16;
@@ -39,11 +33,6 @@ public final class PowerlineRenderUtil {
         return new UV(u0, sprite.getV0() + th, u0 + tw * pixelSize, sprite.getV1() - th);
     }
 
-    /**
-     * Square tube following the sagging cable from {@code start} to {@code end}.
-     *
-     * @param inward emit faces pointing into the tube (for back-face-culled "inverted hull" outlines)
-     */
     public static void tube(VertexConsumer vc, PoseStack.Pose pose, Vec3 start, Vec3 end, double half, int argb,
                             UV uv, int light, boolean inward) {
         double sag = WireGeometry.sag(start, end);
@@ -77,7 +66,6 @@ public final class PowerlineRenderUtil {
         }
     }
 
-    /** Axis-aligned box with outward faces. */
     public static void box(VertexConsumer vc, PoseStack.Pose pose, AABB box, int argb, UV uv, int light) {
         Vec3 c = box.getCenter();
         double x0 = box.minX, y0 = box.minY, z0 = box.minZ, x1 = box.maxX, y1 = box.maxY, z1 = box.maxZ;
@@ -85,18 +73,14 @@ public final class PowerlineRenderUtil {
                 new Vec3(x0, y0, z0), new Vec3(x1, y0, z0), new Vec3(x1, y0, z1), new Vec3(x0, y0, z1),
                 new Vec3(x0, y1, z0), new Vec3(x1, y1, z0), new Vec3(x1, y1, z1), new Vec3(x0, y1, z1)
         };
-        quad(vc, pose, c, p[0], p[1], p[2], p[3], argb, uv, light, false); // bottom
-        quad(vc, pose, c, p[4], p[5], p[6], p[7], argb, uv, light, false); // top
-        quad(vc, pose, c, p[0], p[1], p[5], p[4], argb, uv, light, false); // north
-        quad(vc, pose, c, p[3], p[2], p[6], p[7], argb, uv, light, false); // south
-        quad(vc, pose, c, p[0], p[3], p[7], p[4], argb, uv, light, false); // west
-        quad(vc, pose, c, p[1], p[2], p[6], p[5], argb, uv, light, false); // east
+        quad(vc, pose, c, p[0], p[1], p[2], p[3], argb, uv, light, false);
+        quad(vc, pose, c, p[4], p[5], p[6], p[7], argb, uv, light, false);
+        quad(vc, pose, c, p[0], p[1], p[5], p[4], argb, uv, light, false);
+        quad(vc, pose, c, p[3], p[2], p[6], p[7], argb, uv, light, false);
+        quad(vc, pose, c, p[0], p[3], p[7], p[4], argb, uv, light, false);
+        quad(vc, pose, c, p[1], p[2], p[6], p[5], argb, uv, light, false);
     }
 
-    /**
-     * Emits a quad whose front face points away from {@code inside} (or towards it if {@code inward}); the vertex
-     * order is fixed up automatically so back-face culling behaves.
-     */
     public static void quad(VertexConsumer vc, PoseStack.Pose pose, Vec3 inside, Vec3 a, Vec3 b, Vec3 c, Vec3 d,
                             int argb, UV uv, int light, boolean inward) {
         Vec3 mid = a.add(b).add(c).add(d).scale(0.25);
@@ -126,13 +110,11 @@ public final class PowerlineRenderUtil {
                 .endVertex();
     }
 
-    /** Renders one line strip (camera-relative points) as its own batch so it never joins other strips. */
     public static void lineStrip(MultiBufferSource.BufferSource buffers, PoseStack.Pose pose, List<Vec3> points,
                                  float r, float g, float b, float a) {
         lineStrip(buffers, RenderType.lineStrip(), pose, points, r, g, b, a);
     }
 
-    /** Same as above with a custom line strip render type, e.g. {@link PowerlineRenderTypes#LINE_STRIP_ON_TOP}. */
     public static void lineStrip(MultiBufferSource.BufferSource buffers, RenderType type, PoseStack.Pose pose,
                                  List<Vec3> points, float r, float g, float b, float a) {
         if (points.size() < 2) return;
@@ -148,4 +130,6 @@ public final class PowerlineRenderUtil {
         }
         buffers.endBatch(type);
     }
+
+    public record UV(float u0, float v0, float u1, float v1) {}
 }

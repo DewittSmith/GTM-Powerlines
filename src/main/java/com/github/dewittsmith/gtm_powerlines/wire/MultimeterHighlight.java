@@ -6,10 +6,6 @@ import java.util.List;
 
 import javax.annotation.Nullable;
 
-/**
- * Client-side state of the last multimeter measurement, rendered as a line strip.
- * Stays until the multimeter is used again or the player switches items.
- */
 public final class MultimeterHighlight {
 
     private static @Nullable List<BlockPos> current;

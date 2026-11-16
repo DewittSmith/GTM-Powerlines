@@ -21,10 +21,9 @@ import static com.gregtechceu.gtceu.api.pattern.Predicates.custom;
 
 public final class PowerlinePredicates {
 
+    public static final String IO_KEY = "PowerlineIO";
     private static final PartAbility[] INPUTS = { PartAbility.INPUT_ENERGY, PartAbility.SUBSTATION_INPUT_ENERGY };
     private static final PartAbility[] OUTPUTS = { PartAbility.OUTPUT_ENERGY, PartAbility.SUBSTATION_OUTPUT_ENERGY };
-
-    public static final String IO_KEY = "PowerlineIO";
 
     public static TraceabilityPredicate powerlineHatch() {
         return new TraceabilityPredicate(state -> {

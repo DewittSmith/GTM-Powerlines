@@ -54,8 +54,6 @@ public class PowerlineWireEvents {
         var attach = WireAttachment.get(player);
         boolean dragging = attach != null && attach.dimension().equals(level.dimension());
 
-        // the wire stack this click works with: while dragging, the dragged wire in either hand;
-        // otherwise a wire in the hand this event fires for (main hand first, then off hand)
         InteractionHand hand;
         if (dragging) {
             hand = handHolding(player, attach.wire());
@@ -69,7 +67,6 @@ public class PowerlineWireEvents {
         var wireInfo = WireStats.of(wireItem).orElse(null);
         if (wireInfo == null) return;
 
-        // both hands fire this event; handle a click only once per tick
         var time = level.getGameTime();
         var lastTime = PLAYER_TICKS.put(player.getUUID(), time);
         if (lastTime != null && lastTime == time) {
@@ -82,7 +79,6 @@ public class PowerlineWireEvents {
 
         if (clickedBe == null) {
             if (dragging) {
-                // place an insulator where the player clicked and connect to it
                 if (!placeInsulatorAndConnect(event, player, hand, held, wireInfo, attach)) {
                     WireAttachment.clear(player);
                     message(player, "message.gtm_powerlines.wire.cancelled");
@@ -124,12 +120,6 @@ public class PowerlineWireEvents {
         finish(event);
     }
 
-    /**
-     * Places an insulator from the player's inventory against the clicked face, then connects the dragged wire to
-     * it with every usual check. If the connection fails the insulator is taken back.
-     *
-     * @return false if no insulator could be placed (the drag is then cancelled)
-     */
     private static boolean placeInsulatorAndConnect(PlayerInteractEvent.RightClickBlock event, Player player,
                                                     InteractionHand wireHand, ItemStack held, WireStats wireInfo,
                                                     WireAttachment.Attach attach) {
@@ -153,7 +143,6 @@ public class PowerlineWireEvents {
         if (!(level.getBlockEntity(placedPos) instanceof PowerlineInsulatorBlockEntity placed)) return true;
 
         if (!tryConnect(player, attach, placed, held, wireInfo)) {
-            // roll back: remove the new insulator and give it back
             level.removeBlock(placedPos, false);
             if (!player.getAbilities().instabuild) {
                 player.getInventory().placeItemBackInInventory(new ItemStack(insulatorItem));
@@ -170,11 +159,6 @@ public class PowerlineWireEvents {
         return null;
     }
 
-    /**
-     * Connects the dragged wire to {@code clickedBe}, with all checks (tier, range, obstructions, wire count).
-     *
-     * @return true if a wire was connected (or the drag was re-anchored on the same transformer)
-     */
     private static boolean tryConnect(Player player, WireAttachment.Attach attach,
                                       PowerlineInsulatorBlockEntity clickedBe, ItemStack held, WireStats wireInfo) {
         var level = clickedBe.getLevel();
@@ -256,7 +240,6 @@ public class PowerlineWireEvents {
         return false;
     }
 
-    /** The hand holding {@code wire}, preferring the main hand, or null if neither does. */
     private static @Nullable InteractionHand handHolding(Player player, Item wire) {
         if (player.getMainHandItem().is(wire)) return InteractionHand.MAIN_HAND;
         if (player.getOffhandItem().is(wire)) return InteractionHand.OFF_HAND;
@@ -280,7 +263,6 @@ public class PowerlineWireEvents {
         message(player, "message.gtm_powerlines.wire.cancelled");
     }
 
-    /** Cancels a drag once neither hand holds the dragged wire any more. */
     @SubscribeEvent
     public static void onEquipmentChange(LivingEquipmentChangeEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;

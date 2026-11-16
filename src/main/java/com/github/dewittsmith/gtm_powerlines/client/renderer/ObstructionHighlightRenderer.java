@@ -1,4 +1,4 @@
-package com.github.dewittsmith.gtm_powerlines.renderer;
+package com.github.dewittsmith.gtm_powerlines.client.renderer;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
@@ -18,10 +18,6 @@ import com.github.dewittsmith.gtm_powerlines.wire.WireGeometry;
 
 import java.util.ArrayList;
 
-/**
- * Fading red outlines of whatever was in the way: blocks blocking a new wire, or wires blocking a new block.
- * Fades out like the multimeter path highlight.
- */
 @Mod.EventBusSubscriber(modid = GTMPowerlines.MOD_ID, value = Dist.CLIENT)
 public final class ObstructionHighlightRenderer {
 
@@ -44,7 +40,6 @@ public final class ObstructionHighlightRenderer {
         var pose = event.getPoseStack().last();
         var buffers = mc.renderBuffers().bufferSource();
 
-        // blocks: red outline of their collision box
         if (!highlight.blocks().isEmpty()) {
             var consumer = buffers.getBuffer(PowerlineRenderTypes.LINES_ON_TOP);
             for (var pos : highlight.blocks()) {
@@ -56,7 +51,6 @@ public final class ObstructionHighlightRenderer {
             buffers.endBatch(PowerlineRenderTypes.LINES_ON_TOP);
         }
 
-        // wires: red line strip along the sagging cable
         var graph = ClientWires.graph();
         for (int i = 0; i + 1 < highlight.wires().size(); i += 2) {
             var edge = graph.getEdge(highlight.wires().get(i), highlight.wires().get(i + 1)).orElse(null);

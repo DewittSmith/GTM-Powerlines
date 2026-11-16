@@ -42,18 +42,12 @@ import javax.annotation.Nullable;
 
 public class PowerlineInsulatorBlockEntity extends BlockEntity implements IPaintable {
 
+    private final int maxElevation;
+    private final IEnergyContainer energy = new PowerlineInsulatorEnergy(this);
     @Nullable
     private BlockPos controller;
-
-    /** Tint of the insulator discs, set with a GT spray can. */
     private int paintingColor = UNPAINTED_COLOR;
-
-    /** Set when the supporting cable melted: the attached wires burn instead of dropping. Not saved. */
     private boolean burned;
-
-    private final int maxElevation;
-
-    private final IEnergyContainer energy = new PowerlineInsulatorEnergy(this);
     private LazyOptional<IEnergyContainer> energyCap = LazyOptional.of(() -> energy);
 
     public PowerlineInsulatorBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState blockState) {
@@ -82,8 +76,6 @@ public class PowerlineInsulatorBlockEntity extends BlockEntity implements IPaint
         setChanged();
     }
 
-    // region IPaintable
-
     @Override
     public int getPaintingColor() {
         return paintingColor;
@@ -96,7 +88,6 @@ public class PowerlineInsulatorBlockEntity extends BlockEntity implements IPaint
         setChanged();
         if (level == null) return;
         if (level.isClientSide) {
-            // the spray can also runs client-side: re-bake right away, the server update will then match
             requestRerender();
         } else {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
@@ -107,8 +98,6 @@ public class PowerlineInsulatorBlockEntity extends BlockEntity implements IPaint
     public int getDefaultPaintingColor() {
         return UNPAINTED_COLOR;
     }
-
-    // endregion
 
     public List<PowerlineGraph.Edge> getConnections() {
         if (level instanceof ServerLevel serverLevel) {
@@ -229,7 +218,6 @@ public class PowerlineInsulatorBlockEntity extends BlockEntity implements IPaint
         if (oldPaint != paintingColor && level != null && level.isClientSide) requestRerender();
     }
 
-    /** Re-bakes the chunk section so the disc tint (a block colour) updates. Client only. */
     private void requestRerender() {
         if (level != null && level.isClientSide) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 8);

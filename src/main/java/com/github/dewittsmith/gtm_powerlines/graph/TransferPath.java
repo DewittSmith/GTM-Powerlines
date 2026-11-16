@@ -19,40 +19,13 @@ import java.util.function.Predicate;
 
 import javax.annotation.Nullable;
 
-/**
- * Shortest route (by wire length) from a source insulator to another insulator.
- *
- * @param loss        sum of the raw per-amp loss of every edge, before any transformer efficiency is applied
- * @param maxLoss     {@code ceil(loss)}, the per-amp loss GT-style networks use
- * @param minVoltage  lowest voltage rating of any wire on the route
- * @param minAmperage lowest amperage rating of any wire on the route
- */
 public record TransferPath(BlockPos targetPos, Direction targetFacing, PowerlineGraph.Edge[] path, int distance,
                            float loss, long maxLoss, long minVoltage, long minAmperage) {
-
-    private record Visit(BlockPos pos, int distance) {}
-
-    public @Nullable IEnergyContainer getHandler(Level level) {
-        var pos = targetPos.relative(targetFacing);
-        if (!level.isLoaded(pos)) return null;
-        return GTCapabilityHelper.getEnergyContainer(level, pos, targetFacing.getOpposite());
-    }
-
-    public float length() {
-        var total = 0f;
-        for (var edge : path) total += edge.length();
-        return total;
-    }
 
     public static List<TransferPath> walk(PowerlineGraph graph, BlockPos source) {
         return walk(graph, source, pos -> false);
     }
 
-    /**
-     * Dijkstra over the powerline graph.
-     *
-     * @param terminal nodes that can be reached but never travelled through (e.g. transformer insulators)
-     */
     public static List<TransferPath> walk(PowerlineGraph graph, BlockPos source, Predicate<BlockPos> terminal) {
         var distances = new Long2IntOpenHashMap();
         distances.defaultReturnValue(Integer.MAX_VALUE);
@@ -107,4 +80,18 @@ public record TransferPath(BlockPos targetPos, Direction targetFacing, Powerline
         }
         return routes;
     }
+
+    public @Nullable IEnergyContainer getHandler(Level level) {
+        var pos = targetPos.relative(targetFacing);
+        if (!level.isLoaded(pos)) return null;
+        return GTCapabilityHelper.getEnergyContainer(level, pos, targetFacing.getOpposite());
+    }
+
+    public float length() {
+        var total = 0f;
+        for (var edge : path) total += edge.length();
+        return total;
+    }
+
+    private record Visit(BlockPos pos, int distance) {}
 }

@@ -12,13 +12,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
-/**
- * What stopped a wire from being connected (blocks in its way) or a block from being placed (wires in its way),
- * for the client-side fading highlight.
- *
- * @param blocks blocks obstructing a new wire
- * @param wires  existing wires obstructing a new block, as endpoint pairs {a0, b0, a1, b1, ...}
- */
 public record ObstructionHighlightPacket(List<BlockPos> blocks, List<BlockPos> wires) {
 
     public static void encode(ObstructionHighlightPacket p, FriendlyByteBuf buf) {

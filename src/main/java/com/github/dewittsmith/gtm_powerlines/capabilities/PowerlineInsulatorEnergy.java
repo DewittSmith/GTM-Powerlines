@@ -12,7 +12,6 @@ import com.github.dewittsmith.gtm_powerlines.graph.PowerlineNetwork;
 public class PowerlineInsulatorEnergy implements IEnergyContainer {
 
     private final PowerlineInsulatorBlockEntity blockEntity;
-    // per-handler re-entrancy guard, same as GTCEu's EnergyNetHandler
     private boolean transfer;
 
     public PowerlineInsulatorEnergy(PowerlineInsulatorBlockEntity blockEntity) {

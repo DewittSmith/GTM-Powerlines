@@ -18,20 +18,14 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 
-/**
- * Finds blocks a suspended cable would pass through. Blocks tagged {@code gtm_powerlines:wire_passthrough},
- * blocks without collision and insulators are ignored.
- */
 public final class WireObstruction {
 
-    /** Distance between tested points along the cable, in blocks. */
     private static final double STEP = 0.125;
 
     public static boolean enabled() {
         return GTMPowerlinesConfig.INSTANCE.wire.checkObstructions;
     }
 
-    /** Blocks that would obstruct a cable between two attachment points. Unloaded chunks are skipped. */
     public static List<BlockPos> find(LevelReader level, Vec3 start, Vec3 end) {
         var result = new LinkedHashSet<BlockPos>();
         var clear = new HashSet<BlockPos>();
@@ -57,7 +51,6 @@ public final class WireObstruction {
                 WireGeometry.getAttachmentPoint(edge.b(), edge.dirB(), edge.stats()));
     }
 
-    /** Whether a block with {@code state} placed at {@code pos} would cut through the cable. */
     public static boolean blocks(LevelReader level, PowerlineGraph.Edge edge, BlockPos pos, BlockState state) {
         if (ignored(state) || edge.a().equals(pos) || edge.b().equals(pos)) return false;
         var shape = state.getCollisionShape(level, pos);

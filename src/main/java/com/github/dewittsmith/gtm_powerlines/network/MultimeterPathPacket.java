@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
-/** Insulators along a measured route, in order, for the client-side multimeter highlight. */
 public record MultimeterPathPacket(List<BlockPos> insulators) {
 
     public static void encode(MultimeterPathPacket p, FriendlyByteBuf buf) {

@@ -32,6 +32,7 @@ import java.util.Map;
 
 public class PowerlineInsulatorBlock extends Block implements EntityBlock {
 
+    public static final DirectionProperty DIRECTION = DirectionProperty.create("direction");
     private static final Map<Direction, VoxelShape> SHAPES = Map.of(
             Direction.UP, box(5, 0, 5, 11, 16, 11),
             Direction.DOWN, box(5, 0, 5, 11, 16, 11),
@@ -39,11 +40,7 @@ public class PowerlineInsulatorBlock extends Block implements EntityBlock {
             Direction.SOUTH, box(5, 5, 0, 11, 11, 16),
             Direction.WEST, box(0, 5, 5, 16, 11, 11),
             Direction.EAST, box(0, 5, 5, 16, 11, 11));
-
-    /** Ticks to wait before checking the supporting cable's connection (lets GT finish swapping cables). */
     private static final int CONNECTION_CHECK_DELAY = 2;
-
-    public static final DirectionProperty DIRECTION = DirectionProperty.create("direction");
 
     public PowerlineInsulatorBlock(Properties properties) {
         super(properties);
@@ -74,9 +71,6 @@ public class PowerlineInsulatorBlock extends Block implements EntityBlock {
         return null;
     }
 
-    /**
-     * Like GT machines: placing an insulator against a cable opens the cable on that side.
-     */
     @Override
     public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer,
                             ItemStack stack) {
@@ -88,7 +82,6 @@ public class PowerlineInsulatorBlock extends Block implements EntityBlock {
         }
     }
 
-    /** Structural check only: a sturdy face or any GT cable. Cable connections are checked in {@link #tick}. */
     @Override
     public boolean canSurvive(BlockState state, LevelReader level, BlockPos pos) {
         var facing = state.getValue(DIRECTION);
@@ -109,7 +102,6 @@ public class PowerlineInsulatorBlock extends Block implements EntityBlock {
         }
 
         if (!state.canSurvive(level, pos)) {
-            // the cable we hang on melted: our wires burn with it instead of dropping
             if (neighbor.getBlock() instanceof BaseFireBlock &&
                     level.getBlockEntity(pos) instanceof PowerlineInsulatorBlockEntity insulator) {
                 insulator.markBurned();
@@ -117,8 +109,6 @@ public class PowerlineInsulatorBlock extends Block implements EntityBlock {
             return Blocks.AIR.defaultBlockState();
         }
 
-        // a GT cable may have been swapped (e.g. its insulation burned off); re-check the connection a bit later,
-        // once the new cable restored its sides
         if (neighbor.getBlock() instanceof CableBlock) level.scheduleTick(pos, this, CONNECTION_CHECK_DELAY);
         return state;
     }
@@ -132,7 +122,6 @@ public class PowerlineInsulatorBlock extends Block implements EntityBlock {
         }
     }
 
-    /** Breaks the insulator when the cable it hangs on is no longer connected on its side. */
     @Override
     public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
         var facing = state.getValue(DIRECTION);

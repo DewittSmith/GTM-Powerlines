@@ -49,10 +49,8 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine
 
     private ICoilType coilType = CoilBlock.CoilType.CUPRONICKEL;
 
-    /** EU per second that arrived at receiving transformers (after line loss). */
     private long networkOutputPerSec;
 
-    /** EU per second drained from this transformer's energy hatches. */
     private long energyOutputPerSec;
 
     private long networkOutput;
@@ -63,29 +61,15 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine
     private Collection<BlockPos> insulators = Collections.emptyList();
 
     private @Nullable TickableSubscription transferSub;
-
-    /** Why the last transfer tick did (not) move energy; shown in the controller UI. */
-    public enum TransferStatus {
-
-        IDLE,
-        NO_ENERGY,
-        NO_INSULATORS,
-        NO_RECEIVER,
-        RECEIVER_UNLOADED,
-        RECEIVER_FULL,
-        LOSS_TOO_HIGH,
-        TRANSFERRING;
-
-        public String translationKey() {
-            return "multiblock.gtm_powerlines.powerline_transformer.status." + name().toLowerCase(Locale.ROOT);
-        }
-    }
-
     private TransferStatus status = TransferStatus.IDLE;
     private int receivers;
 
     public PowerlineTransformerMachine(IMachineBlockEntity holder) {
         super(holder);
+    }
+
+    private static TransferStatus worse(TransferStatus current, TransferStatus candidate) {
+        return candidate.ordinal() > current.ordinal() ? candidate : current;
     }
 
     public ICoilType getCoilType() {
@@ -104,7 +88,6 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine
         return status;
     }
 
-    /** Number of step-down transformers that received energy during the last tick. */
     public int getReceivers() {
         return receivers;
     }
@@ -118,9 +101,8 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine
         super.onStructureFormed();
         refreshEnergyContainer();
 
-        // copy (and dedupe): the match context list belongs to the pattern matcher
         insulators = Set.copyOf(getMultiblockState().getMatchContext().getOrDefault("insulators",
-                Collections.<BlockPos>emptyList()));
+                Collections.emptyList()));
         setInsulatorsConnected(insulators, true);
 
         var type = getMultiblockState().getMatchContext().get("CoilType");
@@ -128,7 +110,6 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine
             this.coilType = coil;
         }
 
-        // always tick while formed: the hatch setup decides each tick whether this is the sending side
         if (getLevel() instanceof ServerLevel && transferSub == null) {
             transferSub = subscribeServerTick(this::transferTick);
         }
@@ -157,7 +138,6 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine
     @Override
     public void onUnload() {
         super.onUnload();
-        // MetaMachine drops all tick subscriptions on unload
         transferSub = null;
     }
 
@@ -179,10 +159,6 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine
         return energyContainer;
     }
 
-    /**
-     * Voltage of a single energy hatch. Unlike {@link EnergyContainerList#getInputVoltage()} this does not merge
-     * several hatches into a higher "virtual" voltage, so the line tier always equals the hatch tier.
-     */
     public long getLineVoltage() {
         energy();
         long voltage = 0;
@@ -192,7 +168,6 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine
         return voltage;
     }
 
-    /** Total amperage of all hatches running at {@link #getLineVoltage()}. */
     public long getLineAmperage() {
         long voltage = getLineVoltage();
         long amperage = 0;
@@ -213,10 +188,6 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine
         return energy().getInputPerSec() / 20;
     }
 
-    /**
-     * Step-up side: pushes energy from the input hatches, over the powerline, into every reachable step-down
-     * transformer. Loss per block is reduced by the average coil efficiency of both transformers.
-     */
     private void transferTick() {
         if (!(getLevel() instanceof ServerLevel level) || !isFormed() || !level.shouldTickBlocksAt(getPos())) return;
         if (hatches.isEmpty()) refreshEnergyContainer();
@@ -248,7 +219,6 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine
         var network = PowerlineNetwork.get(level);
         var efficiency = CoilEfficiency.of(coilType);
 
-        // the most informative reason something was skipped, in case nothing gets sent
         var blocked = TransferStatus.NO_RECEIVER;
         var served = new HashSet<BlockPos>();
 
@@ -258,7 +228,6 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine
 
                 var destPos = network.getTransformerController(route.targetPos());
                 if (destPos == null || destPos.equals(getPos())) continue;
-                // the receiver must be in a ticking (properly loaded) chunk, not just a border/lazy one
                 if (!level.isLoaded(destPos) || !level.shouldTickBlocksAt(destPos)) {
                     blocked = worse(blocked, TransferStatus.RECEIVER_UNLOADED);
                     continue;
@@ -304,10 +273,6 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine
         status = served.isEmpty() ? blocked : TransferStatus.TRANSFERRING;
     }
 
-    private static TransferStatus worse(TransferStatus current, TransferStatus candidate) {
-        return candidate.ordinal() > current.ordinal() ? candidate : current;
-    }
-
     public boolean isInput() {
         return energy().getInputVoltage() > 0;
     }
@@ -327,7 +292,6 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine
         if (!(level instanceof ServerLevel serverLevel)) return;
         var network = PowerlineNetwork.get(serverLevel);
         for (BlockPos pos : positions) {
-            // always update the network, even if the insulator block is already gone
             network.setTransformerNode(pos, connected ? getPos() : null);
 
             BlockState state = level.getBlockState(pos);
@@ -379,6 +343,22 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine
     public void attachTooltips(TooltipsPanel tooltipsPanel) {
         for (IMultiPart part : getParts()) {
             part.attachFancyTooltipsToController(this, tooltipsPanel);
+        }
+    }
+
+    public enum TransferStatus {
+
+        IDLE,
+        NO_ENERGY,
+        NO_INSULATORS,
+        NO_RECEIVER,
+        RECEIVER_UNLOADED,
+        RECEIVER_FULL,
+        LOSS_TOO_HIGH,
+        TRANSFERRING;
+
+        public String translationKey() {
+            return "multiblock.gtm_powerlines.powerline_transformer.status." + name().toLowerCase(Locale.ROOT);
         }
     }
 }

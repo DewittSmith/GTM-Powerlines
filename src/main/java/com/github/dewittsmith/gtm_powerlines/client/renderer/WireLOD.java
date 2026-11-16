@@ -1,4 +1,4 @@
-package com.github.dewittsmith.gtm_powerlines.renderer;
+package com.github.dewittsmith.gtm_powerlines.client.renderer;
 
 import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
 

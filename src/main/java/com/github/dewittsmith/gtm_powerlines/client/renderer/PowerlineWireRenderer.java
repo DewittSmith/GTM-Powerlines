@@ -1,4 +1,4 @@
-package com.github.dewittsmith.gtm_powerlines.renderer;
+package com.github.dewittsmith.gtm_powerlines.client.renderer;
 
 import com.gregtechceu.gtceu.GTCEu;
 
@@ -19,13 +19,6 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 public class PowerlineWireRenderer {
 
     private static final ResourceLocation WIRE_TEXTURE = GTCEu.id("block/cable/insulation_5");
-
-    public enum Caps {
-        NONE,
-        START,
-        END,
-        BOTH;
-    }
 
     public static RenderType wireRenderType() {
         return RenderType.entityCutout(TextureAtlas.LOCATION_BLOCKS);
@@ -97,13 +90,9 @@ public class PowerlineWireRenderer {
             Vec3 nRight = right.add(pRight).normalize();
 
             var vEnd = v0 + (v1 - v0) * step;
-            // top
             quad(consumer, pose, pTR, cTR, cTL, pTL, argb, u0, v0, u1, vEnd, light, nUp);
-            // right
             quad(consumer, pose, pBR, cBR, cTR, pTR, argb, u0, v0, u1, vEnd, light, nRight);
-            // bottom
             quad(consumer, pose, pBL, cBL, cBR, pBR, argb, u0, v0, u1, vEnd, light, nUp.reverse());
-            // left
             quad(consumer, pose, pTL, cTL, cBL, pBL, argb, u0, v0, u1, vEnd, light, nRight.reverse());
 
             pPos = pos;
@@ -216,5 +205,12 @@ public class PowerlineWireRenderer {
                 .uv2(light)
                 .normal(pose.normal(), (float) n.x, (float) n.y, (float) n.z)
                 .endVertex();
+    }
+
+    public enum Caps {
+        NONE,
+        START,
+        END,
+        BOTH
     }
 }

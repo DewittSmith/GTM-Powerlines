@@ -6,14 +6,7 @@ import java.util.List;
 
 import javax.annotation.Nullable;
 
-/** Client-side state of the last obstruction, rendered as fading red outlines. */
 public final class ObstructionHighlight {
-
-    /**
-     * @param blocks blocks that blocked a new wire
-     * @param wires  endpoint pairs of wires that blocked a new block
-     */
-    public record Highlight(List<BlockPos> blocks, List<BlockPos> wires, long startMillis) {}
 
     private static @Nullable Highlight current;
 
@@ -29,4 +22,6 @@ public final class ObstructionHighlight {
     public static void clear() {
         current = null;
     }
+
+    public record Highlight(List<BlockPos> blocks, List<BlockPos> wires, long startMillis) {}
 }

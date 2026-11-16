@@ -18,8 +18,6 @@ import javax.annotation.Nullable;
 
 public final class WireAttachment {
 
-    public record Attach(ResourceKey<Level> dimension, BlockPos pos, Item wire, WireStats stats) {}
-
     private static final Map<UUID, Attach> ATTACH = new HashMap<>();
     private static @Nullable Attach clientAttachment;
 
@@ -41,4 +39,6 @@ public final class WireAttachment {
     public static void setClient(@Nullable Attach attachment) {
         clientAttachment = attachment;
     }
+
+    public record Attach(ResourceKey<Level> dimension, BlockPos pos, Item wire, WireStats stats) {}
 }

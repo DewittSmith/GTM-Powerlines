@@ -1,4 +1,4 @@
-package com.github.dewittsmith.gtm_powerlines.renderer;
+package com.github.dewittsmith.gtm_powerlines.client.renderer;
 
 import com.gregtechceu.gtceu.api.blockentity.IPaintable;
 
@@ -39,18 +39,12 @@ import javax.annotation.Nullable;
 @Mod.EventBusSubscriber(modid = GTMPowerlines.MOD_ID, value = Dist.CLIENT)
 public class WirePreviewEvents {
 
-    /**
-     * Flat-colour texel used for the spray outline (the hull is tinted with the paint colour).
-     */
     private static final ResourceLocation OUTLINE_TEXTURE = ResourceLocation.parse("minecraft:block/white_concrete");
-    /**
-     * How much thicker than the cable the spray outline is, in blocks.
-     */
+
     private static final double OUTLINE_MARGIN = 1 / 32.0;
-    /**
-     * Colour of a cleared (solvent) outline.
-     */
+
     private static final int SOLVENT_OUTLINE_COLOR = 0xFFFFFF;
+    private static final ResourceLocation CABLE_TEXTURE = ResourceLocation.parse("gtceu:block/cable/insulation_5");
 
     @SubscribeEvent
     public static void onRenderLevel(RenderLevelStageEvent event) {
@@ -67,9 +61,6 @@ public class WirePreviewEvents {
         renderMultimeterPath(event, mc);
     }
 
-    /**
-     * Hide the block outline while a cable in front of it is the actual target.
-     */
     @SubscribeEvent
     public static void onHighlightBlock(RenderHighlightEvent.Block event) {
         var player = Minecraft.getInstance().player;
@@ -128,17 +119,6 @@ public class WirePreviewEvents {
         }
     }
 
-    // region connection preview
-
-    /**
-     * Wire cable texture used by the regular renderer.
-     */
-    private static final ResourceLocation CABLE_TEXTURE = ResourceLocation.parse("gtceu:block/cable/insulation_5");
-
-    /**
-     * Shows the cable as it would hang once connected (half transparent), and outlines in red every block that would
-     * be in its way.
-     */
     private static void renderConnectionPreview(RenderLevelStageEvent event, Minecraft mc, Level level, Vec3 start,
                                                 Vec3 end, WireStats stats) {
         Vec3 cam = event.getCamera().getPosition();
@@ -167,13 +147,6 @@ public class WirePreviewEvents {
         buffers.endBatch(PowerlineRenderTypes.LINES_ON_TOP);
     }
 
-    // endregion
-
-    // region wire cutter: square around the cut point
-
-    /**
-     * Draws a red square (one closed line strip) around the cable where the cut would happen.
-     */
     private static void renderCutSquare(RenderLevelStageEvent event, Minecraft mc, WireTargeting.Hit hit) {
         Vec3 cam = event.getCamera().getPosition();
         Vec3 forward = hit.tangent();
@@ -208,10 +181,6 @@ public class WirePreviewEvents {
                 .normal(pose.normal(), (float) n.x, (float) n.y, (float) n.z).endVertex();
     }
 
-    // endregion
-
-    // region spray can: inverted-hull outline in the paint colour
-
     private static void renderSprayOutline(RenderLevelStageEvent event, Minecraft mc, PowerlineGraph.Edge edge,
                                            int rgb) {
         var stats = edge.stats();
@@ -224,8 +193,6 @@ public class WirePreviewEvents {
         float u = (sprite.getU0() + sprite.getU1()) / 2, v = (sprite.getV0() + sprite.getV1()) / 2;
         int r = (rgb >> 16) & 0xFF, g = (rgb >> 8) & 0xFF, b = rgb & 0xFF;
 
-        // entityCutout culls back faces: emitting the hull with inward-facing winding leaves only its far side
-        // visible, which shows up as an outline around the cable
         var type = RenderType.entityCutout(TextureAtlas.LOCATION_BLOCKS);
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
         VertexConsumer consumer = buffers.getBuffer(type);
@@ -264,9 +231,6 @@ public class WirePreviewEvents {
         buffers.endBatch(type);
     }
 
-    /**
-     * Emits a quad wound so that its front face points towards {@code axis} (into the hull).
-     */
     private static void insideQuad(VertexConsumer vc, PoseStack.Pose pose, Vec3 axis, Vec3 a, Vec3 b, Vec3 c, Vec3 d,
                                    int r, int g, int bl, float u, float v) {
         Vec3 mid = a.add(b).add(c).add(d).scale(0.25);
@@ -274,7 +238,6 @@ public class WirePreviewEvents {
         Vec3 front = b.subtract(a).cross(c.subtract(a));
         Vec3 normal = outward.normalize().reverse();
         if (front.dot(outward) > 0) {
-            // currently facing out: reverse the winding
             Vec3 tmp = b;
             b = d;
             d = tmp;
@@ -289,10 +252,6 @@ public class WirePreviewEvents {
                     .endVertex();
         }
     }
-
-    // endregion
-
-    // region multimeter: path between insulators
 
     private static void renderMultimeterPath(RenderLevelStageEvent event, Minecraft mc) {
         var insulators = MultimeterHighlight.get();
@@ -316,6 +275,4 @@ public class WirePreviewEvents {
         if (edge == null || edge.stats() == null) return pos.getCenter();
         return WireGeometry.getAttachmentPoint(pos, edge.dirAt(pos), edge.stats());
     }
-
-    // endregion
 }

@@ -48,11 +48,6 @@ public class GTMPowerlinesRegistries {
     public static final TagKey<Block> WIRE_PASSTHROUGH = BlockTags.create(GTMPowerlines.id("wire_passthrough"));
 
     public static final TagKey<Block> SURFACE = BlockTags.create(GTMPowerlines.id("surface"));
-
-    static {
-        POWERLINE_REGISTRATE.creativeModeTab(() -> POWERLINE_CREATIVE_TAB);
-    }
-
     public static final BlockEntry<PowerlineInsulatorBlock> POWERLINE_INSULATOR = POWERLINE_REGISTRATE
             .block("powerline_insulator", PowerlineInsulatorBlock::new)
             .initialProperties(() -> Blocks.IRON_BLOCK)
@@ -60,19 +55,15 @@ public class GTMPowerlinesRegistries {
             .blockstate((ctx, prov) -> {})
             .simpleItem()
             .register();
-
     public static final BlockEntityEntry<PowerlineInsulatorBlockEntity> POWERLINE_INSULATOR_BLOCK_ENTITY = POWERLINE_REGISTRATE
             .blockEntity("powerline_insulator", PowerlineInsulatorBlockEntity::new)
             .validBlock(POWERLINE_INSULATOR)
             .register();
-
     public static final ItemEntry<MultimeterItem> MULTIMETER = POWERLINE_REGISTRATE
             .item("multimeter", MultimeterItem::new)
             .properties(p -> p.stacksTo(1))
-            // model is hand-written in src/main/resources
             .model(NonNullBiConsumer.noop())
             .register();
-
     public static final MultiblockMachineDefinition POWERLINE_TRANSFORMER = POWERLINE_REGISTRATE
             .multiblock("powerline_transformer", PowerlineTransformerMachine::new)
             .rotationState(RotationState.NON_Y_AXIS)
@@ -169,6 +160,10 @@ public class GTMPowerlinesRegistries {
 
             })
             .register();
+
+    static {
+        POWERLINE_REGISTRATE.creativeModeTab(() -> POWERLINE_CREATIVE_TAB);
+    }
 
     public static void init() {}
 }

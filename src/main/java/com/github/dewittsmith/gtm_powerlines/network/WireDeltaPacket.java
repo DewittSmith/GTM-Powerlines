@@ -12,12 +12,6 @@ import java.util.function.Supplier;
 
 public record WireDeltaPacket(Op op, PowerlineGraph.Edge edge) {
 
-    public enum Op {
-        ADD,
-        REMOVE,
-        UPDATE
-    }
-
     public static void encode(WireDeltaPacket p, FriendlyByteBuf buf) {
         buf.writeEnum(p.op);
         WireFullSyncPacket.writeEdge(buf, p.edge);
@@ -31,5 +25,11 @@ public record WireDeltaPacket(Op op, PowerlineGraph.Edge edge) {
         ctx.get().enqueueWork(
                 () -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> ClientWires.apply(p.op, p.edge)));
         ctx.get().setPacketHandled(true);
+    }
+
+    public enum Op {
+        ADD,
+        REMOVE,
+        UPDATE
     }
 }

@@ -22,85 +22,6 @@ import javax.annotation.Nullable;
 
 public class PowerlineGraph {
 
-    /**
-     * A single suspended cable between two insulators. Equality is defined by the two endpoints only, so that a
-     * recoloured edge still matches the heat/amperage bookkeeping of the original one.
-     */
-    public record Edge(BlockPos a, Direction dirA, BlockPos b, Direction dirB, ResourceLocation wire, WireStats stats,
-                       int paint) {
-
-        public static Edge of(BlockPos a, Direction dirA, BlockPos b, Direction dirB, ResourceLocation wire) {
-            return of(a, dirA, b, dirB, wire, IPaintable.UNPAINTED_COLOR);
-        }
-
-        public static Edge of(BlockPos a, Direction dirA, BlockPos b, Direction dirB, ResourceLocation wire,
-                              int paint) {
-            var stats = WireStats.of(wire).orElse(null);
-            return a.asLong() <= b.asLong() ? new Edge(a.immutable(), dirA, b.immutable(), dirB, wire, stats, paint) :
-                    new Edge(b.immutable(), dirB, a.immutable(), dirA, wire, stats, paint);
-        }
-
-        public Edge withPaint(int paint) {
-            return new Edge(a, dirA, b, dirB, wire, stats, paint);
-        }
-
-        public boolean isPainted() {
-            return paint != IPaintable.UNPAINTED_COLOR;
-        }
-
-        /** ARGB colour the cable should be rendered with. */
-        public int renderColor() {
-            return isPainted() ? 0xFF000000 | paint : stats.color();
-        }
-
-        public static float length(BlockPos a, Direction dirA, BlockPos b, Direction dirB) {
-            var ax = a.getX() + 0.5f - dirA.getStepX() * 0.5f;
-            var ay = a.getY() + 0.5f - dirA.getStepY() * 0.5f;
-            var az = a.getZ() + 0.5f - dirA.getStepZ() * 0.5f;
-
-            var bx = b.getX() + 0.5f - dirB.getStepX() * 0.5f;
-            var by = b.getY() + 0.5f - dirB.getStepY() * 0.5f;
-            var bz = b.getZ() + 0.5f - dirB.getStepZ() * 0.5f;
-
-            float dx = bx - ax, dy = by - ay, dz = bz - az;
-            return Mth.sqrt(dx * dx + dy * dy + dz * dz);
-        }
-
-        public float loss() {
-            return length() * stats.props().getLossPerBlock();
-        }
-
-        public float length() {
-            return length(a, dirA, b, dirB);
-        }
-
-        public static int wireCount(BlockPos a, Direction dirA, BlockPos b, Direction dirB) {
-            return Mth.ceil(length(a, dirA, b, dirB));
-        }
-
-        public int wireCount() {
-            return wireCount(a, dirA, b, dirB);
-        }
-
-        public BlockPos other(BlockPos p) {
-            return p.equals(a) ? b : a;
-        }
-
-        public Direction dirAt(BlockPos p) {
-            return p.equals(a) ? dirA : dirB;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            return this == o || (o instanceof Edge e && a.equals(e.a) && b.equals(e.b));
-        }
-
-        @Override
-        public int hashCode() {
-            return 31 * a.hashCode() + b.hashCode();
-        }
-    }
-
     private final Set<Edge> edges = new LinkedHashSet<>();
     private final Long2ObjectMap<List<Edge>> byPos = new Long2ObjectOpenHashMap<>();
     private final Long2ObjectMap<List<Edge>> byChunk = new Long2ObjectOpenHashMap<>();
@@ -109,7 +30,6 @@ public class PowerlineGraph {
         return new ArrayList<>();
     }
 
-    /** Chunks (as {@link ChunkPos#asLong}) the XZ projection of the segment a-b passes through. */
     public static LongSet getChunksCrossed(BlockPos a, BlockPos b) {
         var result = new LongOpenHashSet();
 
@@ -117,8 +37,6 @@ public class PowerlineGraph {
         int endX = SectionPos.blockToSectionCoord(b.getX()), endZ = SectionPos.blockToSectionCoord(b.getZ());
         result.add(ChunkPos.asLong(x, z));
 
-        // grid traversal from block centre to block centre; it takes exactly one step per chunk border crossed, so
-        // it always ends on (endX, endZ) and can never run away
         double ax = a.getX() + 0.5, az = a.getZ() + 0.5;
         double dx = b.getX() + 0.5 - ax, dz = b.getZ() + 0.5 - az;
         int stepX = Integer.signum(endX - x), stepZ = Integer.signum(endZ - z);
@@ -133,7 +51,6 @@ public class PowerlineGraph {
         int steps = Math.abs(endX - x) + Math.abs(endZ - z);
         for (int i = 0; i < steps; i++) {
             boolean moveX = x != endX && (z == endZ || tMaxX <= tMaxZ);
-            // passing exactly through a chunk corner: also include the chunk on the other side of it
             if (x != endX && z != endZ && Math.abs(tMaxX - tMaxZ) < 1e-9) {
                 result.add(ChunkPos.asLong(x + stepX, z));
                 result.add(ChunkPos.asLong(x, z + stepZ));
@@ -151,26 +68,6 @@ public class PowerlineGraph {
         return result;
     }
 
-    public boolean add(Edge edge) {
-        if (edge.a.equals(edge.b) || getEdge(edge.a, edge.b).isPresent()) return false;
-        edges.add(edge);
-        byPos.computeIfAbsent(edge.a.asLong(), PowerlineGraph::arrayFactory).add(edge);
-        byPos.computeIfAbsent(edge.b.asLong(), PowerlineGraph::arrayFactory).add(edge);
-        for (var chunk : getChunksCrossed(edge.a, edge.b)) {
-            byChunk.computeIfAbsent(chunk, PowerlineGraph::arrayFactory).add(edge);
-        }
-        return true;
-    }
-
-    private void remove(Edge edge) {
-        edges.remove(edge);
-        removeFromBucket(byPos, edge.a.asLong(), edge);
-        removeFromBucket(byPos, edge.b.asLong(), edge);
-        for (var chunk : getChunksCrossed(edge.a, edge.b)) {
-            removeFromBucket(byChunk, chunk, edge);
-        }
-    }
-
     private static void removeFromBucket(Long2ObjectMap<List<Edge>> map, long key, Edge edge) {
         var bucket = map.get(key);
         if (bucket == null) return;
@@ -178,83 +75,11 @@ public class PowerlineGraph {
         if (bucket.isEmpty()) map.remove(key);
     }
 
-    public Collection<Edge> all() {
-        return Collections.unmodifiableCollection(edges);
-    }
-
-    public Long2ObjectMap<List<Edge>> byChunk() {
-        return Long2ObjectMaps.unmodifiable(byChunk);
-    }
-
-    public List<Edge> atChunk(int x, int z) {
-        return byChunk.getOrDefault(ChunkPos.asLong(x, z), Collections.emptyList());
-    }
-
-    public List<Edge> atChunk(ChunkPos pos) {
-        return atChunk(pos.x, pos.z);
-    }
-
-    public Optional<Edge> getEdge(BlockPos start, BlockPos end) {
-        for (var edge : atBlock(start)) {
-            if (edge.other(start).equals(end)) return Optional.of(edge);
-        }
-        return Optional.empty();
-    }
-
-    /** Positions (as longs) of every insulator with at least one connection. */
-    public LongSet nodes() {
-        return LongSets.unmodifiable(byPos.keySet());
-    }
-
-    public List<Edge> atBlock(BlockPos pos) {
-        return byPos.getOrDefault(pos.asLong(), Collections.emptyList());
-    }
-
-    public boolean connect(BlockPos a, Direction dirA, BlockPos b, Direction dirB, ResourceLocation wire) {
-        return add(Edge.of(a, dirA, b, dirB, wire));
-    }
-
-    /**
-     * Swaps the stored edge with the same endpoints for {@code edge} (e.g. after repainting).
-     *
-     * @return false if no such edge exists
-     */
-    public boolean replace(Edge edge) {
-        var old = getEdge(edge.a, edge.b).orElse(null);
-        if (old == null) return false;
-        edges.remove(old);
-        edges.add(edge);
-        replaceInBucket(byPos, edge.a.asLong(), edge);
-        replaceInBucket(byPos, edge.b.asLong(), edge);
-        for (var chunk : getChunksCrossed(edge.a, edge.b)) {
-            replaceInBucket(byChunk, chunk, edge);
-        }
-        return true;
-    }
-
     private static void replaceInBucket(Long2ObjectMap<List<Edge>> map, long key, Edge edge) {
         var bucket = map.get(key);
         if (bucket == null) return;
         var index = bucket.indexOf(edge);
         if (index >= 0) bucket.set(index, edge);
-    }
-
-    public @Nullable Edge disconnect(BlockPos a, BlockPos b) {
-        var edge = getEdge(a, b).orElse(null);
-        if (edge != null) remove(edge);
-        return edge;
-    }
-
-    public List<Edge> disconnectAll(BlockPos pos) {
-        var removed = List.copyOf(atBlock(pos));
-        removed.forEach(this::remove);
-        return removed;
-    }
-
-    public void clear() {
-        edges.clear();
-        byPos.clear();
-        byChunk.clear();
     }
 
     public static CompoundTag serialize(PowerlineGraph graph, CompoundTag tag) {
@@ -292,5 +117,165 @@ public class PowerlineGraph {
             graph.add(edge);
         }
         return graph;
+    }
+
+    public boolean add(Edge edge) {
+        if (edge.a.equals(edge.b) || getEdge(edge.a, edge.b).isPresent()) return false;
+        edges.add(edge);
+        byPos.computeIfAbsent(edge.a.asLong(), PowerlineGraph::arrayFactory).add(edge);
+        byPos.computeIfAbsent(edge.b.asLong(), PowerlineGraph::arrayFactory).add(edge);
+        for (var chunk : getChunksCrossed(edge.a, edge.b)) {
+            byChunk.computeIfAbsent(chunk, PowerlineGraph::arrayFactory).add(edge);
+        }
+        return true;
+    }
+
+    private void remove(Edge edge) {
+        edges.remove(edge);
+        removeFromBucket(byPos, edge.a.asLong(), edge);
+        removeFromBucket(byPos, edge.b.asLong(), edge);
+        for (var chunk : getChunksCrossed(edge.a, edge.b)) {
+            removeFromBucket(byChunk, chunk, edge);
+        }
+    }
+
+    public Collection<Edge> all() {
+        return Collections.unmodifiableCollection(edges);
+    }
+
+    public Long2ObjectMap<List<Edge>> byChunk() {
+        return Long2ObjectMaps.unmodifiable(byChunk);
+    }
+
+    public List<Edge> atChunk(int x, int z) {
+        return byChunk.getOrDefault(ChunkPos.asLong(x, z), Collections.emptyList());
+    }
+
+    public List<Edge> atChunk(ChunkPos pos) {
+        return atChunk(pos.x, pos.z);
+    }
+
+    public Optional<Edge> getEdge(BlockPos start, BlockPos end) {
+        for (var edge : atBlock(start)) {
+            if (edge.other(start).equals(end)) return Optional.of(edge);
+        }
+        return Optional.empty();
+    }
+
+    public LongSet nodes() {
+        return LongSets.unmodifiable(byPos.keySet());
+    }
+
+    public List<Edge> atBlock(BlockPos pos) {
+        return byPos.getOrDefault(pos.asLong(), Collections.emptyList());
+    }
+
+    public boolean connect(BlockPos a, Direction dirA, BlockPos b, Direction dirB, ResourceLocation wire) {
+        return add(Edge.of(a, dirA, b, dirB, wire));
+    }
+
+    public boolean replace(Edge edge) {
+        var old = getEdge(edge.a, edge.b).orElse(null);
+        if (old == null) return false;
+        edges.remove(old);
+        edges.add(edge);
+        replaceInBucket(byPos, edge.a.asLong(), edge);
+        replaceInBucket(byPos, edge.b.asLong(), edge);
+        for (var chunk : getChunksCrossed(edge.a, edge.b)) {
+            replaceInBucket(byChunk, chunk, edge);
+        }
+        return true;
+    }
+
+    public @Nullable Edge disconnect(BlockPos a, BlockPos b) {
+        var edge = getEdge(a, b).orElse(null);
+        if (edge != null) remove(edge);
+        return edge;
+    }
+
+    public List<Edge> disconnectAll(BlockPos pos) {
+        var removed = List.copyOf(atBlock(pos));
+        removed.forEach(this::remove);
+        return removed;
+    }
+
+    public void clear() {
+        edges.clear();
+        byPos.clear();
+        byChunk.clear();
+    }
+
+    public record Edge(BlockPos a, Direction dirA, BlockPos b, Direction dirB, ResourceLocation wire, WireStats stats,
+                       int paint) {
+
+        public static Edge of(BlockPos a, Direction dirA, BlockPos b, Direction dirB, ResourceLocation wire) {
+            return of(a, dirA, b, dirB, wire, IPaintable.UNPAINTED_COLOR);
+        }
+
+        public static Edge of(BlockPos a, Direction dirA, BlockPos b, Direction dirB, ResourceLocation wire,
+                              int paint) {
+            var stats = WireStats.of(wire).orElse(null);
+            return a.asLong() <= b.asLong() ? new Edge(a.immutable(), dirA, b.immutable(), dirB, wire, stats, paint) :
+                    new Edge(b.immutable(), dirB, a.immutable(), dirA, wire, stats, paint);
+        }
+
+        public static float length(BlockPos a, Direction dirA, BlockPos b, Direction dirB) {
+            var ax = a.getX() + 0.5f - dirA.getStepX() * 0.5f;
+            var ay = a.getY() + 0.5f - dirA.getStepY() * 0.5f;
+            var az = a.getZ() + 0.5f - dirA.getStepZ() * 0.5f;
+
+            var bx = b.getX() + 0.5f - dirB.getStepX() * 0.5f;
+            var by = b.getY() + 0.5f - dirB.getStepY() * 0.5f;
+            var bz = b.getZ() + 0.5f - dirB.getStepZ() * 0.5f;
+
+            float dx = bx - ax, dy = by - ay, dz = bz - az;
+            return Mth.sqrt(dx * dx + dy * dy + dz * dz);
+        }
+
+        public static int wireCount(BlockPos a, Direction dirA, BlockPos b, Direction dirB) {
+            return Mth.ceil(length(a, dirA, b, dirB));
+        }
+
+        public Edge withPaint(int paint) {
+            return new Edge(a, dirA, b, dirB, wire, stats, paint);
+        }
+
+        public boolean isPainted() {
+            return paint != IPaintable.UNPAINTED_COLOR;
+        }
+
+        public int renderColor() {
+            return isPainted() ? 0xFF000000 | paint : stats.color();
+        }
+
+        public float loss() {
+            return length() * stats.props().getLossPerBlock();
+        }
+
+        public float length() {
+            return length(a, dirA, b, dirB);
+        }
+
+        public int wireCount() {
+            return wireCount(a, dirA, b, dirB);
+        }
+
+        public BlockPos other(BlockPos p) {
+            return p.equals(a) ? b : a;
+        }
+
+        public Direction dirAt(BlockPos p) {
+            return p.equals(a) ? dirA : dirB;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            return this == o || (o instanceof Edge e && a.equals(e.a) && b.equals(e.b));
+        }
+
+        @Override
+        public int hashCode() {
+            return 31 * a.hashCode() + b.hashCode();
+        }
     }
 }
