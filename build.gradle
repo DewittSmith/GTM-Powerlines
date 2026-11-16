@@ -161,6 +161,9 @@ dependencies {
     modCompileOnly("curse.maven:jade-324717:5390389")
     modRuntimeOnly("curse.maven:jade-324717:5390389")
 
+    // Oculus (shader pack shadows), version mc1.20.1-1.8.0
+    modCompileOnly("curse.maven:oculus-581495:6020952")
+
     // GregTech and dependencies
     modImplementation("com.gregtechceu.gtceu:gtceu-${minecraft_version}:${gtceu_version}:slim") { transitive = false }
     modImplementation("com.lowdragmc.ldlib:ldlib-forge-${minecraft_version}:${ldlib_version}") { transitive = false }

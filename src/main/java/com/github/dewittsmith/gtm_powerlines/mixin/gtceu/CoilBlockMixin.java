@@ -1,4 +1,4 @@
-package com.github.dewittsmith.gtm_powerlines.mixin;
+package com.github.dewittsmith.gtm_powerlines.mixin.gtceu;
 
 import com.gregtechceu.gtceu.common.block.CoilBlock;
 import com.gregtechceu.gtceu.utils.GTUtil;

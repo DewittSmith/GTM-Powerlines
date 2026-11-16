@@ -24,9 +24,12 @@ import com.github.dewittsmith.gtm_powerlines.wire.ClientWires;
 import com.github.dewittsmith.gtm_powerlines.wire.WireGeometry;
 import com.github.dewittsmith.gtm_powerlines.wire.WireStats;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 
 import java.util.Set;
+
+import javax.annotation.Nullable;
 
 @Mod.EventBusSubscriber(modid = GTMPowerlines.MOD_ID, value = Dist.CLIENT)
 public final class ClientWireRenderer {
@@ -74,40 +77,53 @@ public final class ClientWireRenderer {
             if (pos.distToCenterSqr(cam) > maxDistance * maxDistance) continue;
             if (!level.isLoaded(pos)) continue;
             if (!(level.getBlockEntity(pos) instanceof PowerlineInsulatorBlockEntity insulator)) continue;
-
-            WireStats widest = null;
-            float widestPixels = 0;
-            int count = 0;
-            long r = 0, g = 0, b = 0;
-            for (var edge : graph.atBlock(pos)) {
-                if (edge.stats() == null) continue;
-                int argb = edge.renderColor();
-                r += (argb >> 16) & 0xFF;
-                g += (argb >> 8) & 0xFF;
-                b += argb & 0xFF;
-                count++;
-                var pixels = WireGeometry.pixelSize(edge.stats());
-                if (widest == null || pixels > widestPixels) {
-                    widest = edge.stats();
-                    widestPixels = pixels;
-                }
-            }
-            if (widest == null) continue;
-
-            var direction = insulator.getBlockState().getValue(PowerlineInsulatorBlock.DIRECTION);
-            var center = WireGeometry.getAttachmentPoint(pos, direction, widest);
-            double half = (Math.round(widestPixels) + 1) / 32.0 + 0.002;
-            var box = new AABB(center, center).inflate(half);
-            if (!frustum.isVisible(box)) continue;
-
-            int side = Math.round(widestPixels) + 1;
-            int color = 0xFF000000 | (int) (r / count) << 16 | (int) (g / count) << 8 | (int) (b / count);
-            int light = LevelRenderer.getLightColor(level, pos);
-            var strip = PowerlineRenderUtil.cableUV(TIE_TEXTURE, side);
-            var uv = new PowerlineRenderUtil.UV(strip.u0(), strip.v0(), strip.u1(),
-                    strip.v0() + (strip.u1() - strip.u0()));
-            PowerlineRenderUtil.box(consumer, pose.last(), box.move(-cam.x, -cam.y, -cam.z), color, uv, light);
+            renderTie(level, insulator, frustum, cam, pose.last(), consumer);
         }
+    }
+
+    /**
+     * Draws the tie of one insulator: a small cube where its cables meet, one pixel wider than the widest cable, in
+     * the average colour of the attached cables (including their paint).
+     *
+     * @param frustum culling frustum, or {@code null} to skip culling (e.g. in a shadow pass)
+     * @param origin  world position that vertex coordinates are made relative to (camera, or block origin for a
+     *                block entity renderer)
+     */
+    public static void renderTie(Level level, PowerlineInsulatorBlockEntity insulator, @Nullable Frustum frustum,
+                                 Vec3 origin, PoseStack.Pose pose, VertexConsumer consumer) {
+        var pos = insulator.getBlockPos();
+        WireStats widest = null;
+        float widestPixels = 0;
+        int count = 0;
+        long r = 0, g = 0, b = 0;
+        for (var edge : ClientWires.graph().atBlock(pos)) {
+            if (edge.stats() == null) continue;
+            int argb = edge.renderColor();
+            r += (argb >> 16) & 0xFF;
+            g += (argb >> 8) & 0xFF;
+            b += argb & 0xFF;
+            count++;
+            var pixels = WireGeometry.pixelSize(edge.stats());
+            if (widest == null || pixels > widestPixels) {
+                widest = edge.stats();
+                widestPixels = pixels;
+            }
+        }
+        if (widest == null) return;
+
+        var direction = insulator.getBlockState().getValue(PowerlineInsulatorBlock.DIRECTION);
+        var center = WireGeometry.getAttachmentPoint(pos, direction, widest);
+        double half = (Math.round(widestPixels) + 1) / 32.0 + 0.002;
+        var box = new AABB(center, center).inflate(half);
+        if (frustum != null && !frustum.isVisible(box)) return;
+
+        int side = Math.round(widestPixels) + 1;
+        int color = 0xFF000000 | (int) (r / count) << 16 | (int) (g / count) << 8 | (int) (b / count);
+        int light = LevelRenderer.getLightColor(level, pos);
+        var strip = PowerlineRenderUtil.cableUV(TIE_TEXTURE, side);
+        var uv = new PowerlineRenderUtil.UV(strip.u0(), strip.v0(), strip.u1(),
+                strip.v0() + (strip.u1() - strip.u0()));
+        PowerlineRenderUtil.box(consumer, pose, box.move(-origin.x, -origin.y, -origin.z), color, uv, light);
     }
 
     private static void renderEdge(PowerlineGraph.Edge e, Level level, Frustum frustum, Vec3 cam, PoseStack pose,
