@@ -74,30 +74,34 @@ public class WirePreviewEvents {
         if (!player.getMainHandItem().is(attachment.wire()) && !player.getOffhandItem().is(attachment.wire())) return;
         if (!(level.getBlockEntity(attachment.pos()) instanceof PowerlineInsulatorBlockEntity)) return;
 
-        Vec3 start = WireGeometry.getAttachmentPoint(level, attachment.pos(), attachment.stats());
-        Vec3 cameraPos = event.getCamera().getPosition();
+        var start = WireGeometry.getAttachmentPoint(level, attachment.pos(), attachment.stats());
+        var cameraPos = event.getCamera().getPosition();
 
         if (mc.hitResult instanceof BlockHitResult blockHit && blockHit.getType() == HitResult.Type.BLOCK &&
                 !blockHit.getBlockPos().equals(attachment.pos()) &&
                 level.getBlockEntity(blockHit.getBlockPos()) instanceof PowerlineInsulatorBlockEntity) {
-            Vec3 target = WireGeometry.getAttachmentPoint(level, blockHit.getBlockPos(), attachment.stats());
+            var target = WireGeometry.getAttachmentPoint(level, blockHit.getBlockPos(), attachment.stats());
             renderConnectionPreview(event, mc, level, start, target, attachment.stats());
             return;
         }
 
-        Vec3 end = player.getRopeHoldPosition(event.getPartialTick());
+        var end = player.getRopeHoldPosition(event.getPartialTick());
 
-        PoseStack poseStack = event.getPoseStack();
+        var poseStack = event.getPoseStack();
         var bufferSource = mc.renderBuffers().bufferSource();
 
         poseStack.pushPose();
         poseStack.translate(-cameraPos.x, -cameraPos.y, -cameraPos.z);
 
         var wireInfo = attachment.stats();
-        if (GTMPowerlinesConfig.INSTANCE.rendering.useFlatWires) PowerlineWireRenderer.renderBillboard(poseStack,
-                bufferSource, start, end, LightTexture.FULL_BRIGHT, cameraPos, wireInfo);
-        else PowerlineWireRenderer.renderTube(poseStack, bufferSource, start, end, LightTexture.FULL_BRIGHT,
-                PowerlineWireRenderer.Caps.END, wireInfo);
+        var light = LevelRenderer.getLightColor(level, BlockPos.containing(end));
+
+        if (GTMPowerlinesConfig.INSTANCE.rendering.useFlatWires)
+            PowerlineWireRenderer.renderBillboard(poseStack, bufferSource, start, end, light, cameraPos, wireInfo);
+        else
+            PowerlineWireRenderer.renderTube(poseStack, bufferSource, start, end, light, PowerlineWireRenderer.Caps.END,
+                    wireInfo);
+
         poseStack.popPose();
         bufferSource.endBatch(PowerlineWireRenderer.wireRenderType());
     }
