@@ -81,14 +81,6 @@ public final class ClientWireRenderer {
         }
     }
 
-    /**
-     * Draws the tie of one insulator: a small cube where its cables meet, one pixel wider than the widest cable, in
-     * the average colour of the attached cables (including their paint).
-     *
-     * @param frustum culling frustum, or {@code null} to skip culling (e.g. in a shadow pass)
-     * @param origin  world position that vertex coordinates are made relative to (camera, or block origin for a
-     *                block entity renderer)
-     */
     public static void renderTie(Level level, PowerlineInsulatorBlockEntity insulator, @Nullable Frustum frustum,
                                  Vec3 origin, PoseStack.Pose pose, VertexConsumer consumer) {
         var pos = insulator.getBlockPos();

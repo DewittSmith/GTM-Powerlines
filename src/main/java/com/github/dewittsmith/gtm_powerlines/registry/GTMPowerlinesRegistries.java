@@ -12,6 +12,7 @@ import com.gregtechceu.gtceu.api.pattern.MultiblockShapeInfo;
 import com.gregtechceu.gtceu.common.data.GTMachines;
 import com.gregtechceu.gtceu.common.data.GTMaterials;
 import com.gregtechceu.gtceu.common.data.GTRecipeTypes;
+import com.gregtechceu.gtceu.data.recipe.CustomTags;
 
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
@@ -54,6 +55,7 @@ public class GTMPowerlinesRegistries {
     public static final BlockEntry<PowerlineInsulatorBlock> INSULATOR = POWERLINE_REGISTRATE
             .block("insulator", PowerlineInsulatorBlock::new)
             .initialProperties(() -> Blocks.IRON_BLOCK)
+            .tag(CustomTags.MINEABLE_WITH_WRENCH, BlockTags.MINEABLE_WITH_PICKAXE)
             .properties(p -> p.noOcclusion().strength(1.5f, 6f).sound(SoundType.GLASS))
             .blockstate((ctx, prov) -> {})
             .simpleItem()

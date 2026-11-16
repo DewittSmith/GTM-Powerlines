@@ -205,7 +205,6 @@ public class PowerlineWireRenderer {
         quad(vc, pose, a, b, c, d, argb, u0, v0, u1, v1, light, n, false);
     }
 
-    /** {@code inverted} reverses the winding (a, d, c, b) and the normal, so the quad faces the other way. */
     private static void quad(VertexConsumer vc, PoseStack.Pose pose,
                              Vec3 a, Vec3 b, Vec3 c, Vec3 d, int argb,
                              float u0, float v0, float u1, float v1, int light, Vec3 n, boolean inverted) {

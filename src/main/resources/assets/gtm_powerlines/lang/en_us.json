@@ -56,7 +56,6 @@
   "tooltip.gtm_powerlines.connections": "Connections %1$d / max %2$d",
   "tooltip.gtm_powerlines.connections_nomax": "Connections %1$d",
   "tooltip.gtm_powerlines.max_distance": "Max Distance %1$d",
-  "tooltip.gtm_powerlines.block_count": "Block Count %1$d / max %2$d",
   "message.gtm_powerlines.multimeter.selected": "First insulator selected (%1$s), use on a second one",
   "message.gtm_powerlines.multimeter.cleared": "Multimeter selection cleared",
   "message.gtm_powerlines.multimeter.not_connected": "These insulators are not connected",
