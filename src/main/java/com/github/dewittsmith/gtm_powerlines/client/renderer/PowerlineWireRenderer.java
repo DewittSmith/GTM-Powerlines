@@ -16,6 +16,8 @@ import com.github.dewittsmith.gtm_powerlines.wire.WireStats;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
+import javax.annotation.Nullable;
+
 public class PowerlineWireRenderer {
 
     private static final ResourceLocation WIRE_TEXTURE = GTCEu.id("block/cable/insulation_5");
@@ -39,8 +41,8 @@ public class PowerlineWireRenderer {
     }
 
     public static void renderTube(PoseStack poseStack, VertexConsumer consumer, Vec3 start, Vec3 end, int light,
-                                  Caps caps, TextureAtlasSprite sprite, float pixelSize, float halfSize, int argb,
-                                  boolean inverted) {
+                                  Caps caps, @Nullable TextureAtlasSprite sprite, float pixelSize, float halfSize,
+                                  int argb, boolean inverted) {
         PoseStack.Pose pose = poseStack.last();
 
         var sag = WireGeometry.sag(start, end);
@@ -51,13 +53,19 @@ public class PowerlineWireRenderer {
         Vec3 pRight = pFwd.cross(pRef).normalize();
         Vec3 pUp = pRight.cross(pFwd).normalize();
 
-        float u0 = sprite.getU0(), v0 = sprite.getV0(), u1 = sprite.getU1(), v1 = sprite.getV1();
-        float w = u1 - u0, h = v1 - v0;
-        float tw = w / 16, th = h / 16;
-        u0 += tw;
-        v0 += th;
-        u1 = u0 + tw * pixelSize;
-        v1 -= th;
+        float u0 = 0, v0 = 0, u1 = 0, v1 = 0, tw = 0, th = 0;
+        if (sprite != null) {
+            u0 = sprite.getU0();
+            v0 = sprite.getV0();
+            u1 = sprite.getU1();
+            v1 = sprite.getV1();
+            tw = (u1 - u0) / 16;
+            th = (v1 - v0) / 16;
+            u0 += tw;
+            v0 += th;
+            u1 = u0 + tw * pixelSize;
+            v1 -= th;
+        }
 
         if (caps == Caps.START || caps == Caps.BOTH) {
             Vec3 pr = pRight.scale(halfSize), pu = pUp.scale(halfSize);

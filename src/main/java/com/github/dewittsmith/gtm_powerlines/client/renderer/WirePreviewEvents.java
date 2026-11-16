@@ -36,9 +36,8 @@ import javax.annotation.Nullable;
 @Mod.EventBusSubscriber(modid = GTMPowerlines.MOD_ID, value = Dist.CLIENT)
 public class WirePreviewEvents {
 
-    private static final ResourceLocation OUTLINE_TEXTURE = ResourceLocation.parse("minecraft:block/white_concrete");
-
     private static final double OUTLINE_MARGIN = 1 / 32.0;
+    private static final ResourceLocation OUTLINE_TEXTURE = ResourceLocation.parse("minecraft:block/white_concrete");
 
     private static final int SOLVENT_OUTLINE_COLOR = 0xFFFFFF;
     private static final ResourceLocation CABLE_TEXTURE = ResourceLocation.parse("gtceu:block/cable/insulation_5");
@@ -188,12 +187,11 @@ public class WirePreviewEvents {
         float halfSize = (float) (pixelSize / 32.0 + OUTLINE_MARGIN);
 
         var sprite = mc.getTextureAtlas(TextureAtlas.LOCATION_BLOCKS).apply(OUTLINE_TEXTURE);
-        var type = PowerlineWireRenderer.wireRenderType();
         var buffers = mc.renderBuffers().bufferSource();
-        PowerlineWireRenderer.renderTube(event.getPoseStack(), buffers.getBuffer(type), start, end,
-                LightTexture.FULL_BRIGHT, PowerlineWireRenderer.Caps.NONE, sprite, pixelSize, halfSize,
-                0xFF000000 | rgb, true);
-        buffers.endBatch(type);
+        var consumer = buffers.getBuffer(RenderType.solid());
+        PowerlineWireRenderer.renderTube(event.getPoseStack(), consumer, start, end, LightTexture.FULL_BRIGHT,
+                PowerlineWireRenderer.Caps.NONE, sprite, pixelSize, halfSize, 0xFF000000 | rgb, true);
+        buffers.endBatch(RenderType.solid());
     }
 
     private static void renderMultimeterPath(RenderLevelStageEvent event, Minecraft mc) {
