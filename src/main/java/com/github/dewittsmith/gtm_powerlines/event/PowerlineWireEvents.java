@@ -122,7 +122,7 @@ public class PowerlineWireEvents {
     private static boolean placeInsulatorAndConnect(PlayerInteractEvent.RightClickBlock event, Player player,
                                                     InteractionHand wireHand, ItemStack held, WireStats wireInfo,
                                                     WireAttachment.Attach attach) {
-        var insulatorItem = GTMPowerlinesRegistries.POWERLINE_INSULATOR.get().asItem();
+        var insulatorItem = GTMPowerlinesRegistries.INSULATOR.get().asItem();
         var stack = findInsulator(player);
         if (stack == null) {
             if (!player.getAbilities().instabuild) return false;
@@ -151,7 +151,7 @@ public class PowerlineWireEvents {
     }
 
     private static @Nullable ItemStack findInsulator(Player player) {
-        var item = GTMPowerlinesRegistries.POWERLINE_INSULATOR.get().asItem();
+        var item = GTMPowerlinesRegistries.INSULATOR.get().asItem();
         var inventory = player.getInventory();
         for (var stack : inventory.offhand) if (stack.is(item)) return stack;
         for (var stack : inventory.items) if (stack.is(item)) return stack;

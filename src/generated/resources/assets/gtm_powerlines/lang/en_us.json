@@ -1,4 +1,5 @@
 {
-  "block.gtm_powerlines.powerline_insulator": "Powerline Insulator",
-  "block.gtm_powerlines.powerline_transformer": "Powerline Transformer"
+  "block.gtm_powerlines.insulator": "Insulator",
+  "block.gtm_powerlines.powerline_transformer": "Powerline Transformer",
+  "item.gtm_powerlines.multimeter": "Multimeter"
 }

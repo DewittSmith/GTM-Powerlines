@@ -51,16 +51,16 @@ public class GTMPowerlinesRegistries {
     public static final TagKey<Block> WIRE_PASSTHROUGH = BlockTags.create(GTMPowerlines.id("wire_passthrough"));
 
     public static final TagKey<Block> SURFACE = BlockTags.create(GTMPowerlines.id("surface"));
-    public static final BlockEntry<PowerlineInsulatorBlock> POWERLINE_INSULATOR = POWERLINE_REGISTRATE
-            .block("powerline_insulator", PowerlineInsulatorBlock::new)
+    public static final BlockEntry<PowerlineInsulatorBlock> INSULATOR = POWERLINE_REGISTRATE
+            .block("insulator", PowerlineInsulatorBlock::new)
             .initialProperties(() -> Blocks.IRON_BLOCK)
             .properties(p -> p.noOcclusion().strength(1.5f, 6f).sound(SoundType.GLASS))
             .blockstate((ctx, prov) -> {})
             .simpleItem()
             .register();
     public static final BlockEntityEntry<PowerlineInsulatorBlockEntity> POWERLINE_INSULATOR_BLOCK_ENTITY = POWERLINE_REGISTRATE
-            .blockEntity("powerline_insulator", PowerlineInsulatorBlockEntity::new)
-            .validBlock(POWERLINE_INSULATOR)
+            .blockEntity("insulator", PowerlineInsulatorBlockEntity::new)
+            .validBlock(INSULATOR)
             .register();
     public static final ItemEntry<MultimeterItem> MULTIMETER = POWERLINE_REGISTRATE
             .item("multimeter", MultimeterItem::new)
@@ -89,7 +89,7 @@ public class GTMPowerlinesRegistries {
                     .where('P', blocks(CASING_STEEL_PIPE.get()))
                     .where('I',
                             PowerlinePredicates
-                                    .track("insulators", POWERLINE_INSULATOR.getDefaultState(),
+                                    .track("insulators", INSULATOR.getDefaultState(),
                                             PowerlineInsulatorBlock.DIRECTION)
                                     .setExactLimit(6)
                                     .or(any()))
@@ -110,7 +110,7 @@ public class GTMPowerlinesRegistries {
                         .where('P', CASING_STEEL_PIPE)
                         .where('T', GTMachines.ENERGY_INPUT_HATCH[GTValues.LV], Direction.NORTH)
                         .where('M', GTMachines.MAINTENANCE_HATCH, Direction.NORTH)
-                        .where('I', POWERLINE_INSULATOR)
+                        .where('I', INSULATOR)
                         .where('#', Blocks.AIR);
                 GTCEuAPI.HEATING_COILS.entrySet().stream()
                         .sorted(Comparator.comparingInt(entry -> entry.getKey().getTier()))

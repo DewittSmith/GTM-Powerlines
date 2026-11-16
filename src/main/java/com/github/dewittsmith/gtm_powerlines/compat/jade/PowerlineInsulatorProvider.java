@@ -83,6 +83,6 @@ public class PowerlineInsulatorProvider implements IBlockComponentProvider, ISer
 
     @Override
     public ResourceLocation getUid() {
-        return GTMPowerlines.id("powerline_insulator_info");
+        return GTMPowerlines.id("insulator_info");
     }
 }

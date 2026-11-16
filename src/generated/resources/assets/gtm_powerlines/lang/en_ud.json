@@ -1,4 +1,5 @@
 {
-  "block.gtm_powerlines.powerline_insulator": "ɹoʇɐןnsuI ǝuıןɹǝʍoԀ",
-  "block.gtm_powerlines.powerline_transformer": "ɹǝɯɹoɟsuɐɹ⟘ ǝuıןɹǝʍoԀ"
+  "block.gtm_powerlines.insulator": "ɹoʇɐןnsuI",
+  "block.gtm_powerlines.powerline_transformer": "ɹǝɯɹoɟsuɐɹ⟘ ǝuıןɹǝʍoԀ",
+  "item.gtm_powerlines.multimeter": "ɹǝʇǝɯıʇןnW"
 }

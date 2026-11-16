@@ -11,11 +11,11 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "gtm_powerlines:powerline_insulator"
+          "name": "gtm_powerlines:insulator"
         }
       ],
       "rolls": 1.0
     }
   ],
-  "random_sequence": "gtm_powerlines:blocks/powerline_insulator"
+  "random_sequence": "gtm_powerlines:blocks/insulator"
 }

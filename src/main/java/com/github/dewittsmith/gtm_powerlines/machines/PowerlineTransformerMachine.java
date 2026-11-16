@@ -38,7 +38,7 @@ import java.util.*;
 
 import javax.annotation.Nullable;
 
-import static com.github.dewittsmith.gtm_powerlines.registry.GTMPowerlinesRegistries.POWERLINE_INSULATOR;
+import static com.github.dewittsmith.gtm_powerlines.registry.GTMPowerlinesRegistries.INSULATOR;
 
 public class PowerlineTransformerMachine extends WorkableMultiblockMachine
                                          implements IFancyUIMachine, IDisplayUIMachine, ITieredMachine {
@@ -243,7 +243,7 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine
             network.setTransformerNode(pos, connected ? getPos() : null);
 
             var state = level.getBlockState(pos);
-            if (!state.is(POWERLINE_INSULATOR.get())) continue;
+            if (!state.is(INSULATOR.get())) continue;
 
             if (level.getBlockEntity(pos) instanceof PowerlineInsulatorBlockEntity be) {
                 be.setController(connected ? getPos() : null);

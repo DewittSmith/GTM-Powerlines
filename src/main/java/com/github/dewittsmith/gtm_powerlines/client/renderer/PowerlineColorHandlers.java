@@ -25,12 +25,12 @@ public final class PowerlineColorHandlers {
                 return insulator.getPaintingColor() & 0xFFFFFF;
             }
             return DEFAULT_DISC_COLOR;
-        }, GTMPowerlinesRegistries.POWERLINE_INSULATOR.get());
+        }, GTMPowerlinesRegistries.INSULATOR.get());
     }
 
     @SubscribeEvent
     public static void registerItemColors(RegisterColorHandlersEvent.Item event) {
         event.register((stack, tintIndex) -> tintIndex == DISC_TINT ? DEFAULT_DISC_COLOR : 0xFFFFFF,
-                GTMPowerlinesRegistries.POWERLINE_INSULATOR.get());
+                GTMPowerlinesRegistries.INSULATOR.get());
     }
 }

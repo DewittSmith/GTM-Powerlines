@@ -1,8 +1,8 @@
 {
   "itemGroup.gtm_powerlines.creative_tab": "GTM Powerlines",
-  "block.gtm_powerlines.powerline_insulator": "Powerline Insulator",
+  "block.gtm_powerlines.insulator": "Insulator",
   "block.gtm_powerlines.powerline_transformer": "Powerline Transformer",
-  "item.gtm_powerlines.multimeter": "Powerline Multimeter",
+  "item.gtm_powerlines.multimeter": "Multimeter",
   "config.screen.gtm_powerlines": "GTM Powerlines Config",
   "config.gtm_powerlines.option.wire": "Wire",
   "config.gtm_powerlines.option.lowestCoilEfficiency": "Lowest coil efficiency",
@@ -26,7 +26,7 @@
   "config.gtm_powerlines.option.flatWireLODDistance": "Flat LOD distance",
   "config.gtm_powerlines.option.obstructionHighlightSeconds": "Obstruction highlight duration",
   "config.gtm_powerlines.option.obstructionHighlightSeconds.comment.0": "How long blocks or wires that are in the way stay highlighted, in seconds",
-  "config.jade.plugin_gtm_powerlines.powerline_insulator_info": "Powerline Insulator Info",
+  "config.jade.plugin_gtm_powerlines.insulator_info": "Powerline Insulator Info",
   "config.jade.plugin_gtm_powerlines.wire_info": "Powerline Wire Info",
   "multiblock.gtm_powerlines.powerline_transformer.mode": "Transfer Mode: ",
   "multiblock.gtm_powerlines.powerline_transformer.powerline_tier": "Powerline Tier: %1$s",
@@ -63,4 +63,4 @@
   "tooltip.gtm_powerlines.multimeter.usage": "Use on two insulators to measure the line between them",
   "tooltip.gtm_powerlines.multimeter.selected": "Selected: %1$s",
   "gtm_powerlines.top.wire_length": "Length: "
-}
+}

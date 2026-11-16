@@ -58,7 +58,7 @@ public class PowerlineWireProvider implements IBlockComponentProvider {
         return registration.blockAccessor()
                 .level(mc.level)
                 .player(player)
-                .blockState(GTMPowerlinesRegistries.POWERLINE_INSULATOR.getDefaultState())
+                .blockState(GTMPowerlinesRegistries.INSULATOR.getDefaultState())
                 .hit(blockHit)
                 .fakeBlock(new ItemStack(item))
                 .serverData(new CompoundTag())
