@@ -18,6 +18,20 @@ public final class PowerlineRenderTypes extends RenderType {
             DefaultVertexFormat.POSITION_COLOR_NORMAL, VertexFormat.Mode.LINE_STRIP, 256, false, false,
             onTopState());
 
+    /**
+     * Like Unity's Unlit/Color: flat vertex colour only. No texture, no lightmap, no diffuse shading.
+     * Back faces are culled and depth is tested/written like regular geometry.
+     */
+    public static final RenderType UNLIT_COLOR = create("gtm_powerlines_unlit_color",
+            DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS, 256, false, false,
+            CompositeState.builder()
+                    .setShaderState(POSITION_COLOR_SHADER)
+                    .setTextureState(NO_TEXTURE)
+                    .setLightmapState(NO_LIGHTMAP)
+                    .setTransparencyState(NO_TRANSPARENCY)
+                    .setCullState(CULL)
+                    .createCompositeState(false));
+
     private PowerlineRenderTypes(String name, VertexFormat format, VertexFormat.Mode mode, int bufferSize,
                                  boolean affectsCrumbling, boolean sortOnUpload, Runnable setup, Runnable clear) {
         super(name, format, mode, bufferSize, affectsCrumbling, sortOnUpload, setup, clear);

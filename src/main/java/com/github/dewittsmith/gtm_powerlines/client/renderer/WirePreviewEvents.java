@@ -6,13 +6,10 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.LightTexture;
-import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
@@ -187,70 +184,16 @@ public class WirePreviewEvents {
         Vec3 cam = event.getCamera().getPosition();
         Vec3 start = WireGeometry.getAttachmentPoint(edge.a(), edge.dirA(), stats).subtract(cam);
         Vec3 end = WireGeometry.getAttachmentPoint(edge.b(), edge.dirB(), stats).subtract(cam);
-        double half = WireGeometry.pixelSize(stats) / 32.0 + OUTLINE_MARGIN;
+        var pixelSize = WireGeometry.pixelSize(stats);
+        float halfSize = (float) (pixelSize / 32.0 + OUTLINE_MARGIN);
 
         var sprite = mc.getTextureAtlas(TextureAtlas.LOCATION_BLOCKS).apply(OUTLINE_TEXTURE);
-        float u = (sprite.getU0() + sprite.getU1()) / 2, v = (sprite.getV0() + sprite.getV1()) / 2;
-        int r = (rgb >> 16) & 0xFF, g = (rgb >> 8) & 0xFF, b = rgb & 0xFF;
-
-        var type = RenderType.entityCutout(TextureAtlas.LOCATION_BLOCKS);
-        MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
-        VertexConsumer consumer = buffers.getBuffer(type);
-        var pose = event.getPoseStack().last();
-
-        double sag = WireGeometry.sag(start, end);
-        int samples = Math.max(2, Mth.ceil(WireGeometry.samples(WireGeometry.length(start, end, sag))) + 1);
-
-        Vec3[] prevRing = null;
-        Vec3 prevCenter = null;
-        for (int i = 0; i < samples; i++) {
-            double t = i / (samples - 1.0);
-            Vec3 center = WireGeometry.sample(start, end, t, sag);
-            Vec3 forward = WireGeometry.sampleTangent(start, end, t, sag);
-            Vec3 ref = Math.abs(forward.y) > 0.99 ? new Vec3(1, 0, 0) : new Vec3(0, 1, 0);
-            Vec3 right = forward.cross(ref).normalize().scale(half);
-            Vec3 up = right.cross(forward).normalize().scale(half);
-            Vec3[] ring = {
-                    center.add(right).add(up),
-                    center.subtract(right).add(up),
-                    center.subtract(right).subtract(up),
-                    center.add(right).subtract(up)
-            };
-
-            if (prevRing != null) {
-                Vec3 axis = prevCenter.add(center).scale(0.5);
-                for (int k = 0; k < 4; k++) {
-                    int n = (k + 1) % 4;
-                    insideQuad(consumer, pose, axis, prevRing[k], prevRing[n], ring[n], ring[k], r, g, b, u, v);
-                }
-            }
-            prevRing = ring;
-            prevCenter = center;
-        }
-
+        var type = PowerlineWireRenderer.wireRenderType();
+        var buffers = mc.renderBuffers().bufferSource();
+        PowerlineWireRenderer.renderTube(event.getPoseStack(), buffers.getBuffer(type), start, end,
+                LightTexture.FULL_BRIGHT, PowerlineWireRenderer.Caps.NONE, sprite, pixelSize, halfSize,
+                0xFF000000 | rgb, true);
         buffers.endBatch(type);
-    }
-
-    private static void insideQuad(VertexConsumer vc, PoseStack.Pose pose, Vec3 axis, Vec3 a, Vec3 b, Vec3 c, Vec3 d,
-                                   int r, int g, int bl, float u, float v) {
-        Vec3 mid = a.add(b).add(c).add(d).scale(0.25);
-        Vec3 outward = mid.subtract(axis);
-        Vec3 front = b.subtract(a).cross(c.subtract(a));
-        Vec3 normal = outward.normalize().reverse();
-        if (front.dot(outward) > 0) {
-            Vec3 tmp = b;
-            b = d;
-            d = tmp;
-        }
-        for (var p : new Vec3[] { a, b, c, d }) {
-            vc.vertex(pose.pose(), (float) p.x, (float) p.y, (float) p.z)
-                    .color(r, g, bl, 255)
-                    .uv(u, v)
-                    .overlayCoords(OverlayTexture.NO_OVERLAY)
-                    .uv2(LightTexture.FULL_BRIGHT)
-                    .normal(pose.normal(), (float) normal.x, (float) normal.y, (float) normal.z)
-                    .endVertex();
-        }
     }
 
     private static void renderMultimeterPath(RenderLevelStageEvent event, Minecraft mc) {

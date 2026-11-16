@@ -32,11 +32,15 @@ public class PowerlineWireRenderer {
     public static void renderTube(PoseStack poseStack, MultiBufferSource buffers, Vec3 start, Vec3 end,
                                   int light, Caps caps, WireStats stats, int argb) {
         var pixelSize = WireGeometry.pixelSize(stats);
-        var halfSize = pixelSize / 16f / 2;
-
-        VertexConsumer consumer = buffers.getBuffer(wireRenderType());
         TextureAtlasSprite sprite = Minecraft.getInstance().getTextureAtlas(TextureAtlas.LOCATION_BLOCKS)
                 .apply(WIRE_TEXTURE);
+        renderTube(poseStack, buffers.getBuffer(wireRenderType()), start, end, light, caps, sprite, pixelSize,
+                pixelSize / 16f / 2, argb, false);
+    }
+
+    public static void renderTube(PoseStack poseStack, VertexConsumer consumer, Vec3 start, Vec3 end, int light,
+                                  Caps caps, TextureAtlasSprite sprite, float pixelSize, float halfSize, int argb,
+                                  boolean inverted) {
         PoseStack.Pose pose = poseStack.last();
 
         var sag = WireGeometry.sag(start, end);
@@ -60,7 +64,7 @@ public class PowerlineWireRenderer {
             Vec3 pLD = pPos.subtract(pr).subtract(pu), pLU = pPos.subtract(pr).add(pu);
             Vec3 pRD = pPos.add(pr).subtract(pu), pRU = pPos.add(pr).add(pu);
             var cv1 = v0 + th * pixelSize;
-            quad(consumer, pose, pLD, pLU, pRU, pRD, argb, u0, v0, u1, cv1, light, pFwd.reverse());
+            quad(consumer, pose, pLD, pLU, pRU, pRD, argb, u0, v0, u1, cv1, light, pFwd.reverse(), inverted);
         }
 
         var length = WireGeometry.length(start, end, sag);
@@ -90,10 +94,10 @@ public class PowerlineWireRenderer {
             Vec3 nRight = right.add(pRight).normalize();
 
             var vEnd = v0 + (v1 - v0) * step;
-            quad(consumer, pose, pTR, cTR, cTL, pTL, argb, u0, v0, u1, vEnd, light, nUp);
-            quad(consumer, pose, pBR, cBR, cTR, pTR, argb, u0, v0, u1, vEnd, light, nRight);
-            quad(consumer, pose, pBL, cBL, cBR, pBR, argb, u0, v0, u1, vEnd, light, nUp.reverse());
-            quad(consumer, pose, pTL, cTL, cBL, pBL, argb, u0, v0, u1, vEnd, light, nRight.reverse());
+            quad(consumer, pose, pTR, cTR, cTL, pTL, argb, u0, v0, u1, vEnd, light, nUp, inverted);
+            quad(consumer, pose, pBR, cBR, cTR, pTR, argb, u0, v0, u1, vEnd, light, nRight, inverted);
+            quad(consumer, pose, pBL, cBL, cBR, pBR, argb, u0, v0, u1, vEnd, light, nUp.reverse(), inverted);
+            quad(consumer, pose, pTL, cTL, cBL, pBL, argb, u0, v0, u1, vEnd, light, nRight.reverse(), inverted);
 
             pPos = pos;
             pRight = right;
@@ -107,7 +111,7 @@ public class PowerlineWireRenderer {
             Vec3 pLD = pPos.subtract(pr).subtract(pu), pLU = pPos.subtract(pr).add(pu);
             Vec3 pRD = pPos.add(pr).subtract(pu), pRU = pPos.add(pr).add(pu);
             var cv1 = v0 + th * pixelSize;
-            quad(consumer, pose, pLD, pLU, pRU, pRD, argb, u0, v0, u1, cv1, light, pFwd);
+            quad(consumer, pose, pLD, pLU, pRU, pRD, argb, u0, v0, u1, cv1, light, pFwd, inverted);
         }
     }
 
@@ -190,6 +194,21 @@ public class PowerlineWireRenderer {
     private static void quad(VertexConsumer vc, PoseStack.Pose pose,
                              Vec3 a, Vec3 b, Vec3 c, Vec3 d, int argb,
                              float u0, float v0, float u1, float v1, int light, Vec3 n) {
+        quad(vc, pose, a, b, c, d, argb, u0, v0, u1, v1, light, n, false);
+    }
+
+    /** {@code inverted} reverses the winding (a, d, c, b) and the normal, so the quad faces the other way. */
+    private static void quad(VertexConsumer vc, PoseStack.Pose pose,
+                             Vec3 a, Vec3 b, Vec3 c, Vec3 d, int argb,
+                             float u0, float v0, float u1, float v1, int light, Vec3 n, boolean inverted) {
+        if (inverted) {
+            n = n.reverse();
+            vertex(vc, pose, a, argb, u0, v0, light, n);
+            vertex(vc, pose, d, argb, u1, v0, light, n);
+            vertex(vc, pose, c, argb, u1, v1, light, n);
+            vertex(vc, pose, b, argb, u0, v1, light, n);
+            return;
+        }
         vertex(vc, pose, a, argb, u0, v0, light, n);
         vertex(vc, pose, b, argb, u0, v1, light, n);
         vertex(vc, pose, c, argb, u1, v1, light, n);
