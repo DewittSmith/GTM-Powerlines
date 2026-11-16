@@ -89,10 +89,10 @@ public final class WireObstruction {
     }
 
     private static List<Vec3> samples(Vec3 start, Vec3 end) {
-        double sag = WireGeometry.sag(start, end);
-        int n = Math.max(2, Mth.ceil(WireGeometry.length(start, end, sag) / STEP) + 1);
+        var sag = WireGeometry.sag(start, end);
+        var n = Math.max(2, Mth.ceil(WireGeometry.length(start, end, sag) / STEP) + 1);
         var points = new ArrayList<Vec3>(n);
-        for (int i = 0; i < n; i++) points.add(WireGeometry.sample(start, end, i / (n - 1.0), sag));
+        for (var i = 0; i < n; i++) points.add(WireGeometry.sample(start, end, i / (n - 1.0), sag));
         return points;
     }
 }

@@ -146,7 +146,7 @@ public class PowerlineNetwork extends SavedData {
         var routeSet = getRoutes(source);
         if (routeSet.dedicated()) return 0;
 
-        long amperesUsed = 0L;
+        var amperesUsed = 0L;
         for (var route : routeSet.paths()) {
             if (route.maxLoss() >= voltage) continue;
 
@@ -156,8 +156,8 @@ public class PowerlineNetwork extends SavedData {
             var facing = route.targetFacing().getOpposite();
             if (!dest.inputsEnergy(facing) || dest.getEnergyCanBeInserted() <= 0) continue;
 
-            long pathVoltage = applyVoltageLimit(route, voltage, voltage - route.maxLoss());
-            long amps = dest.acceptEnergyFromNetwork(facing, pathVoltage, amperage - amperesUsed);
+            var pathVoltage = applyVoltageLimit(route, voltage, voltage - route.maxLoss());
+            var amps = dest.acceptEnergyFromNetwork(facing, pathVoltage, amperage - amperesUsed);
             if (amps == 0) continue;
 
             amperesUsed += amps;
@@ -170,7 +170,7 @@ public class PowerlineNetwork extends SavedData {
 
     public long applyVoltageLimit(TransferPath route, long voltage, long pathVoltage) {
         for (var edge : route.path()) {
-            long maxVoltage = edge.stats().props().getVoltage();
+            var maxVoltage = edge.stats().props().getVoltage();
             if (maxVoltage < voltage) {
                 applyHeat(edge, overvoltageHeat(voltage, maxVoltage));
                 pathVoltage = Math.min(maxVoltage, pathVoltage);
@@ -186,7 +186,7 @@ public class PowerlineNetwork extends SavedData {
             if (voltageTraveled <= 0) break;
             incrementAmperage(edge, amps);
             var seen = voltages.computeIfAbsent(edge, unused -> new long[2]);
-            long now = level.getGameTime();
+            var now = level.getGameTime();
             if (seen[0] != now) {
                 seen[0] = now;
                 seen[1] = 0;
@@ -200,7 +200,7 @@ public class PowerlineNetwork extends SavedData {
     private void incrementAmperage(PowerlineGraph.Edge edge, long amps) {
         var counter = amperageCounters.computeIfAbsent(edge, unused -> new AveragingPerTickCounter());
         counter.increment(level, amps);
-        int dif = GTMath.saturatedCast(counter.getLast(level) - edge.stats().props().getAmperage());
+        var dif = GTMath.saturatedCast(counter.getLast(level) - edge.stats().props().getAmperage());
         if (dif > 0) applyHeat(edge, dif * 40);
     }
 

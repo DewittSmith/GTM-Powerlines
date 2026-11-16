@@ -41,14 +41,14 @@ public final class ClientWireRenderer {
     public static void onRenderLevel(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES) return;
 
-        Minecraft mc = Minecraft.getInstance();
+        var mc = Minecraft.getInstance();
         Level level = mc.level;
         if (level == null || ClientWires.byChunk().isEmpty()) return;
 
-        Vec3 cam = event.getCamera().getPosition();
-        PoseStack pose = event.getPoseStack();
+        var cam = event.getCamera().getPosition();
+        var pose = event.getPoseStack();
         var buffers = mc.renderBuffers().bufferSource();
-        Frustum frustum = event.getFrustum();
+        var frustum = event.getFrustum();
 
         RENDERED.clear();
         for (var chunk : ClientWires.byChunk().long2ObjectEntrySet()) {
@@ -94,11 +94,11 @@ public final class ClientWireRenderer {
         var pos = insulator.getBlockPos();
         WireStats widest = null;
         float widestPixels = 0;
-        int count = 0;
+        var count = 0;
         long r = 0, g = 0, b = 0;
         for (var edge : ClientWires.graph().atBlock(pos)) {
             if (edge.stats() == null) continue;
-            int argb = edge.renderColor();
+            var argb = edge.renderColor();
             r += (argb >> 16) & 0xFF;
             g += (argb >> 8) & 0xFF;
             b += argb & 0xFF;
@@ -113,13 +113,13 @@ public final class ClientWireRenderer {
 
         var direction = insulator.getBlockState().getValue(PowerlineInsulatorBlock.DIRECTION);
         var center = WireGeometry.getAttachmentPoint(pos, direction, widest);
-        double half = (Math.round(widestPixels) + 1) / 32.0 + 0.002;
+        var half = (Math.round(widestPixels) + 1) / 32.0 + 0.002;
         var box = new AABB(center, center).inflate(half);
         if (frustum != null && !frustum.isVisible(box)) return;
 
-        int side = Math.round(widestPixels) + 1;
-        int color = 0xFF000000 | (int) (r / count) << 16 | (int) (g / count) << 8 | (int) (b / count);
-        int light = LevelRenderer.getLightColor(level, pos);
+        var side = Math.round(widestPixels) + 1;
+        var color = 0xFF000000 | (int) (r / count) << 16 | (int) (g / count) << 8 | (int) (b / count);
+        var light = LevelRenderer.getLightColor(level, pos);
         var strip = PowerlineRenderUtil.cableUV(TIE_TEXTURE, side);
         var uv = new PowerlineRenderUtil.UV(strip.u0(), strip.v0(), strip.u1(),
                 strip.v0() + (strip.u1() - strip.u0()));
@@ -133,14 +133,14 @@ public final class ClientWireRenderer {
 
         Vec3 a = WireGeometry.getAttachmentPoint(e.a(), e.dirA(), e.stats()),
                 b = WireGeometry.getAttachmentPoint(e.b(), e.dirB(), e.stats());
-        double sag = WireGeometry.sag(a, b);
+        var sag = WireGeometry.sag(a, b);
         var bounds = new AABB(a, b).expandTowards(0, -Math.max(0, sag), 0).inflate(0.5);
         if (!frustum.isVisible(bounds)) return;
 
         var distance = WireGeometry.distanceToSegment(cam, a, b);
         var lod = WireLOD.getLOD(distance);
         if (lod == WireLOD.CULL) return;
-        int light = LevelRenderer.getLightColor(level, BlockPos.containing(a.add(b).scale(0.5)));
+        var light = LevelRenderer.getLightColor(level, BlockPos.containing(a.add(b).scale(0.5)));
 
         pose.pushPose();
         pose.translate(-cam.x, -cam.y, -cam.z);

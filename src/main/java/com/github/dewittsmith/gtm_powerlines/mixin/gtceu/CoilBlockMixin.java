@@ -27,7 +27,7 @@ public abstract class CoilBlockMixin {
                                              List<Component> tooltip, TooltipFlag flag, CallbackInfo ci) {
         if (!GTUtil.isShiftDown()) return;
 
-        CoilBlock self = (CoilBlock) (Object) this;
+        var self = (CoilBlock) (Object) this;
         tooltip.add(Component.translatable("tooltip.gtm_powerlines.coil_efficiency"));
         tooltip.add(Component.translatable("tooltip.gtm_powerlines.coil_efficiency_value",
                 Mth.floor(100 * CoilEfficiency.of(self.coilType))));

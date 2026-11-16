@@ -20,9 +20,9 @@ public record MultimeterPathPacket(List<BlockPos> insulators) {
     }
 
     public static MultimeterPathPacket decode(FriendlyByteBuf buf) {
-        int n = buf.readVarInt();
+        var n = buf.readVarInt();
         var list = new ArrayList<BlockPos>(n);
-        for (int i = 0; i < n; i++) list.add(buf.readBlockPos());
+        for (var i = 0; i < n; i++) list.add(buf.readBlockPos());
         return new MultimeterPathPacket(list);
     }
 

@@ -47,8 +47,8 @@ public class WirePreviewEvents {
     public static void onRenderLevel(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES) return;
 
-        Minecraft mc = Minecraft.getInstance();
-        LocalPlayer player = mc.player;
+        var mc = Minecraft.getInstance();
+        var player = mc.player;
         Level level = mc.level;
 
         if (player == null || level == null) return;
@@ -122,13 +122,13 @@ public class WirePreviewEvents {
 
     private static void renderConnectionPreview(RenderLevelStageEvent event, Minecraft mc, Level level, Vec3 start,
                                                 Vec3 end, WireStats stats) {
-        Vec3 cam = event.getCamera().getPosition();
+        var cam = event.getCamera().getPosition();
         var pose = event.getPoseStack().last();
         var buffers = mc.renderBuffers().bufferSource();
 
         var type = RenderType.entityTranslucentCull(TextureAtlas.LOCATION_BLOCKS);
         var pixelSize = WireGeometry.pixelSize(stats);
-        int argb = (stats.color() & 0x00FFFFFF) | 0x80000000;
+        var argb = (stats.color() & 0x00FFFFFF) | 0x80000000;
         PowerlineRenderUtil.tube(buffers.getBuffer(type), pose, start.subtract(cam), end.subtract(cam),
                 pixelSize / 32.0, argb, PowerlineRenderUtil.cableUV(CABLE_TEXTURE, pixelSize),
                 LightTexture.FULL_BRIGHT, false);
@@ -149,19 +149,19 @@ public class WirePreviewEvents {
     }
 
     private static void renderCutSquare(RenderLevelStageEvent event, Minecraft mc, WireTargeting.Hit hit) {
-        Vec3 cam = event.getCamera().getPosition();
-        Vec3 forward = hit.tangent();
+        var cam = event.getCamera().getPosition();
+        var forward = hit.tangent();
         Vec3 ref = Math.abs(forward.y) > 0.99 ? new Vec3(1, 0, 0) : new Vec3(0, 1, 0);
-        Vec3 right = forward.cross(ref).normalize();
-        Vec3 up = right.cross(forward).normalize();
+        var right = forward.cross(ref).normalize();
+        var up = right.cross(forward).normalize();
 
         double half = (WireGeometry.pixelSize(hit.edge().stats()) + 0.02f) / 16 / 2;
         Vec3 r = right.scale(half), u = up.scale(half);
-        Vec3 center = hit.point().subtract(cam);
-        Vec3 c0 = center.subtract(r).subtract(u);
-        Vec3 c1 = center.add(r).subtract(u);
-        Vec3 c2 = center.add(r).add(u);
-        Vec3 c3 = center.subtract(r).add(u);
+        var center = hit.point().subtract(cam);
+        var c0 = center.subtract(r).subtract(u);
+        var c1 = center.add(r).subtract(u);
+        var c2 = center.add(r).add(u);
+        var c3 = center.subtract(r).add(u);
 
         var buffers = mc.renderBuffers().bufferSource();
         var consumer = buffers.getBuffer(RenderType.lines());
@@ -185,11 +185,11 @@ public class WirePreviewEvents {
     private static void renderSprayOutline(RenderLevelStageEvent event, Minecraft mc, PowerlineGraph.Edge edge,
                                            int rgb) {
         var stats = edge.stats();
-        Vec3 cam = event.getCamera().getPosition();
-        Vec3 start = WireGeometry.getAttachmentPoint(edge.a(), edge.dirA(), stats).subtract(cam);
-        Vec3 end = WireGeometry.getAttachmentPoint(edge.b(), edge.dirB(), stats).subtract(cam);
+        var cam = event.getCamera().getPosition();
+        var start = WireGeometry.getAttachmentPoint(edge.a(), edge.dirA(), stats).subtract(cam);
+        var end = WireGeometry.getAttachmentPoint(edge.b(), edge.dirB(), stats).subtract(cam);
         var pixelSize = WireGeometry.pixelSize(stats);
-        float halfSize = (float) (pixelSize / 32.0 + OUTLINE_MARGIN);
+        var halfSize = (float) (pixelSize / 32.0 + OUTLINE_MARGIN);
 
         var sprite = mc.getTextureAtlas(TextureAtlas.LOCATION_BLOCKS).apply(OUTLINE_TEXTURE);
         var buffers = mc.renderBuffers().bufferSource();
@@ -203,10 +203,10 @@ public class WirePreviewEvents {
         var insulators = MultimeterHighlight.get();
         if (insulators == null) return;
 
-        Vec3 cam = event.getCamera().getPosition();
+        var cam = event.getCamera().getPosition();
         var graph = ClientWires.graph();
         var points = new ArrayList<Vec3>(insulators.size());
-        for (int i = 0; i < insulators.size(); i++) {
+        for (var i = 0; i < insulators.size(); i++) {
             var pos = insulators.get(i);
             var neighbor = insulators.get(i == 0 ? 1 : i - 1);
             points.add(attachmentPoint(graph, pos, neighbor).subtract(cam));

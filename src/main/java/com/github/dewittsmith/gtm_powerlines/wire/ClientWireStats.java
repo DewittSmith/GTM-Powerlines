@@ -18,8 +18,8 @@ public final class ClientWireStats {
     private static long lastRequest;
 
     public static @Nullable WireStatsPacket get(PowerlineGraph.Edge edge) {
-        long now = System.currentTimeMillis();
-        boolean sameEdge = edge.a().equals(requestedA) && edge.b().equals(requestedB);
+        var now = System.currentTimeMillis();
+        var sameEdge = edge.a().equals(requestedA) && edge.b().equals(requestedB);
         if (!sameEdge || now - lastRequest > REQUEST_INTERVAL) {
             requestedA = edge.a();
             requestedB = edge.b();

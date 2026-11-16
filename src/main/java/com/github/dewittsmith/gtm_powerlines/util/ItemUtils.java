@@ -13,7 +13,7 @@ public final class ItemUtils {
     public static int countAvailable(Player player, ItemStack held) {
         if (player.getAbilities().instabuild) return Integer.MAX_VALUE;
 
-        int total = held.getCount();
+        var total = held.getCount();
         for (var stack : player.getInventory().items) {
             if (stack == held) continue;
             if (ItemStack.isSameItem(stack, held)) total += stack.getCount();
@@ -24,12 +24,12 @@ public final class ItemUtils {
     public static void consume(Player player, ItemStack held, int count) {
         if (player.getAbilities().instabuild) return;
 
-        int left = count;
+        var left = count;
         for (var stack : player.getInventory().items) {
             if (left <= 0) break;
             if (stack == held || stack.isEmpty() || !ItemStack.isSameItem(stack, held)) continue;
 
-            int take = Math.min(stack.getCount(), left);
+            var take = Math.min(stack.getCount(), left);
             stack.shrink(take);
             left -= take;
         }

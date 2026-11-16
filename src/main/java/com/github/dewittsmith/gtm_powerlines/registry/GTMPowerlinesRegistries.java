@@ -13,7 +13,6 @@ import com.gregtechceu.gtceu.common.data.GTMachines;
 import com.gregtechceu.gtceu.common.data.GTMaterials;
 import com.gregtechceu.gtceu.common.data.GTRecipeTypes;
 
-import net.minecraft.ChatFormatting;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.tags.BlockTags;
@@ -44,6 +43,10 @@ import static com.gregtechceu.gtceu.api.pattern.Predicates.*;
 import static com.gregtechceu.gtceu.common.data.GTBlocks.*;
 
 public class GTMPowerlinesRegistries {
+
+    static {
+        POWERLINE_REGISTRATE.creativeModeTab(() -> POWERLINE_CREATIVE_TAB);
+    }
 
     public static final TagKey<Block> WIRE_PASSTHROUGH = BlockTags.create(GTMPowerlines.id("wire_passthrough"));
 
@@ -133,16 +136,7 @@ public class GTMPowerlinesRegistries {
                 components.add(Component.translatable("multiblock.gtm_powerlines.powerline_transformer.mode")
                         .append(Component.translatable(transformerMachine.getIO().tooltip)));
 
-                components.add(Component.translatable("multiblock.gtm_powerlines.powerline_transformer.insulators",
-                        transformerMachine.getInsulatorCount()));
-
                 if (transformerMachine.isInput()) {
-                    var status = transformerMachine.getStatus();
-                    components.add(Component.translatable("multiblock.gtm_powerlines.powerline_transformer.status")
-                            .append(Component.translatable(status.translationKey(),
-                                    transformerMachine.getReceivers())
-                                    .withStyle(status == PowerlineTransformerMachine.TransferStatus.TRANSFERRING ?
-                                            ChatFormatting.GREEN : ChatFormatting.RED)));
                     components
                             .add(Component.translatable("multiblock.gtm_powerlines.powerline_transformer.energy_output",
                                     transformerMachine.getEnergyOutputPerSec() / 20));
@@ -160,10 +154,6 @@ public class GTMPowerlinesRegistries {
 
             })
             .register();
-
-    static {
-        POWERLINE_REGISTRATE.creativeModeTab(() -> POWERLINE_CREATIVE_TAB);
-    }
 
     public static void init() {}
 }

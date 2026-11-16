@@ -1,7 +1,6 @@
 package com.github.dewittsmith.gtm_powerlines.item;
 
 import com.gregtechceu.gtceu.api.GTValues;
-import com.gregtechceu.gtceu.common.blockentity.CableBlockEntity;
 import com.gregtechceu.gtceu.utils.GTUtil;
 
 import net.minecraft.ChatFormatting;
@@ -9,12 +8,10 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
@@ -24,24 +21,19 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.registries.ForgeRegistries;
 
 import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
 import com.github.dewittsmith.gtm_powerlines.graph.PowerlineNetwork;
-import com.github.dewittsmith.gtm_powerlines.graph.TransferPath;
-import com.github.dewittsmith.gtm_powerlines.machines.PowerlineTransformerMachine;
 import com.github.dewittsmith.gtm_powerlines.network.MultimeterPathPacket;
 import com.github.dewittsmith.gtm_powerlines.network.Net;
-import com.github.dewittsmith.gtm_powerlines.util.BlockUtils;
-import com.github.dewittsmith.gtm_powerlines.util.CoilEfficiency;
 import com.github.dewittsmith.gtm_powerlines.wire.MultimeterHighlight;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 
 import javax.annotation.Nullable;
+
+import static com.gregtechceu.gtceu.utils.FormattingUtil.DECIMAL_FORMAT_1F;
 
 public class MultimeterItem extends Item {
 
@@ -72,10 +64,7 @@ public class MultimeterItem extends Item {
 
     private static void report(Player player, ServerLevel level, BlockPos from, BlockPos to) {
         var network = PowerlineNetwork.get(level);
-        player.sendSystemMessage(Component.translatable("message.gtm_powerlines.multimeter.header",
-                formatPos(from), formatPos(to)).withStyle(ChatFormatting.GOLD));
-
-        TransferPath route = network.findRoute(from, to);
+        var route = network.findRoute(from, to);
         if (route == null) {
             player.sendSystemMessage(Component.translatable("message.gtm_powerlines.multimeter.not_connected")
                     .withStyle(ChatFormatting.RED));
@@ -93,70 +82,25 @@ public class MultimeterItem extends Item {
             Net.sendToPlayer(serverPlayer, new MultimeterPathPacket(insulators));
         }
 
-        var dedicated = network.getRoutes(from).dedicated();
-        line(player, dedicated ? "message.gtm_powerlines.multimeter.line_transformer" :
-                "message.gtm_powerlines.multimeter.line_machines");
-
-        int items = 0;
-        var wires = new LinkedHashMap<ResourceLocation, Integer>();
+        var voltage = 0L;
+        var amperage = 0.0;
         for (var edge : route.path()) {
-            items += edge.wireCount();
-            wires.merge(edge.wire(), edge.wireCount(), Integer::sum);
-        }
-        line(player, "message.gtm_powerlines.multimeter.length", route.path().length,
-                fmt(route.length()), items);
-
-        MutableComponent wireList = Component.empty();
-        var first = true;
-        for (var entry : wires.entrySet()) {
-            var item = ForgeRegistries.ITEMS.getValue(entry.getKey());
-            if (!first) wireList.append(", ");
-            first = false;
-            wireList.append(item == null ? Component.literal(entry.getKey().toString()) :
-                    new ItemStack(item).getHoverName().copy());
-            wireList.append(" x" + entry.getValue());
-        }
-        line(player, "message.gtm_powerlines.multimeter.wires", wireList);
-
-        line(player, "message.gtm_powerlines.multimeter.limits", route.minVoltage(),
-                GTValues.VNF[GTUtil.getFloorTierByVoltage(route.minVoltage())], route.minAmperage());
-
-        var lossScale = transformerLossScale(level, network, from, to);
-        if (lossScale < 1f) {
-            line(player, "message.gtm_powerlines.multimeter.loss_transformer", fmt(route.loss()),
-                    Mth.floor((1f - lossScale) * 100), fmt(route.loss() * lossScale));
-        } else {
-            line(player, "message.gtm_powerlines.multimeter.loss", fmt(route.loss()));
+            voltage = Math.max(voltage, network.getCurrentVoltage(edge));
+            amperage = Math.max(amperage, network.getAverageAmperage(edge));
         }
 
-        double amps = 0, energy = 0;
-        int hottest = PowerlineNetwork.DEFAULT_TEMP;
-        for (var edge : route.path()) {
-            amps = Math.max(amps, network.getAverageAmperage(edge));
-            energy = Math.max(energy, network.getAverageEnergy(edge));
-            hottest = Math.max(hottest, network.getTemperature(edge));
-        }
-        line(player, "message.gtm_powerlines.multimeter.flow", fmt(amps), Math.round(energy));
-        line(player, "message.gtm_powerlines.multimeter.temperature", hottest, CableBlockEntity.getMeltTemp());
-    }
+        var voltageLine = Component.translatable("gtceu.top.cable_voltage");
+        if (voltage != 0) voltageLine.append(GTValues.VNF[GTUtil.getTierByVoltage(voltage)]).append(" / ");
+        voltageLine.append(GTValues.VNF[GTUtil.getTierByVoltage(route.minVoltage())]);
+        player.sendSystemMessage(voltageLine);
 
-    private static float transformerLossScale(ServerLevel level, PowerlineNetwork network, BlockPos from, BlockPos to) {
-        var a = network.getTransformerController(from);
-        var b = network.getTransformerController(to);
-        if (a == null || b == null || a.equals(b)) return 1f;
-        var ta = BlockUtils.instanceOf(level, a, PowerlineTransformerMachine.class).orElse(null);
-        var tb = BlockUtils.instanceOf(level, b, PowerlineTransformerMachine.class).orElse(null);
-        if (ta == null || tb == null || !ta.isFormed() || !tb.isFormed()) return 1f;
-        return 1f - (CoilEfficiency.of(ta.getCoilType()) + CoilEfficiency.of(tb.getCoilType())) / 2f;
-    }
+        var amperageLine = Component.translatable("gtceu.top.cable_amperage");
+        if (amperage != 0) amperageLine.append(DECIMAL_FORMAT_1F.format(amperage) + "A / ");
+        amperageLine.append(DECIMAL_FORMAT_1F.format((double) route.minAmperage()) + "A");
+        player.sendSystemMessage(amperageLine);
 
-    private static void line(Player player, String key, Object... args) {
-        player.sendSystemMessage(Component.literal(" ").append(Component.translatable(key, args))
-                .withStyle(ChatFormatting.GRAY));
-    }
-
-    private static String fmt(double value) {
-        return String.format(Locale.ROOT, "%.2f", value);
+        player.sendSystemMessage(Component.translatable("gtm_powerlines.top.wire_length")
+                .append(DECIMAL_FORMAT_1F.format(route.length()) + "m"));
     }
 
     private static String formatPos(BlockPos pos) {

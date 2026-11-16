@@ -76,32 +76,32 @@ public final class WireGeometry {
     }
 
     public static Vec3 getAttachmentPoint(BlockPos pos, Direction direction, WireStats wire) {
-        float offset = (6f - pixelSize(wire) / 2) / 16f;
+        var offset = (6f - pixelSize(wire) / 2) / 16f;
         return pos.getCenter().add(direction.getStepX() * offset, direction.getStepY() * offset,
                 direction.getStepZ() * offset);
     }
 
     public static double distanceToSegment(Vec3 p, Vec3 a, Vec3 b) {
-        double abX = b.x - a.x;
-        double abY = b.y - a.y;
-        double abZ = b.z - a.z;
+        var abX = b.x - a.x;
+        var abY = b.y - a.y;
+        var abZ = b.z - a.z;
 
-        double apX = p.x - a.x;
-        double apY = p.y - a.y;
-        double apZ = p.z - a.z;
+        var apX = p.x - a.x;
+        var apY = p.y - a.y;
+        var apZ = p.z - a.z;
 
-        double abLenSq = abX * abX + abY * abY + abZ * abZ;
+        var abLenSq = abX * abX + abY * abY + abZ * abZ;
         if (abLenSq == 0) return Math.sqrt(apX * apX + apY * apY + apZ * apZ);
 
-        double t = Mth.clamp((apX * abX + apY * abY + apZ * abZ) / abLenSq, 0, 1);
+        var t = Mth.clamp((apX * abX + apY * abY + apZ * abZ) / abLenSq, 0, 1);
 
-        double closestX = a.x + t * abX;
-        double closestY = a.y + t * abY;
-        double closestZ = a.z + t * abZ;
+        var closestX = a.x + t * abX;
+        var closestY = a.y + t * abY;
+        var closestZ = a.z + t * abZ;
 
-        double diffX = p.x - closestX;
-        double diffY = p.y - closestY;
-        double diffZ = p.z - closestZ;
+        var diffX = p.x - closestX;
+        var diffY = p.y - closestY;
+        var diffZ = p.z - closestZ;
 
         return Math.sqrt(diffX * diffX + diffY * diffY + diffZ * diffZ);
     }

@@ -10,7 +10,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -34,13 +33,13 @@ public class GTMPowerlines {
             .defaultCreativeTab(MOD_ID, builder -> builder
                     .displayItems(new GTCreativeModeTabs.RegistrateDisplayItemsGenerator(MOD_ID, POWERLINE_REGISTRATE))
                     .title(Component.translatable("itemGroup.gtm_powerlines.creative_tab"))
-                    .icon(GTMPowerlinesRegistries.POWERLINE_INSULATOR::asStack)
+                    .icon(GTMPowerlinesRegistries.MULTIMETER::asStack)
                     .build())
             .register();
 
     public GTMPowerlines() {
         var context = FMLJavaModLoadingContext.get();
-        IEventBus modEventBus = context.getModEventBus();
+        var modEventBus = context.getModEventBus();
 
         GTMPowerlinesConfig.init();
 

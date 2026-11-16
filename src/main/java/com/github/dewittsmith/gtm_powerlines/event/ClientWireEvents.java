@@ -24,12 +24,12 @@ public final class ClientWireEvents {
             lastSelectedSlot = -1;
             return;
         }
-        int slot = player.getInventory().selected;
-        boolean switched = lastSelectedSlot != -1 && slot != lastSelectedSlot;
+        var slot = player.getInventory().selected;
+        var switched = lastSelectedSlot != -1 && slot != lastSelectedSlot;
         lastSelectedSlot = slot;
 
         if (MultimeterHighlight.get() == null) return;
-        boolean holding = player.getMainHandItem().getItem() instanceof MultimeterItem ||
+        var holding = player.getMainHandItem().getItem() instanceof MultimeterItem ||
                 player.getOffhandItem().getItem() instanceof MultimeterItem;
         if (switched || !holding) MultimeterHighlight.clear();
     }

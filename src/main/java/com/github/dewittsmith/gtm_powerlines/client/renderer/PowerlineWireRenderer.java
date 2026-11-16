@@ -34,7 +34,7 @@ public class PowerlineWireRenderer {
     public static void renderTube(PoseStack poseStack, MultiBufferSource buffers, Vec3 start, Vec3 end,
                                   int light, Caps caps, WireStats stats, int argb) {
         var pixelSize = WireGeometry.pixelSize(stats);
-        TextureAtlasSprite sprite = Minecraft.getInstance().getTextureAtlas(TextureAtlas.LOCATION_BLOCKS)
+        var sprite = Minecraft.getInstance().getTextureAtlas(TextureAtlas.LOCATION_BLOCKS)
                 .apply(WIRE_TEXTURE);
         renderTube(poseStack, buffers.getBuffer(wireRenderType()), start, end, light, caps, sprite, pixelSize,
                 pixelSize / 16f / 2, argb, false);
@@ -43,15 +43,15 @@ public class PowerlineWireRenderer {
     public static void renderTube(PoseStack poseStack, VertexConsumer consumer, Vec3 start, Vec3 end, int light,
                                   Caps caps, @Nullable TextureAtlasSprite sprite, float pixelSize, float halfSize,
                                   int argb, boolean inverted) {
-        PoseStack.Pose pose = poseStack.last();
+        var pose = poseStack.last();
 
         var sag = WireGeometry.sag(start, end);
 
-        Vec3 pPos = WireGeometry.sample(start, end, 0, sag);
-        Vec3 pFwd = WireGeometry.sampleTangent(start, end, 0, sag);
+        var pPos = WireGeometry.sample(start, end, 0, sag);
+        var pFwd = WireGeometry.sampleTangent(start, end, 0, sag);
         Vec3 pRef = Math.abs(pFwd.y) > 0.99 ? new Vec3(1, 0, 0) : new Vec3(0, 1, 0);
-        Vec3 pRight = pFwd.cross(pRef).normalize();
-        Vec3 pUp = pRight.cross(pFwd).normalize();
+        var pRight = pFwd.cross(pRef).normalize();
+        var pUp = pRight.cross(pFwd).normalize();
 
         float u0 = 0, v0 = 0, u1 = 0, v1 = 0, tw = 0, th = 0;
         if (sprite != null) {
@@ -84,11 +84,11 @@ public class PowerlineWireRenderer {
             var step = Math.min(1, samples);
             t += dt * step;
 
-            Vec3 pos = WireGeometry.sample(start, end, t, sag);
-            Vec3 fwd = WireGeometry.sampleTangent(start, end, t, sag).normalize();
+            var pos = WireGeometry.sample(start, end, t, sag);
+            var fwd = WireGeometry.sampleTangent(start, end, t, sag).normalize();
             Vec3 ref = Math.abs(fwd.y) > 0.99 ? new Vec3(1, 0, 0) : new Vec3(0, 1, 0);
-            Vec3 right = fwd.cross(ref).normalize();
-            Vec3 up = right.cross(fwd).normalize();
+            var right = fwd.cross(ref).normalize();
+            var up = right.cross(fwd).normalize();
 
             Vec3 pr = pRight.scale(halfSize), pu = pUp.scale(halfSize);
             Vec3 cr = right.scale(halfSize), cu = up.scale(halfSize);
@@ -98,8 +98,8 @@ public class PowerlineWireRenderer {
             Vec3 cTL = pos.subtract(cr).add(cu), cTR = pos.add(cr).add(cu);
             Vec3 cBL = pos.subtract(cr).subtract(cu), cBR = pos.add(cr).subtract(cu);
 
-            Vec3 nUp = up.add(pUp).normalize();
-            Vec3 nRight = right.add(pRight).normalize();
+            var nUp = up.add(pUp).normalize();
+            var nRight = right.add(pRight).normalize();
 
             var vEnd = v0 + (v1 - v0) * step;
             quad(consumer, pose, pTR, cTR, cTL, pTL, argb, u0, v0, u1, vEnd, light, nUp, inverted);
@@ -133,12 +133,12 @@ public class PowerlineWireRenderer {
         var pixelSize = WireGeometry.pixelSize(stats);
         var halfSize = pixelSize / 16f / 2;
 
-        VertexConsumer consumer = buffers.getBuffer(wireRenderType());
-        TextureAtlasSprite sprite = Minecraft.getInstance().getTextureAtlas(TextureAtlas.LOCATION_BLOCKS)
+        var consumer = buffers.getBuffer(wireRenderType());
+        var sprite = Minecraft.getInstance().getTextureAtlas(TextureAtlas.LOCATION_BLOCKS)
                 .apply(WIRE_TEXTURE);
-        PoseStack.Pose pose = poseStack.last();
+        var pose = poseStack.last();
 
-        double sag = WireGeometry.sag(start, end);
+        var sag = WireGeometry.sag(start, end);
 
         float u0 = sprite.getU0(), v0 = sprite.getV0(), u1 = sprite.getU1(), v1 = sprite.getV1();
         float w = u1 - u0, h = v1 - v0;
@@ -149,20 +149,20 @@ public class PowerlineWireRenderer {
         u1 = u0 + tw * pixelSize;
         v1 -= th;
 
-        Vec3 pPos = WireGeometry.sample(start, end, 0, sag);
-        Vec3 pForward = WireGeometry.sampleTangent(start, end, 0, sag);
-        Vec3 pToCamera = cameraPos.subtract(pPos).normalize();
-        Vec3 pRight = pForward.cross(pToCamera).normalize();
+        var pPos = WireGeometry.sample(start, end, 0, sag);
+        var pForward = WireGeometry.sampleTangent(start, end, 0, sag);
+        var pToCamera = cameraPos.subtract(pPos).normalize();
+        var pRight = pForward.cross(pToCamera).normalize();
 
         if (pRight.lengthSqr() < 1.0e-6) {
             Vec3 ref = Math.abs(pForward.y) > 0.99 ? new Vec3(1, 0, 0) : new Vec3(0, 1, 0);
             pRight = pForward.cross(ref).normalize();
         }
 
-        Vec3 pOffset = pRight.scale(halfSize);
+        var pOffset = pRight.scale(halfSize);
 
-        Vec3 pTL = pPos.add(pOffset);
-        Vec3 pTR = pPos.subtract(pOffset);
+        var pTL = pPos.add(pOffset);
+        var pTR = pPos.subtract(pOffset);
 
         var length = WireGeometry.length(start, end, sag);
         var samples = WireGeometry.samples(length);
@@ -173,21 +173,21 @@ public class PowerlineWireRenderer {
             var step = Math.min(1, samples);
             t += dt * step;
 
-            Vec3 pos = WireGeometry.sample(start, end, t, sag);
-            Vec3 forward = WireGeometry.sampleTangent(start, end, t, sag).normalize();
+            var pos = WireGeometry.sample(start, end, t, sag);
+            var forward = WireGeometry.sampleTangent(start, end, t, sag).normalize();
 
-            Vec3 toCamera = cameraPos.subtract(pos).normalize();
-            Vec3 right = forward.cross(toCamera).normalize();
+            var toCamera = cameraPos.subtract(pos).normalize();
+            var right = forward.cross(toCamera).normalize();
 
             if (right.lengthSqr() < 1.0e-6) {
                 Vec3 ref = Math.abs(forward.y) > 0.99 ? new Vec3(1, 0, 0) : new Vec3(0, 1, 0);
                 right = forward.cross(ref).normalize();
             }
 
-            Vec3 offset = right.scale(halfSize);
-            Vec3 cTL = pos.add(offset);
-            Vec3 cTR = pos.subtract(offset);
-            Vec3 normal = right.cross(forward).normalize();
+            var offset = right.scale(halfSize);
+            var cTL = pos.add(offset);
+            var cTR = pos.subtract(offset);
+            var normal = right.cross(forward).normalize();
 
             var vEnd = v0 + (v1 - v0) * step;
             quad(consumer, pose, pTL, cTL, cTR, pTR, argb, u0, v0, u1, vEnd, light, normal);

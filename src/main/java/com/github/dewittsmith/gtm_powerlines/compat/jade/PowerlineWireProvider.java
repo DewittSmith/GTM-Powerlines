@@ -93,7 +93,7 @@ public class PowerlineWireProvider implements IBlockComponentProvider {
         iTooltip.add(Component.translatable("gtm_powerlines.top.wire_length"));
         iTooltip.append(Component.literal(DECIMAL_FORMAT_1F.format(edge.length()) + "m"));
 
-        int paintingColor = edge.paint();
+        var paintingColor = edge.paint();
         if (paintingColor != IPaintable.UNPAINTED_COLOR) {
             iTooltip.add(Component.translatable("gtceu.top.stained", String.format("#%06X", paintingColor))
                     .withStyle(style -> style.withColor(paintingColor)));

@@ -2,7 +2,6 @@ package com.github.dewittsmith.gtm_powerlines.event;
 
 import com.gregtechceu.gtceu.api.GTValues;
 
-import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
@@ -50,9 +49,9 @@ public class PowerlineWireEvents {
         var level = event.getLevel();
         if (level.isClientSide()) return;
 
-        Player player = event.getEntity();
+        var player = event.getEntity();
         var attach = WireAttachment.get(player);
-        boolean dragging = attach != null && attach.dimension().equals(level.dimension());
+        var dragging = attach != null && attach.dimension().equals(level.dimension());
 
         InteractionHand hand;
         if (dragging) {
@@ -62,7 +61,7 @@ public class PowerlineWireEvents {
             hand = event.getHand();
             if (WireStats.of(event.getItemStack().getItem()).isEmpty()) return;
         }
-        ItemStack held = player.getItemInHand(hand);
+        var held = player.getItemInHand(hand);
         var wireItem = held.getItem();
         var wireInfo = WireStats.of(wireItem).orElse(null);
         if (wireInfo == null) return;
@@ -74,7 +73,7 @@ public class PowerlineWireEvents {
             return;
         }
 
-        BlockPos pos = event.getPos();
+        var pos = event.getPos();
         var clickedBe = level.getBlockEntity(pos) instanceof PowerlineInsulatorBlockEntity be ? be : null;
 
         if (clickedBe == null) {
@@ -251,7 +250,7 @@ public class PowerlineWireEvents {
         var level = event.getLevel();
         if (level.isClientSide()) return;
 
-        Player player = event.getEntity();
+        var player = event.getEntity();
         var attach = WireAttachment.get(player);
         if (attach == null || !event.getItemStack().is(attach.wire())) return;
 

@@ -29,24 +29,24 @@ public final class PowerlineRenderUtil {
     public static UV cableUV(ResourceLocation texture, float pixelSize) {
         var sprite = Minecraft.getInstance().getTextureAtlas(TextureAtlas.LOCATION_BLOCKS).apply(texture);
         float tw = (sprite.getU1() - sprite.getU0()) / 16, th = (sprite.getV1() - sprite.getV0()) / 16;
-        float u0 = sprite.getU0() + tw;
+        var u0 = sprite.getU0() + tw;
         return new UV(u0, sprite.getV0() + th, u0 + tw * pixelSize, sprite.getV1() - th);
     }
 
     public static void tube(VertexConsumer vc, PoseStack.Pose pose, Vec3 start, Vec3 end, double half, int argb,
                             UV uv, int light, boolean inward) {
-        double sag = WireGeometry.sag(start, end);
-        int samples = Math.max(2, Mth.ceil(WireGeometry.samples(WireGeometry.length(start, end, sag))) + 1);
+        var sag = WireGeometry.sag(start, end);
+        var samples = Math.max(2, Mth.ceil(WireGeometry.samples(WireGeometry.length(start, end, sag))) + 1);
 
         Vec3[] prevRing = null;
         Vec3 prevCenter = null;
-        for (int i = 0; i < samples; i++) {
-            double t = i / (samples - 1.0);
-            Vec3 center = WireGeometry.sample(start, end, t, sag);
-            Vec3 forward = WireGeometry.sampleTangent(start, end, t, sag);
+        for (var i = 0; i < samples; i++) {
+            var t = i / (samples - 1.0);
+            var center = WireGeometry.sample(start, end, t, sag);
+            var forward = WireGeometry.sampleTangent(start, end, t, sag);
             Vec3 ref = Math.abs(forward.y) > 0.99 ? new Vec3(1, 0, 0) : new Vec3(0, 1, 0);
-            Vec3 right = forward.cross(ref).normalize().scale(half);
-            Vec3 up = right.cross(forward).normalize().scale(half);
+            var right = forward.cross(ref).normalize().scale(half);
+            var up = right.cross(forward).normalize().scale(half);
             Vec3[] ring = {
                     center.add(right).add(up),
                     center.subtract(right).add(up),
@@ -55,9 +55,9 @@ public final class PowerlineRenderUtil {
             };
 
             if (prevRing != null) {
-                Vec3 axis = prevCenter.add(center).scale(0.5);
-                for (int k = 0; k < 4; k++) {
-                    int n = (k + 1) % 4;
+                var axis = prevCenter.add(center).scale(0.5);
+                for (var k = 0; k < 4; k++) {
+                    var n = (k + 1) % 4;
                     quad(vc, pose, axis, prevRing[k], prevRing[n], ring[n], ring[k], argb, uv, light, inward);
                 }
             }
@@ -67,7 +67,7 @@ public final class PowerlineRenderUtil {
     }
 
     public static void box(VertexConsumer vc, PoseStack.Pose pose, AABB box, int argb, UV uv, int light) {
-        Vec3 c = box.getCenter();
+        var c = box.getCenter();
         double x0 = box.minX, y0 = box.minY, z0 = box.minZ, x1 = box.maxX, y1 = box.maxY, z1 = box.maxZ;
         Vec3[] p = {
                 new Vec3(x0, y0, z0), new Vec3(x1, y0, z0), new Vec3(x1, y0, z1), new Vec3(x0, y0, z1),
@@ -83,12 +83,12 @@ public final class PowerlineRenderUtil {
 
     public static void quad(VertexConsumer vc, PoseStack.Pose pose, Vec3 inside, Vec3 a, Vec3 b, Vec3 c, Vec3 d,
                             int argb, UV uv, int light, boolean inward) {
-        Vec3 mid = a.add(b).add(c).add(d).scale(0.25);
-        Vec3 outward = mid.subtract(inside);
-        Vec3 front = b.subtract(a).cross(c.subtract(a));
-        boolean facesOut = front.dot(outward) > 0;
+        var mid = a.add(b).add(c).add(d).scale(0.25);
+        var outward = mid.subtract(inside);
+        var front = b.subtract(a).cross(c.subtract(a));
+        var facesOut = front.dot(outward) > 0;
         if (facesOut == inward) {
-            Vec3 tmp = b;
+            var tmp = b;
             b = d;
             d = tmp;
         }
@@ -119,7 +119,7 @@ public final class PowerlineRenderUtil {
                                  List<Vec3> points, float r, float g, float b, float a) {
         if (points.size() < 2) return;
         var consumer = buffers.getBuffer(type);
-        for (int i = 0; i < points.size(); i++) {
+        for (var i = 0; i < points.size(); i++) {
             var p = points.get(i);
             var n = (i + 1 < points.size() ? points.get(i + 1).subtract(p) : p.subtract(points.get(i - 1)))
                     .normalize();

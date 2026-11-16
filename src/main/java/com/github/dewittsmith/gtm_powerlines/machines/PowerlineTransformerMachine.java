@@ -4,7 +4,6 @@ import com.gregtechceu.gtceu.api.block.ICoilType;
 import com.gregtechceu.gtceu.api.capability.IEnergyContainer;
 import com.gregtechceu.gtceu.api.capability.recipe.EURecipeCapability;
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
-import com.gregtechceu.gtceu.api.capability.recipe.IRecipeHandler;
 import com.gregtechceu.gtceu.api.gui.GuiTextures;
 import com.gregtechceu.gtceu.api.gui.fancy.ConfiguratorPanel;
 import com.gregtechceu.gtceu.api.gui.fancy.FancyMachineUIWidget;
@@ -15,7 +14,6 @@ import com.gregtechceu.gtceu.api.machine.TickableSubscription;
 import com.gregtechceu.gtceu.api.machine.feature.IFancyUIMachine;
 import com.gregtechceu.gtceu.api.machine.feature.ITieredMachine;
 import com.gregtechceu.gtceu.api.machine.feature.multiblock.IDisplayUIMachine;
-import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMultiPart;
 import com.gregtechceu.gtceu.api.machine.multiblock.MultiblockDisplayText;
 import com.gregtechceu.gtceu.api.machine.multiblock.WorkableMultiblockMachine;
 import com.gregtechceu.gtceu.api.misc.EnergyContainerList;
@@ -30,8 +28,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.state.BlockState;
 
 import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
 import com.github.dewittsmith.gtm_powerlines.graph.PowerlineNetwork;
@@ -61,15 +57,9 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine
     private Collection<BlockPos> insulators = Collections.emptyList();
 
     private @Nullable TickableSubscription transferSub;
-    private TransferStatus status = TransferStatus.IDLE;
-    private int receivers;
 
     public PowerlineTransformerMachine(IMachineBlockEntity holder) {
         super(holder);
-    }
-
-    private static TransferStatus worse(TransferStatus current, TransferStatus candidate) {
-        return candidate.ordinal() > current.ordinal() ? candidate : current;
     }
 
     public ICoilType getCoilType() {
@@ -82,18 +72,6 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine
 
     public long getEnergyOutputPerSec() {
         return energyOutputPerSec;
-    }
-
-    public TransferStatus getStatus() {
-        return status;
-    }
-
-    public int getReceivers() {
-        return receivers;
-    }
-
-    public int getInsulatorCount() {
-        return insulators.size();
     }
 
     @Override
@@ -131,8 +109,6 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine
         hatches = Collections.emptyList();
         energyContainer = null;
         networkOutputPerSec = energyOutputPerSec = networkOutput = energyOutput = 0;
-        status = TransferStatus.IDLE;
-        receivers = 0;
     }
 
     @Override
@@ -145,7 +121,7 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine
         List<IEnergyContainer> containers = new ArrayList<>();
         var handlers = getCapabilitiesFlat(IO.IN, EURecipeCapability.CAP);
         if (handlers.isEmpty()) handlers = getCapabilitiesFlat(IO.OUT, EURecipeCapability.CAP);
-        for (IRecipeHandler<?> handler : handlers) {
+        for (var handler : handlers) {
             if (handler instanceof IEnergyContainer container) {
                 containers.add(container);
             }
@@ -169,7 +145,7 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine
     }
 
     public long getLineAmperage() {
-        long voltage = getLineVoltage();
+        var voltage = getLineVoltage();
         long amperage = 0;
         for (var hatch : hatches) {
             if (isInput() ? hatch.getInputVoltage() == voltage : hatch.getOutputVoltage() == voltage) {
@@ -191,10 +167,7 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine
     private void transferTick() {
         if (!(getLevel() instanceof ServerLevel level) || !isFormed() || !level.shouldTickBlocksAt(getPos())) return;
         if (hatches.isEmpty()) refreshEnergyContainer();
-        if (!isInput()) {
-            status = TransferStatus.IDLE;
-            return;
-        }
+        if (!isInput()) return;
 
         if (getOffsetTimer() % 20 == 0) {
             networkOutputPerSec = networkOutput;
@@ -203,24 +176,15 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine
             energyOutput = 0;
         }
 
-        if (insulators.isEmpty()) {
-            status = TransferStatus.NO_INSULATORS;
-            return;
-        }
+        if (insulators.isEmpty()) return;
 
         var source = energy();
-        long voltage = getLineVoltage();
+        var voltage = getLineVoltage();
         long ampsLeft = voltage <= 0 ? 0 : Math.min(getLineAmperage(), source.getEnergyStored() / voltage);
-        if (ampsLeft <= 0) {
-            status = TransferStatus.NO_ENERGY;
-            return;
-        }
+        if (ampsLeft <= 0) return;
 
         var network = PowerlineNetwork.get(level);
         var efficiency = CoilEfficiency.of(coilType);
-
-        var blocked = TransferStatus.NO_RECEIVER;
-        var served = new HashSet<BlockPos>();
 
         for (var insulator : insulators) {
             for (var route : network.getRoutes(insulator).paths()) {
@@ -228,49 +192,33 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine
 
                 var destPos = network.getTransformerController(route.targetPos());
                 if (destPos == null || destPos.equals(getPos())) continue;
-                if (!level.isLoaded(destPos) || !level.shouldTickBlocksAt(destPos)) {
-                    blocked = worse(blocked, TransferStatus.RECEIVER_UNLOADED);
-                    continue;
-                }
+                if (!level.isLoaded(destPos) || !level.shouldTickBlocksAt(destPos)) continue;
                 var dest = BlockUtils.instanceOf(level, destPos, PowerlineTransformerMachine.class).orElse(null);
                 if (dest == null || !dest.isFormed() || !dest.isOutput()) continue;
 
                 var sink = dest.energy();
-                long room = sink.getEnergyCanBeInserted();
-                if (room <= 0) {
-                    blocked = worse(blocked, TransferStatus.RECEIVER_FULL);
-                    continue;
-                }
+                var room = sink.getEnergyCanBeInserted();
+                if (room <= 0) continue;
 
                 var lossScale = 1f - (efficiency + CoilEfficiency.of(dest.coilType)) / 2f;
                 long lossPerAmp = Mth.ceil(route.loss() * lossScale);
-                if (lossPerAmp >= voltage) {
-                    blocked = worse(blocked, TransferStatus.LOSS_TOO_HIGH);
-                    continue;
-                }
+                if (lossPerAmp >= voltage) continue;
 
-                long arriving = network.applyVoltageLimit(route, voltage, voltage - lossPerAmp);
+                var arriving = network.applyVoltageLimit(route, voltage, voltage - lossPerAmp);
                 if (arriving <= 0) continue;
 
-                long amps = Math.min(ampsLeft, room / arriving);
-                if (amps <= 0) {
-                    blocked = worse(blocked, TransferStatus.RECEIVER_FULL);
-                    continue;
-                }
+                var amps = Math.min(ampsLeft, room / arriving);
+                if (amps <= 0) continue;
 
-                long added = sink.changeEnergy(amps * arriving);
+                var added = sink.changeEnergy(amps * arriving);
                 source.changeEnergy(-amps * voltage);
                 network.recordFlow(route, voltage, amps, lossScale);
 
                 ampsLeft -= amps;
                 networkOutput += added;
                 energyOutput += amps * voltage;
-                served.add(destPos);
             }
         }
-
-        receivers = served.size();
-        status = served.isEmpty() ? blocked : TransferStatus.TRANSFERRING;
     }
 
     public boolean isInput() {
@@ -288,13 +236,13 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine
     }
 
     private void setInsulatorsConnected(Collection<BlockPos> positions, boolean connected) {
-        Level level = getLevel();
+        var level = getLevel();
         if (!(level instanceof ServerLevel serverLevel)) return;
         var network = PowerlineNetwork.get(serverLevel);
-        for (BlockPos pos : positions) {
+        for (var pos : positions) {
             network.setTransformerNode(pos, connected ? getPos() : null);
 
-            BlockState state = level.getBlockState(pos);
+            var state = level.getBlockState(pos);
             if (!state.is(POWERLINE_INSULATOR.get())) continue;
 
             if (level.getBlockEntity(pos) instanceof PowerlineInsulatorBlockEntity be) {
@@ -341,24 +289,8 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine
 
     @Override
     public void attachTooltips(TooltipsPanel tooltipsPanel) {
-        for (IMultiPart part : getParts()) {
+        for (var part : getParts()) {
             part.attachFancyTooltipsToController(this, tooltipsPanel);
-        }
-    }
-
-    public enum TransferStatus {
-
-        IDLE,
-        NO_ENERGY,
-        NO_INSULATORS,
-        NO_RECEIVER,
-        RECEIVER_UNLOADED,
-        RECEIVER_FULL,
-        LOSS_TOO_HIGH,
-        TRANSFERRING;
-
-        public String translationKey() {
-            return "multiblock.gtm_powerlines.powerline_transformer.status." + name().toLowerCase(Locale.ROOT);
         }
     }
 }

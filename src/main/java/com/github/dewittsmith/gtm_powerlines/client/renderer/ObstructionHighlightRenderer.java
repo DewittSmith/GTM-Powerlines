@@ -29,15 +29,15 @@ public final class ObstructionHighlightRenderer {
         var mc = Minecraft.getInstance();
         if (highlight == null || mc.level == null) return;
 
-        double duration = GTMPowerlinesConfig.INSTANCE.rendering.obstructionHighlightSeconds * 1000.0;
+        var duration = GTMPowerlinesConfig.INSTANCE.rendering.obstructionHighlightSeconds * 1000.0;
         double elapsed = System.currentTimeMillis() - highlight.startMillis();
         if (duration <= 0 || elapsed >= duration) {
             ObstructionHighlight.clear();
             return;
         }
-        float alpha = (float) (1 - elapsed / duration);
+        var alpha = (float) (1 - elapsed / duration);
 
-        Vec3 cam = event.getCamera().getPosition();
+        var cam = event.getCamera().getPosition();
         var pose = event.getPoseStack().last();
         var buffers = mc.renderBuffers().bufferSource();
 
@@ -53,16 +53,16 @@ public final class ObstructionHighlightRenderer {
         }
 
         var graph = ClientWires.graph();
-        for (int i = 0; i + 1 < highlight.wires().size(); i += 2) {
+        for (var i = 0; i + 1 < highlight.wires().size(); i += 2) {
             var edge = graph.getEdge(highlight.wires().get(i), highlight.wires().get(i + 1)).orElse(null);
             if (edge == null || edge.stats() == null) continue;
 
             var start = WireGeometry.getAttachmentPoint(edge.a(), edge.dirA(), edge.stats());
             var end = WireGeometry.getAttachmentPoint(edge.b(), edge.dirB(), edge.stats());
-            double sag = WireGeometry.sag(start, end);
-            int n = Math.max(2, Mth.ceil(WireGeometry.samples(WireGeometry.length(start, end, sag))) + 1);
+            var sag = WireGeometry.sag(start, end);
+            var n = Math.max(2, Mth.ceil(WireGeometry.samples(WireGeometry.length(start, end, sag))) + 1);
             var points = new ArrayList<Vec3>(n);
-            for (int k = 0; k < n; k++) points.add(WireGeometry.sample(start, end, k / (n - 1.0), sag).subtract(cam));
+            for (var k = 0; k < n; k++) points.add(WireGeometry.sample(start, end, k / (n - 1.0), sag).subtract(cam));
 
             PowerlineRenderUtil.lineStrip(buffers, PowerlineRenderTypes.LINE_STRIP_ON_TOP, pose, points, 1f, 0f, 0f,
                     alpha);

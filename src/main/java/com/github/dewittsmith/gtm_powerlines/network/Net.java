@@ -26,7 +26,7 @@ public final class Net {
         if (registered) return;
         registered = true;
 
-        int id = 0;
+        var id = 0;
         CHANNEL.registerMessage(id++, WireFullSyncPacket.class,
                 WireFullSyncPacket::encode, WireFullSyncPacket::decode, WireFullSyncPacket::handle,
                 Optional.of(NetworkDirection.PLAY_TO_CLIENT));

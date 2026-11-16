@@ -27,7 +27,7 @@ public final class PowerlinePredicates {
 
     public static TraceabilityPredicate powerlineHatch() {
         return new TraceabilityPredicate(state -> {
-            Block block = state.getBlockState().getBlock();
+            var block = state.getBlockState().getBlock();
 
             IO io;
             if (isAny(INPUTS, block)) io = IO.IN;
@@ -49,7 +49,7 @@ public final class PowerlinePredicates {
     }
 
     private static boolean isAny(PartAbility[] abilities, Block block) {
-        for (PartAbility a : abilities) if (a.isApplicable(block)) return true;
+        for (var a : abilities) if (a.isApplicable(block)) return true;
         return false;
     }
 
@@ -57,7 +57,7 @@ public final class PowerlinePredicates {
         return custom(state -> {
             var bs = state.getBlockState();
             if (!bs.is(blockState.getBlock())) return false;
-            for (Property<?> prop : props) {
+            for (var prop : props) {
                 if (!bs.hasProperty(prop)) {
                     return false;
                 }

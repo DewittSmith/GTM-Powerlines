@@ -38,10 +38,10 @@ public final class WireShadowRenderer {
         var level = mc.level;
         if (level == null) return;
 
-        Vec3 cam = mc.gameRenderer.getMainCamera().getPosition();
-        Vec3 light = cam.add(lightDirection(modelView).scale(LIGHT_DISTANCE));
+        var cam = mc.gameRenderer.getMainCamera().getPosition();
+        var light = cam.add(lightDirection(modelView).scale(LIGHT_DISTANCE));
         double maxDistance = GTMPowerlinesConfig.INSTANCE.rendering.flatWireLODDistance;
-        int packedLight = LightTexture.FULL_BRIGHT;
+        var packedLight = LightTexture.FULL_BRIGHT;
 
         modelView.pushPose();
         modelView.translate(-cam.x, -cam.y, -cam.z);

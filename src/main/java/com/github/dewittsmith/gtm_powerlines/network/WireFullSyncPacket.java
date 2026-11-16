@@ -21,9 +21,9 @@ public record WireFullSyncPacket(List<PowerlineGraph.Edge> edges) {
     }
 
     public static WireFullSyncPacket decode(FriendlyByteBuf buf) {
-        int n = buf.readVarInt();
+        var n = buf.readVarInt();
         var list = new ArrayList<PowerlineGraph.Edge>(n);
-        for (int i = 0; i < n; i++) list.add(readEdge(buf));
+        for (var i = 0; i < n; i++) list.add(readEdge(buf));
         return new WireFullSyncPacket(list);
     }
 

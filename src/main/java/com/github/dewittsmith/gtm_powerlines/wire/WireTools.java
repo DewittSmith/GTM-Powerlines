@@ -23,7 +23,7 @@ public final class WireTools {
         if (stack.isEmpty()) return OptionalInt.empty();
         if (stack.is(GTItems.SPRAY_SOLVENT.get())) return OptionalInt.of(IPaintable.UNPAINTED_COLOR);
         var colors = DyeColor.values();
-        for (int i = 0; i < GTItems.SPRAY_CAN_DYES.length; i++) {
+        for (var i = 0; i < GTItems.SPRAY_CAN_DYES.length; i++) {
             var entry = GTItems.SPRAY_CAN_DYES[i];
             if (entry != null && stack.is(entry.get())) return OptionalInt.of(colors[i].getMapColor().col);
         }

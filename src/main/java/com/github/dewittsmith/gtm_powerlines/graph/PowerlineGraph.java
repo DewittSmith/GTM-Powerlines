@@ -48,9 +48,9 @@ public class PowerlineGraph {
         double tDeltaX = stepX == 0 ? Double.POSITIVE_INFINITY : SectionPos.SECTION_SIZE / Math.abs(dx);
         double tDeltaZ = stepZ == 0 ? Double.POSITIVE_INFINITY : SectionPos.SECTION_SIZE / Math.abs(dz);
 
-        int steps = Math.abs(endX - x) + Math.abs(endZ - z);
-        for (int i = 0; i < steps; i++) {
-            boolean moveX = x != endX && (z == endZ || tMaxX <= tMaxZ);
+        var steps = Math.abs(endX - x) + Math.abs(endZ - z);
+        for (var i = 0; i < steps; i++) {
+            var moveX = x != endX && (z == endZ || tMaxX <= tMaxZ);
             if (x != endX && z != endZ && Math.abs(tMaxX - tMaxZ) < 1e-9) {
                 result.add(ChunkPos.asLong(x + stepX, z));
                 result.add(ChunkPos.asLong(x, z + stepZ));

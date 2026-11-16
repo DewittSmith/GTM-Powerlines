@@ -72,7 +72,7 @@ public record TransferPath(BlockPos targetPos, Direction targetFacing, Powerline
             }
 
             var edges = new PowerlineGraph.Edge[path.size()];
-            for (int i = 0; i < edges.length; i++) edges[i] = path.get(edges.length - 1 - i);
+            for (var i = 0; i < edges.length; i++) edges[i] = path.get(edges.length - 1 - i);
 
             var facing = edges[edges.length - 1].dirAt(target).getOpposite();
             routes.add(new TransferPath(target, facing, edges, distances.get(target.asLong()), loss, Mth.ceil(loss),

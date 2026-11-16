@@ -39,7 +39,7 @@ public class PowerlineInsulatorProvider implements IBlockComponentProvider, ISer
 
         var wires = new ListTag();
         counts.forEach((id, count) -> {
-            CompoundTag t = new CompoundTag();
+            var t = new CompoundTag();
             t.putString("Wire", id.toString());
             t.putInt("Count", count);
             wires.add(t);
