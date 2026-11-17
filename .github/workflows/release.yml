@@ -99,11 +99,13 @@ jobs:
           generate_release_notes: true
           files: ${{ steps.jar.outputs.path }}
 
-      - name: Upload to CurseForge
+      - name: Upload to CurseForge and Modrinth
         uses: Kir-Antipov/mc-publish@v3.3
         with:
           curseforge-id: ${{ secrets.CURSEFORGE_PROJECT_ID }}
           curseforge-token: ${{ secrets.CURSEFORGE_API_TOKEN }}
+          modrinth-id: ${{ secrets.MODRINTH_PROJECT_ID }}
+          modrinth-token: ${{ secrets.MODRINTH_API_TOKEN }}
           files: ${{ steps.jar.outputs.path }}
           name: GTM Powerlines ${{ steps.meta.outputs.version }}
           version: ${{ steps.meta.outputs.full }}
@@ -113,6 +115,6 @@ jobs:
           game-versions: ${{ steps.meta.outputs.mc }}
           java: 17
           dependencies: |
-            gtceu(required){curseforge:gregtechceu-modern}
-            configuration(required){curseforge:configuration}
-            jade(optional){curseforge:jade}
+            gtceu(required){curseforge:gregtechceu-modern}{modrinth:gregtechceu-modern}
+            configuration(required){curseforge:configuration}{modrinth:configuration}
+            jade(optional){curseforge:jade}{modrinth:jade}
