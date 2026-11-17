@@ -116,5 +116,5 @@ jobs:
           java: 17
           dependencies: |
             gtceu(required){curseforge:gregtechceu-modern}{modrinth:gregtechceu-modern}
-            configuration(required){curseforge:configuration}{modrinth:configuration}
             jade(optional){curseforge:jade}{modrinth:jade}
+            oculus(optional){curseforge:oculus}{modrinth:oculus}

@@ -64,7 +64,7 @@ public class GTMPowerlinesConfig {
 
         @Configurable
         @Configurable.Comment(value = { "Whether blocks may not stand in a wire's way",
-                "Blocks tagged gtm_powerlines:wire_passthrough are always allowed" }, localize = true)
+                "Blocks tagged gtm_powerlines:wire_passthrough are always allowed" })
         @Configurable.Synchronized
         public boolean checkObstructions = true;
     }
@@ -73,14 +73,13 @@ public class GTMPowerlinesConfig {
 
         @Configurable
         @Configurable.DecimalRange(min = 0f, max = 8f)
-        @Configurable.Comment(value = { "Insulator range is calculated as:", "pow(insulator.elevation, rangePower)" },
-                              localize = true)
+        @Configurable.Comment(value = { "Insulator range is calculated as:", "pow(insulator.elevation, rangePower)" })
         @Configurable.Synchronized
         public float rangePower = 1.618f;
 
         @Configurable
         @Configurable.Comment(value = { "Max connections for an insulator",
-                "Anything less than 2 treated as \"unlimited\"" }, localize = true)
+                "Anything less than 2 treated as \"unlimited\"" })
         @Configurable.Synchronized
         public int maxWireConnections = 4;
     }
@@ -88,7 +87,7 @@ public class GTMPowerlinesConfig {
     public static class RenderingConfig {
 
         @Configurable
-        @Configurable.Comment(value = { "Whether to use billboards to render wires" }, localize = true)
+        @Configurable.Comment(value = { "Whether to use billboards to render wires" })
         public boolean useFlatWires = false;
 
         @Configurable
@@ -101,8 +100,7 @@ public class GTMPowerlinesConfig {
 
         @Configurable
         @Configurable.DecimalRange(min = 0f)
-        @Configurable.Comment(value = { "How long blocks or wires that are in the way stay highlighted, in seconds" },
-                              localize = true)
+        @Configurable.Comment(value = { "How long blocks or wires that are in the way stay highlighted, in seconds" })
         public float obstructionHighlightSeconds = 5;
     }
 }

@@ -41,3 +41,9 @@ mandatory = false
 versionRange = "[${jade_version},)"
 ordering = "AFTER"
 side = "BOTH"
+[[dependencies.${mod_id}]]
+modId = "oculus"
+mandatory = false
+versionRange = "[${oculus_version},)"
+ordering = "NONE"
+side = "CLIENT"
