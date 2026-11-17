@@ -1,0 +1,118 @@
+name: Build and Release
+
+# Branch name format: release/mc<minecraft version>-gt<gtceu version>-<addon version>
+# e.g. release/mc1.20.1-gt7.5.3-1.0.0
+on:
+  push:
+    branches:
+      - 'release/mc*-gt*-*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Parse and check version
+        id: meta
+        shell: bash
+        run: |
+          if [[ ! "$GITHUB_REF_NAME" =~ ^release/mc([^-]+)-gt([^-]+)-(.+)$ ]]; then
+            echo "::error::Branch '$GITHUB_REF_NAME' does not match release/mc<mc>-gt<gtceu>-<version>"
+            exit 1
+          fi
+          MC="${BASH_REMATCH[1]}"
+          GT="${BASH_REMATCH[2]}"
+          VERSION="${BASH_REMATCH[3]}"
+          FULL="${GITHUB_REF_NAME#release/}"
+
+          prop() { grep -E "^$1=" gradle.properties | cut -d= -f2- | tr -d '\r'; }
+          if [[ "$MC" != "$(prop minecraft_version)" ]]; then
+            echo "::error::Branch says Minecraft $MC, gradle.properties says $(prop minecraft_version)"
+            exit 1
+          fi
+          if [[ "$GT" != "$(prop gtceu_version)" ]]; then
+            echo "::error::Branch says GTCEu $GT, gradle.properties says $(prop gtceu_version)"
+            exit 1
+          fi
+
+          # one release per version: a second push to the same branch must not upload again
+          if git ls-remote --exit-code --tags origin "refs/tags/v$FULL" >/dev/null; then
+            echo "::error::Tag v$FULL already exists. Use a new release branch to publish a new version."
+            exit 1
+          fi
+
+          {
+            echo "mc=$MC"
+            echo "gt=$GT"
+            echo "version=$VERSION"
+            echo "full=$FULL"
+          } >> "$GITHUB_OUTPUT"
+          echo "Building $FULL"
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Build mod
+        # -Pmod_version overrides gradle.properties, so the jar name and mods.toml version follow the branch
+        run: chmod +x ./gradlew && ./gradlew build -Pmod_version=${{ steps.meta.outputs.version }}
+
+      - name: Locate mod JAR
+        id: jar
+        shell: bash
+        run: |
+          shopt -s nullglob
+          filtered=()
+          for jar in build/libs/*.jar; do
+            [[ "$jar" == *-sources.jar || "$jar" == *-javadoc.jar ]] && continue
+            filtered+=("$jar")
+          done
+
+          if [[ ${#filtered[@]} -ne 1 ]]; then
+            echo "::error::Expected exactly one production JAR, found ${#filtered[@]}"
+            printf '%s\n' "${filtered[@]}"
+            exit 1
+          fi
+          echo "path=${filtered[0]}" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: v${{ steps.meta.outputs.full }}
+          name: GTM Powerlines ${{ steps.meta.outputs.version }} (MC ${{ steps.meta.outputs.mc }}, GTCEu ${{ steps.meta.outputs.gt }})
+          target_commitish: ${{ github.sha }}
+          generate_release_notes: true
+          files: ${{ steps.jar.outputs.path }}
+
+      - name: Upload to CurseForge
+        uses: Kir-Antipov/mc-publish@v3.3
+        with:
+          curseforge-id: ${{ secrets.CURSEFORGE_PROJECT_ID }}
+          curseforge-token: ${{ secrets.CURSEFORGE_API_TOKEN }}
+          files: ${{ steps.jar.outputs.path }}
+          name: GTM Powerlines ${{ steps.meta.outputs.version }}
+          version: ${{ steps.meta.outputs.full }}
+          version-type: release
+          changelog: https://github.com/${{ github.repository }}/releases/tag/v${{ steps.meta.outputs.full }}
+          loaders: forge
+          game-versions: ${{ steps.meta.outputs.mc }}
+          java: 17
+          dependencies: |
+            gtceu(required){curseforge:gregtechceu-modern}
+            configuration(required){curseforge:configuration}
+            jade(optional){curseforge:jade}
