@@ -17,6 +17,7 @@ import com.gregtechceu.gtceu.api.machine.feature.ITieredMachine;
 import com.gregtechceu.gtceu.api.machine.feature.multiblock.IDisplayUIMachine;
 import com.gregtechceu.gtceu.api.machine.multiblock.MultiblockDisplayText;
 import com.gregtechceu.gtceu.api.machine.multiblock.WorkableMultiblockMachine;
+import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic;
 import com.gregtechceu.gtceu.api.misc.EnergyContainerList;
 import com.gregtechceu.gtceu.common.block.CoilBlock;
 import com.gregtechceu.gtceu.utils.GTUtil;
@@ -210,6 +211,16 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine
             energyOutput = 0;
             networkInput = 0;
         }
+
+        var logic = getRecipeLogic();
+        if (!logic.isWorkingEnabled()) {
+            logic.setStatus(RecipeLogic.Status.SUSPEND);
+            return;
+        }
+
+        var active = energyOutputPerSec > 0 || networkInputPerSec > 0;
+        logic.setStatus(active ? RecipeLogic.Status.WORKING : RecipeLogic.Status.IDLE);
+
         if (!isInput()) return;
 
         if (insulators.isEmpty()) return;
@@ -238,6 +249,7 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine
                 if (!level.isLoaded(destPos) || !level.shouldTickBlocksAt(destPos)) continue;
                 var dest = BlockUtils.instanceOf(level, destPos, PowerlineTransformerMachine.class).orElse(null);
                 if (dest == null || !dest.isFormed() || !dest.isOutput()) continue;
+                if (!dest.getRecipeLogic().isWorkingEnabled()) continue;
 
                 var sink = dest.energy();
                 var room = Math.min(sink.getEnergyCanBeInserted(), dest.receiveCapacity(level.getGameTime()));
@@ -263,6 +275,11 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine
                 energyOutput += amps * voltage;
             }
         }
+    }
+
+    @Override
+    public boolean isRecipeLogicAvailable() {
+        return false;
     }
 
     public boolean isInput() {
@@ -296,8 +313,15 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine
     }
 
     @Override
+    public void notifyStatusChanged(RecipeLogic.Status oldStatus, RecipeLogic.Status newStatus) {
+        // super.notifyStatusChanged(oldStatus, newStatus);
+    }
+
+    @Override
     public void addDisplayText(List<Component> textList) {
+        var logic = getRecipeLogic();
         MultiblockDisplayText.builder(textList, isFormed())
+                .setWorkingStatus(logic.isWorkingEnabled(), logic.isActive())
                 .addWorkingStatusLine();
         getDefinition().getAdditionalDisplay().accept(this, textList);
         IDisplayUIMachine.super.addDisplayText(textList);
