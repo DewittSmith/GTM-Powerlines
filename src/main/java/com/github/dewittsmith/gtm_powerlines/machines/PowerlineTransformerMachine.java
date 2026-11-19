@@ -1,5 +1,6 @@
 package com.github.dewittsmith.gtm_powerlines.machines;
 
+import com.gregtechceu.gtceu.api.GTValues;
 import com.gregtechceu.gtceu.api.block.ICoilType;
 import com.gregtechceu.gtceu.api.capability.IEnergyContainer;
 import com.gregtechceu.gtceu.api.capability.recipe.EURecipeCapability;
@@ -51,6 +52,12 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine
 
     private long networkOutput;
     private long energyOutput;
+
+    private long networkInputPerSec;
+    private long networkInput;
+    private long receivedTick = -1;
+    private long receiveCredit;
+    private long sendCredit;
 
     private List<IEnergyContainer> hatches = Collections.emptyList();
     private @Nullable EnergyContainerList energyContainer;
@@ -109,6 +116,8 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine
         hatches = Collections.emptyList();
         energyContainer = null;
         networkOutputPerSec = energyOutputPerSec = networkOutput = energyOutput = 0;
+        networkInputPerSec = networkInput = receiveCredit = sendCredit = 0;
+        receivedTick = -1;
     }
 
     @Override
@@ -135,24 +144,33 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine
         return energyContainer;
     }
 
-    public long getLineVoltage() {
+    public long getLinePower() {
         energy();
-        long voltage = 0;
+        var input = isInput();
+        long power = 0;
         for (var hatch : hatches) {
-            voltage = Math.max(voltage, isInput() ? hatch.getInputVoltage() : hatch.getOutputVoltage());
+            power += input ? hatch.getInputVoltage() * hatch.getInputAmperage() :
+                    hatch.getOutputVoltage() * hatch.getOutputAmperage();
         }
-        return voltage;
+        return power;
     }
 
-    public long getLineAmperage() {
+    public long getLineVoltage() {
+        var power = getLinePower();
+        if (power <= 0) return 0;
+        return GTValues.V[GTUtil.getFloorTierByVoltage(power)];
+    }
+
+    public double getLineAmperage() {
         var voltage = getLineVoltage();
-        long amperage = 0;
-        for (var hatch : hatches) {
-            if (isInput() ? hatch.getInputVoltage() == voltage : hatch.getOutputVoltage() == voltage) {
-                amperage += isInput() ? hatch.getInputAmperage() : hatch.getOutputAmperage();
-            }
-        }
-        return amperage;
+        return voltage <= 0 ? 0 : (double) getLinePower() / voltage;
+    }
+
+    public double getCurrentAmperage() {
+        var voltage = getLineVoltage();
+        if (voltage <= 0) return 0;
+        var perTick = (isInput() ? energyOutputPerSec : networkInputPerSec) / 20.0;
+        return perTick / voltage;
     }
 
     @Override
@@ -161,26 +179,51 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine
     }
 
     public long getEnergyInput() {
-        return energy().getInputPerSec() / 20;
+        return networkInputPerSec / 20;
+    }
+
+    private long receiveCapacity(long gameTime) {
+        var power = getLinePower();
+        var max = power + getLineVoltage();
+        if (receivedTick != gameTime) {
+            var elapsed = receivedTick < 0 ? 1 : Math.max(1, gameTime - receivedTick);
+            receivedTick = gameTime;
+            receiveCredit = Math.min(max, receiveCredit + power * Math.min(elapsed, 2));
+        }
+        return Math.max(0, receiveCredit);
+    }
+
+    private void onReceived(long energy) {
+        receiveCredit -= energy;
+        networkInput += energy;
     }
 
     private void transferTick() {
         if (!(getLevel() instanceof ServerLevel level) || !isFormed() || !level.shouldTickBlocksAt(getPos())) return;
         if (hatches.isEmpty()) refreshEnergyContainer();
-        if (!isInput()) return;
 
         if (getOffsetTimer() % 20 == 0) {
             networkOutputPerSec = networkOutput;
             energyOutputPerSec = energyOutput;
+            networkInputPerSec = networkInput;
             networkOutput = 0;
             energyOutput = 0;
+            networkInput = 0;
         }
+        if (!isInput()) return;
 
         if (insulators.isEmpty()) return;
 
         var source = energy();
         var voltage = getLineVoltage();
-        long ampsLeft = voltage <= 0 ? 0 : Math.min(getLineAmperage(), source.getEnergyStored() / voltage);
+        if (voltage <= 0) return;
+
+        // whole amps this tick; the remainder carries over, so 1.5A goes out as 1A, 2A, 1A, 2A...
+        sendCredit += getLinePower();
+        var ampsThisTick = sendCredit / voltage;
+        sendCredit -= ampsThisTick * voltage;
+
+        long ampsLeft = Math.min(ampsThisTick, source.getEnergyStored() / voltage);
         if (ampsLeft <= 0) return;
 
         var network = PowerlineNetwork.get(level);
@@ -197,7 +240,7 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine
                 if (dest == null || !dest.isFormed() || !dest.isOutput()) continue;
 
                 var sink = dest.energy();
-                var room = sink.getEnergyCanBeInserted();
+                var room = Math.min(sink.getEnergyCanBeInserted(), dest.receiveCapacity(level.getGameTime()));
                 if (room <= 0) continue;
 
                 var lossScale = 1f - (efficiency + CoilEfficiency.of(dest.coilType)) / 2f;
@@ -211,6 +254,7 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine
                 if (amps <= 0) continue;
 
                 var added = sink.changeEnergy(amps * arriving);
+                dest.onReceived(added);
                 source.changeEnergy(-amps * voltage);
                 network.recordFlow(route, voltage, amps, lossScale);
 

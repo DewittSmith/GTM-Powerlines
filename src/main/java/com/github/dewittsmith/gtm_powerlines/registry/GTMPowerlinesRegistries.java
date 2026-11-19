@@ -42,6 +42,7 @@ import static com.github.dewittsmith.gtm_powerlines.GTMPowerlines.POWERLINE_CREA
 import static com.github.dewittsmith.gtm_powerlines.GTMPowerlines.POWERLINE_REGISTRATE;
 import static com.gregtechceu.gtceu.api.pattern.Predicates.*;
 import static com.gregtechceu.gtceu.common.data.GTBlocks.*;
+import static com.gregtechceu.gtceu.utils.FormattingUtil.DECIMAL_FORMAT_1F;
 
 public class GTMPowerlinesRegistries {
 
@@ -129,8 +130,16 @@ public class GTMPowerlinesRegistries {
                     return;
                 }
 
-                components.add(Component.translatable("multiblock.gtm_powerlines.powerline_transformer.powerline_tier",
-                        GTValues.VNF[transformerMachine.getTier()]));
+                var amperage = transformerMachine.getCurrentAmperage();
+                var voltageLine = Component.translatable("gtceu.top.cable_voltage");
+                if (amperage > 0) voltageLine.append(GTValues.VNF[transformerMachine.getTier()]).append(" / ");
+                voltageLine.append(GTValues.VNF[transformerMachine.getTier()]);
+                components.add(voltageLine);
+
+                var amperageLine = Component.translatable("gtceu.top.cable_amperage");
+                if (amperage > 0) amperageLine.append(DECIMAL_FORMAT_1F.format(amperage) + "A / ");
+                amperageLine.append(DECIMAL_FORMAT_1F.format(Math.ceil(transformerMachine.getLineAmperage())) + "A");
+                components.add(amperageLine);
                 components.add(
                         Component.translatable("multiblock.gtm_powerlines.powerline_transformer.powerline_efficiency",
                                 Mth.floor(100 * CoilEfficiency.of(transformerMachine.getCoilType()))));
