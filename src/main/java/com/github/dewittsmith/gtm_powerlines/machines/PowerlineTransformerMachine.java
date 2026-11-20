@@ -32,6 +32,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 
 import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
+import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
 import com.github.dewittsmith.gtm_powerlines.graph.PowerlineNetwork;
 import com.github.dewittsmith.gtm_powerlines.util.BlockUtils;
 import com.github.dewittsmith.gtm_powerlines.util.CoilEfficiency;
@@ -159,7 +160,16 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine
     public long getLineVoltage() {
         var power = getLinePower();
         if (power <= 0) return 0;
-        return GTValues.V[GTUtil.getFloorTierByVoltage(power)];
+        if (GTMPowerlinesConfig.INSTANCE.energy.mergeVoltage) {
+            return GTValues.V[GTUtil.getFloorTierByVoltage(power)];
+        }
+
+        var input = isInput();
+        long voltage = 0;
+        for (var hatch : hatches) {
+            voltage = Math.max(voltage, input ? hatch.getInputVoltage() : hatch.getOutputVoltage());
+        }
+        return voltage;
     }
 
     public double getLineAmperage() {

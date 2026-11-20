@@ -15,8 +15,8 @@ public class CoilEfficiency {
     public static float of(ICoilType coilType) {
         var t = (coilType.getCoilTemperature() - MIN_TEMPERATURE) / (MAX_TEMPERATURE - MIN_TEMPERATURE);
 
-        final var MIN_EFFICIENCY = GTMPowerlinesConfig.INSTANCE.wire.lowestCoilEfficiency;
-        final var MAX_EFFICIENCY = GTMPowerlinesConfig.INSTANCE.wire.highestCoilEfficiency;
+        final var MIN_EFFICIENCY = GTMPowerlinesConfig.INSTANCE.energy.lowestCoilEfficiency;
+        final var MAX_EFFICIENCY = GTMPowerlinesConfig.INSTANCE.energy.highestCoilEfficiency;
         return Mth.clampedLerp(MIN_EFFICIENCY, MAX_EFFICIENCY, Mth.sqrt(t));
     }
 }

@@ -42,7 +42,6 @@ import javax.annotation.Nullable;
 
 public class PowerlineInsulatorBlockEntity extends BlockEntity implements IPaintable {
 
-    private final int maxElevation;
     private final IEnergyContainer energy = new PowerlineInsulatorEnergy(this);
     @Nullable
     private BlockPos controller;
@@ -52,8 +51,6 @@ public class PowerlineInsulatorBlockEntity extends BlockEntity implements IPaint
 
     public PowerlineInsulatorBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState blockState) {
         super(type, pos, blockState);
-        maxElevation = Mth.ceil(Math.pow(GTMPowerlinesConfig.INSTANCE.wire.maxWireRange,
-                1f / GTMPowerlinesConfig.INSTANCE.insulator.rangePower));
     }
 
     public void markBurned() {
@@ -120,6 +117,7 @@ public class PowerlineInsulatorBlockEntity extends BlockEntity implements IPaint
         var level = getLevel();
         if (level == null) return 0;
 
+        var maxElevation = GTMPowerlinesConfig.INSTANCE.wire.maxInsulatorHeight;
         var cursor = worldPosition.mutable();
         for (var i = 0; i < maxElevation; ++i) {
             cursor.move(0, -1, 0);
@@ -141,7 +139,7 @@ public class PowerlineInsulatorBlockEntity extends BlockEntity implements IPaint
                     GTMPowerlinesConfig.INSTANCE.wire.maxWireRange);
         }
 
-        return Mth.clamp((float) Math.pow(getElevation(), GTMPowerlinesConfig.INSTANCE.insulator.rangePower),
+        return Mth.clamp((float) Math.pow(getElevation(), GTMPowerlinesConfig.INSTANCE.wire.rangePower()),
                 GTMPowerlinesConfig.INSTANCE.wire.minWireRange, GTMPowerlinesConfig.INSTANCE.wire.maxWireRange);
     }
 
@@ -150,11 +148,11 @@ public class PowerlineInsulatorBlockEntity extends BlockEntity implements IPaint
             return 1;
         }
 
-        if (GTMPowerlinesConfig.INSTANCE.insulator.maxWireConnections < 2) {
+        if (GTMPowerlinesConfig.INSTANCE.wire.maxWireConnections < 2) {
             return Integer.MAX_VALUE;
         }
 
-        return GTMPowerlinesConfig.INSTANCE.insulator.maxWireConnections;
+        return GTMPowerlinesConfig.INSTANCE.wire.maxWireConnections;
     }
 
     public boolean hasConnectionCapacity() {

@@ -16,9 +16,9 @@ public class GTMPowerlinesConfig {
     private static final Object LOCK = new Object();
     public static GTMPowerlinesConfig INSTANCE;
     @Configurable
-    public WireConfig wire = new WireConfig();
+    public EnergyConfig energy = new EnergyConfig();
     @Configurable
-    public InsulatorConfig insulator = new InsulatorConfig();
+    public WireConfig wire = new WireConfig();
     @Configurable
     public RenderingConfig rendering = new RenderingConfig();
 
@@ -38,7 +38,7 @@ public class GTMPowerlinesConfig {
         return result;
     }
 
-    public static class WireConfig {
+    public static class EnergyConfig {
 
         @Configurable
         @Configurable.DecimalRange(min = 0f, max = 1f)
@@ -53,6 +53,14 @@ public class GTMPowerlinesConfig {
         public float highestCoilEfficiency = 0.8f;
 
         @Configurable
+        @Configurable.Comment(value = { "Whether a transformer merges its hatches into the highest voltage they reach" })
+        @Configurable.Synchronized
+        public boolean mergeVoltage = true;
+    }
+
+    public static class WireConfig {
+
+        @Configurable
         @Configurable.DecimalRange(min = 0f)
         @Configurable.Synchronized
         public float minWireRange = 4f;
@@ -63,25 +71,29 @@ public class GTMPowerlinesConfig {
         public float maxWireRange = 64f;
 
         @Configurable
-        @Configurable.Comment(value = { "Whether blocks may not stand in a wire's way",
-                "Blocks tagged gtm_powerlines:wire_passthrough are always allowed" })
+        @Configurable.Range(min = 2, max = 256)
+        @Configurable.Comment(value = { "Insulator height that reaches maxWireRange",
+                "Insulator range is calculated as:",
+                "pow(insulator.elevation, ln(maxWireRange) / ln(maxInsulatorHeight))" })
         @Configurable.Synchronized
-        public boolean checkObstructions = true;
-    }
-
-    public static class InsulatorConfig {
-
-        @Configurable
-        @Configurable.DecimalRange(min = 0f, max = 8f)
-        @Configurable.Comment(value = { "Insulator range is calculated as:", "pow(insulator.elevation, rangePower)" })
-        @Configurable.Synchronized
-        public float rangePower = 1.618f;
+        public int maxInsulatorHeight = 23;
 
         @Configurable
         @Configurable.Comment(value = { "Max connections for an insulator",
                 "Anything less than 2 treated as \"unlimited\"" })
         @Configurable.Synchronized
         public int maxWireConnections = 4;
+
+        @Configurable
+        @Configurable.Comment(value = { "Whether blocks may not stand in a wire's way",
+                "Blocks tagged gtm_powerlines:wire_passthrough are always allowed" })
+        @Configurable.Synchronized
+        public boolean checkObstructions = true;
+
+        public float rangePower() {
+            if (maxWireRange <= 1f) return 1f;
+            return (float) (Math.log(maxWireRange) / Math.log(maxInsulatorHeight));
+        }
     }
 
     public static class RenderingConfig {
