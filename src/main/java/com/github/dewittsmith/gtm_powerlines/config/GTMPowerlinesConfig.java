@@ -53,7 +53,8 @@ public class GTMPowerlinesConfig {
         public float highestCoilEfficiency = 0.8f;
 
         @Configurable
-        @Configurable.Comment(value = { "Whether a transformer merges its hatches into the highest voltage they reach" })
+        @Configurable.Comment(value = {
+                "Whether a transformer merges its hatches into the highest voltage they reach" })
         @Configurable.Synchronized
         public boolean mergeVoltage = true;
     }

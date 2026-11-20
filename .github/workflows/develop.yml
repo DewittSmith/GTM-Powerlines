@@ -20,6 +20,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # full history and tags for the changelog
 
       - name: Parse and check version
         id: meta
@@ -56,6 +58,24 @@ jobs:
             echo "full=$FULL"
           } >> "$GITHUB_OUTPUT"
           echo "Building $FULL"
+
+      - name: Collect changelog
+        id: changelog
+        shell: bash
+        env:
+          REPO_URL: https://github.com/${{ github.repository }}
+        run: |
+          # every non-merge commit since the previous build (release or dev) of this Minecraft/GTCEu pair, oldest first
+          PREV=$(git describe --tags --abbrev=0 --match "vmc${{ steps.meta.outputs.mc }}-gt${{ steps.meta.outputs.gt }}-*" HEAD 2>/dev/null || true)
+          COMMITS=$(git log --reverse --no-merges --format="- %s ([%h]($REPO_URL/commit/%H))" "${PREV:+$PREV..}HEAD")
+          [[ -z "$COMMITS" ]] && COMMITS="- No changes"
+          echo "$COMMITS"
+
+          {
+            echo "text<<CHANGELOG_EOF"
+            echo "$COMMITS"
+            echo "CHANGELOG_EOF"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Set up Java 17
         uses: actions/setup-java@v6
@@ -95,5 +115,5 @@ jobs:
           target_commitish: ${{ github.sha }}
           prerelease: true
           make_latest: false
-          generate_release_notes: true
+          body: ${{ steps.changelog.outputs.text }}
           files: ${{ steps.jar.outputs.path }}
