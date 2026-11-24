@@ -25,7 +25,7 @@ public class GTMPowerlinesConfig {
     public static void init() {
         synchronized (LOCK) {
             if (INSTANCE == null) {
-                INSTANCE = Configuration.registerConfig(GTMPowerlinesConfig.class, ConfigFormats.yaml())
+                INSTANCE = Configuration.registerConfig(GTMPowerlinesConfig.class, ConfigFormats.YAML)
                         .getConfigInstance();
             }
         }

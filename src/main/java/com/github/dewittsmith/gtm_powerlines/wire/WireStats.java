@@ -36,7 +36,7 @@ public record WireStats(int color, WireProperties props, Insulation insulation) 
             var wire = cableBlock.material.getProperty(PropertyKey.WIRE);
             if (wire == null) return Optional.empty();
 
-            var color = cableBlock.pipeType.isCable ? 0xFF404040 : cableBlock.material.getMaterialARGB();
+            var color = cableBlock.pipeType.isCable() ? 0xFF404040 : cableBlock.material.getMaterialARGB();
             return Optional.of(new WireStats(color, cableBlock.pipeType.modifyProperties(wire), cableBlock.pipeType));
         });
     }

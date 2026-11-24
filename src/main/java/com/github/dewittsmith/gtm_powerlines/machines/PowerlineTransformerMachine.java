@@ -1,41 +1,47 @@
 package com.github.dewittsmith.gtm_powerlines.machines;
 
+import com.gregtechceu.gtceu.api.GTCEuAPI;
 import com.gregtechceu.gtceu.api.GTValues;
 import com.gregtechceu.gtceu.api.block.ICoilType;
+import com.gregtechceu.gtceu.api.blockentity.BlockEntityCreationInfo;
 import com.gregtechceu.gtceu.api.capability.IEnergyContainer;
 import com.gregtechceu.gtceu.api.capability.recipe.EURecipeCapability;
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
-import com.gregtechceu.gtceu.api.gui.GuiTextures;
-import com.gregtechceu.gtceu.api.gui.fancy.ConfiguratorPanel;
-import com.gregtechceu.gtceu.api.gui.fancy.FancyMachineUIWidget;
-import com.gregtechceu.gtceu.api.gui.fancy.IFancyUIProvider;
-import com.gregtechceu.gtceu.api.gui.fancy.TooltipsPanel;
-import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.TickableSubscription;
-import com.gregtechceu.gtceu.api.machine.feature.IFancyUIMachine;
+import com.gregtechceu.gtceu.api.machine.feature.IMuiMachine;
 import com.gregtechceu.gtceu.api.machine.feature.ITieredMachine;
-import com.gregtechceu.gtceu.api.machine.feature.multiblock.IDisplayUIMachine;
-import com.gregtechceu.gtceu.api.machine.multiblock.MultiblockDisplayText;
 import com.gregtechceu.gtceu.api.machine.multiblock.WorkableMultiblockMachine;
-import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic;
+import com.gregtechceu.gtceu.api.machine.trait.feature.IRecipeLogicModifierTrait;
+import com.gregtechceu.gtceu.api.machine.trait.recipe.RecipeLogic;
 import com.gregtechceu.gtceu.api.misc.EnergyContainerList;
+import com.gregtechceu.gtceu.api.multiblock.error.CoilMatchingError;
+import com.gregtechceu.gtceu.api.multiblock.error.PatternStringError;
 import com.gregtechceu.gtceu.common.block.CoilBlock;
+import com.gregtechceu.gtceu.common.mui.GTMultiblockTextUtil;
+import com.gregtechceu.gtceu.utils.FormattingUtil;
 import com.gregtechceu.gtceu.utils.GTUtil;
-
-import com.lowdragmc.lowdraglib.gui.modular.ModularUI;
-import com.lowdragmc.lowdraglib.gui.widget.*;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.player.Player;
 
+import brachy.modularui.api.drawable.Text;
+import brachy.modularui.api.widget.IWidget;
+import brachy.modularui.factory.PosGuiData;
+import brachy.modularui.screen.UISettings;
+import brachy.modularui.value.sync.BooleanSyncValue;
+import brachy.modularui.value.sync.DoubleSyncValue;
+import brachy.modularui.value.sync.IntSyncValue;
+import brachy.modularui.value.sync.LongSyncValue;
+import brachy.modularui.value.sync.PanelSyncManager;
+import brachy.modularui.widget.ParentWidget;
 import com.github.dewittsmith.gtm_powerlines.blockentity.PowerlineInsulatorBlockEntity;
 import com.github.dewittsmith.gtm_powerlines.config.GTMPowerlinesConfig;
 import com.github.dewittsmith.gtm_powerlines.graph.PowerlineNetwork;
 import com.github.dewittsmith.gtm_powerlines.util.BlockUtils;
 import com.github.dewittsmith.gtm_powerlines.util.CoilEfficiency;
+import com.github.dewittsmith.gtm_powerlines.util.PowerlinePredicates;
 
 import java.util.*;
 
@@ -44,7 +50,7 @@ import javax.annotation.Nullable;
 import static com.github.dewittsmith.gtm_powerlines.registry.GTMPowerlinesRegistries.INSULATOR;
 
 public class PowerlineTransformerMachine extends WorkableMultiblockMachine
-                                         implements IFancyUIMachine, IDisplayUIMachine, ITieredMachine {
+                                         implements IMuiMachine, ITieredMachine {
 
     private ICoilType coilType = CoilBlock.CoilType.CUPRONICKEL;
 
@@ -67,8 +73,8 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine
 
     private @Nullable TickableSubscription transferSub;
 
-    public PowerlineTransformerMachine(IMachineBlockEntity holder) {
-        super(holder);
+    public PowerlineTransformerMachine(BlockEntityCreationInfo info) {
+        super(info);
     }
 
     public ICoilType getCoilType() {
@@ -84,18 +90,46 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine
     }
 
     @Override
-    public void onStructureFormed() {
-        super.onStructureFormed();
+    public void formStructure(String substructureName) {
+        super.formStructure(substructureName);
+        if (!isFormed()) return;
+        super.updateActiveBlocks(false);
         refreshEnergyContainer();
 
-        insulators = Set.copyOf(getMultiblockState().getMatchContext().getOrDefault("insulators",
-                Collections.emptyList()));
-        setInsulatorsConnected(insulators, true);
-
-        var type = getMultiblockState().getMatchContext().get("CoilType");
-        if (type instanceof ICoilType coil) {
-            this.coilType = coil;
+        var patternState = getPatternState(substructureName);
+        var positions = new HashSet<BlockPos>();
+        ICoilType matchedCoil = null;
+        IO hatchIO = IO.NONE;
+        for (var entry : patternState.getCache().long2ObjectEntrySet()) {
+            var state = entry.getValue().getBlockState();
+            var pos = BlockPos.of(entry.getLongKey());
+            if (state.is(INSULATOR.get())) positions.add(pos);
+            var type = PowerlinePredicates.hatchIO(state.getBlock());
+            if (type != IO.NONE) {
+                if (hatchIO != IO.NONE && hatchIO != type) {
+                    patternState.setError(PatternStringError.translatable(
+                            "multiblock.gtm_powerlines.pattern.error.mixed_hatches"));
+                    invalidateStructure(substructureName);
+                    return;
+                }
+                hatchIO = type;
+            }
+            for (var coil : GTCEuAPI.HEATING_COILS.entrySet()) {
+                if (!state.is(coil.getValue().get())) continue;
+                if (matchedCoil != null && matchedCoil != coil.getKey()) {
+                    patternState.setError(new CoilMatchingError(
+                            pos, matchedCoil, coil.getKey()));
+                    invalidateStructure(substructureName);
+                    return;
+                }
+                matchedCoil = coil.getKey();
+                break;
+            }
         }
+        setInsulatorsConnected(insulators, false);
+        insulators = Set.copyOf(positions);
+        if (matchedCoil != null) coilType = matchedCoil;
+        setInsulatorsConnected(insulators, true);
 
         if (getLevel() instanceof ServerLevel && transferSub == null) {
             transferSub = subscribeServerTick(this::transferTick);
@@ -103,8 +137,8 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine
     }
 
     @Override
-    public void onStructureInvalid() {
-        super.onStructureInvalid();
+    public void invalidateStructure(String substructureName) {
+        super.invalidateStructure(substructureName);
 
         if (transferSub != null) {
             unsubscribe(transferSub);
@@ -210,7 +244,8 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine
     }
 
     private void transferTick() {
-        if (!(getLevel() instanceof ServerLevel level) || !isFormed() || !level.shouldTickBlocksAt(getPos())) return;
+        if (!(getLevel() instanceof ServerLevel level) || !isFormed() || !level.shouldTickBlocksAt(getBlockPos()))
+            return;
         if (hatches.isEmpty()) refreshEnergyContainer();
 
         if (getOffsetTimer() % 20 == 0) {
@@ -255,7 +290,7 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine
                 if (ampsLeft <= 0) break;
 
                 var destPos = network.getTransformerController(route.targetPos());
-                if (destPos == null || destPos.equals(getPos())) continue;
+                if (destPos == null || destPos.equals(getBlockPos())) continue;
                 if (!level.isLoaded(destPos) || !level.shouldTickBlocksAt(destPos)) continue;
                 var dest = BlockUtils.instanceOf(level, destPos, PowerlineTransformerMachine.class).orElse(null);
                 if (dest == null || !dest.isFormed() || !dest.isOutput()) continue;
@@ -288,6 +323,18 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine
     }
 
     @Override
+    public boolean shouldUpdateActiveBlocks() {
+        return false;
+    }
+
+    @Override
+    public void recipeLogicStatusChanged(RecipeLogic.Status oldStatus, RecipeLogic.Status newStatus) {
+        for (var trait : getTraitHolder().getTraitsByInterface(IRecipeLogicModifierTrait.class)) {
+            trait.recipeLogicStatusChanged(oldStatus, newStatus);
+        }
+    }
+
+    @Override
     public boolean isRecipeLogicAvailable() {
         return false;
     }
@@ -311,64 +358,84 @@ public class PowerlineTransformerMachine extends WorkableMultiblockMachine
         if (!(level instanceof ServerLevel serverLevel)) return;
         var network = PowerlineNetwork.get(serverLevel);
         for (var pos : positions) {
-            network.setTransformerNode(pos, connected ? getPos() : null);
+            network.setTransformerNode(pos, connected ? getBlockPos() : null);
 
             var state = level.getBlockState(pos);
             if (!state.is(INSULATOR.get())) continue;
 
             if (level.getBlockEntity(pos) instanceof PowerlineInsulatorBlockEntity be) {
-                be.setController(connected ? getPos() : null);
+                be.setController(connected ? getBlockPos() : null);
             }
         }
     }
 
     @Override
-    public void notifyStatusChanged(RecipeLogic.Status oldStatus, RecipeLogic.Status newStatus) {
-        // super.notifyStatusChanged(oldStatus, newStatus);
+    public void buildMainUI(ParentWidget<?> mainWidget, PosGuiData guiData, PanelSyncManager syncManager,
+                            UISettings settings) {
+        mainWidget.child(getMainTextPanel(syncManager).margin(4, 2));
     }
 
     @Override
-    public void addDisplayText(List<Component> textList) {
-        var logic = getRecipeLogic();
-        MultiblockDisplayText.builder(textList, isFormed())
-                .setWorkingStatus(logic.isWorkingEnabled(), logic.isActive())
-                .addWorkingStatusLine();
-        getDefinition().getAdditionalDisplay().accept(this, textList);
-        IDisplayUIMachine.super.addDisplayText(textList);
-    }
-
-    @Override
-    public Widget createUIWidget() {
-        var group = new WidgetGroup(0, 0, 182 + 8, 117 + 8);
-        group.addWidget(new DraggableScrollableWidgetGroup(4, 4, 182, 117).setBackground(getScreenTexture())
-                .addWidget(new LabelWidget(4, 5, self().getBlockState().getBlock().getDescriptionId()))
-                .addWidget(new ComponentPanelWidget(4, 17, this::addDisplayText)
-                        .textSupplier(this.getLevel().isClientSide ? null : this::addDisplayText)
-                        .setMaxWidthLimit(200)
-                        .clickHandler(this::handleDisplayClick)));
-        group.setBackground(GuiTextures.BACKGROUND_INVERSE);
-        return group;
-    }
-
-    @Override
-    public ModularUI createUI(Player entityPlayer) {
-        return new ModularUI(198, 208, this, entityPlayer).widget(new FancyMachineUIWidget(this, 198, 208));
-    }
-
-    @Override
-    public List<IFancyUIProvider> getSubTabs() {
-        return getParts().stream().filter(Objects::nonNull).map(IFancyUIProvider.class::cast).toList();
-    }
-
-    @Override
-    public void attachConfigurators(ConfiguratorPanel configuratorPanel) {
-        IFancyUIMachine.super.attachConfigurators(configuratorPanel);
-    }
-
-    @Override
-    public void attachTooltips(TooltipsPanel tooltipsPanel) {
-        for (var part : getParts()) {
-            part.attachFancyTooltipsToController(this, tooltipsPanel);
-        }
+    public List<IWidget> getWidgetsForDisplay(PanelSyncManager syncManager) {
+        var widgets = new ArrayList<IWidget>();
+        widgets.add(GTMultiblockTextUtil.addUnformedWarning(this, syncManager));
+        widgets.add(GTMultiblockTextUtil.addWorkingStatusLine(this, syncManager));
+        var formed = new BooleanSyncValue(this::isFormed);
+        var tier = new IntSyncValue(this::getTier);
+        var amperage = new DoubleSyncValue(this::getCurrentAmperage);
+        var lineAmperage = new DoubleSyncValue(this::getLineAmperage);
+        var efficiency = new IntSyncValue(() -> Mth.floor(100 * CoilEfficiency.of(coilType)));
+        var input = new BooleanSyncValue(this::isInput);
+        var output = new BooleanSyncValue(this::isOutput);
+        var energyOut = new LongSyncValue(() -> energyOutputPerSec / 20);
+        var networkOut = new LongSyncValue(() -> networkOutputPerSec / 20);
+        var energyIn = new LongSyncValue(this::getEnergyInput);
+        var energyLoss = new LongSyncValue(() -> (energyOutputPerSec - networkOutputPerSec) / 20);
+        syncManager.syncValue("powerlineFormed", formed);
+        syncManager.syncValue("powerlineTier", tier);
+        syncManager.syncValue("powerlineAmperage", amperage);
+        syncManager.syncValue("powerlineLineAmperage", lineAmperage);
+        syncManager.syncValue("powerlineEfficiency", efficiency);
+        syncManager.syncValue("powerlineInput", input);
+        syncManager.syncValue("powerlineOutput", output);
+        syncManager.syncValue("powerlineEnergyOut", energyOut);
+        syncManager.syncValue("powerlineNetworkOut", networkOut);
+        syncManager.syncValue("powerlineEnergyIn", energyIn);
+        syncManager.syncValue("powerlineEnergyLoss", energyLoss);
+        widgets.add(Text.dynamic(() -> {
+            var line = Component.translatable("gtceu.top.cable_voltage");
+            if (amperage.getDoubleValue() > 0) line.append(GTValues.VNF[tier.getIntValue()]).append(" / ");
+            return line.append(GTValues.VNF[tier.getIntValue()]);
+        }).asWidget().color(0xFFFFFFFF).setEnabledIf(w -> formed.getBoolValue()));
+        widgets.add(Text.dynamic(() -> {
+            var line = Component.translatable("gtceu.top.cable_amperage");
+            if (amperage.getDoubleValue() > 0) line.append(
+                    FormattingUtil.DECIMAL_FORMAT_1F.format(amperage.getDoubleValue()) + "A / ");
+            return line.append(FormattingUtil.DECIMAL_FORMAT_1F.format(
+                    Math.ceil(lineAmperage.getDoubleValue())) + "A");
+        }).asWidget().color(0xFFFFFFFF).setEnabledIf(w -> formed.getBoolValue()));
+        widgets.add(Text.dynamic(() -> Component.translatable(
+                "multiblock.gtm_powerlines.powerline_transformer.powerline_efficiency", efficiency.getIntValue()))
+                .asWidget().color(0xFFFFFFFF).setEnabledIf(w -> formed.getBoolValue()));
+        widgets.add(Text.dynamic(() -> Component.translatable(
+                "multiblock.gtm_powerlines.powerline_transformer.mode").append(
+                        Component.translatable(
+                                (input.getBoolValue() ? IO.IN : output.getBoolValue() ? IO.OUT : IO.NONE)
+                                        .getTooltip())))
+                .asWidget().color(0xFFFFFFFF).setEnabledIf(w -> formed.getBoolValue()));
+        widgets.add(Text.dynamic(() -> Component.translatable(
+                "multiblock.gtm_powerlines.powerline_transformer.energy_output", energyOut.getLongValue()))
+                .asWidget().color(0xFFFFFFFF).setEnabledIf(w -> formed.getBoolValue() && input.getBoolValue()));
+        widgets.add(Text.dynamic(() -> Component.translatable(
+                "multiblock.gtm_powerlines.powerline_transformer.network_output", networkOut.getLongValue()))
+                .asWidget().color(0xFFFFFFFF).setEnabledIf(w -> formed.getBoolValue() && input.getBoolValue()));
+        widgets.add(Text.dynamic(() -> Component.translatable(
+                "multiblock.gtm_powerlines.powerline_transformer.energy_loss",
+                energyLoss.getLongValue()))
+                .asWidget().color(0xFFFFFFFF).setEnabledIf(w -> formed.getBoolValue() && input.getBoolValue()));
+        widgets.add(Text.dynamic(() -> Component.translatable(
+                "multiblock.gtm_powerlines.powerline_transformer.energy_input", energyIn.getLongValue()))
+                .asWidget().color(0xFFFFFFFF).setEnabledIf(w -> formed.getBoolValue() && !input.getBoolValue()));
+        return widgets;
     }
 }

@@ -34,11 +34,8 @@ repositories {
         url = 'https://maven.gtceu.com'
         content {
             includeGroup 'com.gregtechceu.gtceu'
+            includeGroup 'brachy.modularui'
         }
-    }
-    maven {
-        name 'FirstDarkDev'
-        url "https://maven.firstdark.dev/snapshots/"
     }
     maven { // Registrate
         url = "https://maven.tterrag.com/"
@@ -155,7 +152,6 @@ dependencies {
     // JEI, EMI, Jade
     modCompileOnly("mezz.jei:jei-${minecraft_version}-forge-api:${jei_version}")
     modCompileOnly("mezz.jei:jei-${minecraft_version}-common-api:${jei_version}")
-    modRuntimeOnly("mezz.jei:jei-${minecraft_version}-forge:${jei_version}")
     modRuntimeOnly("dev.emi:emi-forge:${emi_version}+${minecraft_version}")
 
     modCompileOnly("curse.maven:jade-324717:5390389")
@@ -165,10 +161,12 @@ dependencies {
     modCompileOnly("curse.maven:oculus-581495:6020952")
 
     // GregTech and dependencies
-    modImplementation("com.gregtechceu.gtceu:gtceu-${minecraft_version}:${gtceu_version}:slim") { transitive = false }
-    modImplementation("com.lowdragmc.ldlib:ldlib-forge-${minecraft_version}:${ldlib_version}") { transitive = false }
+    modImplementation("com.gregtechceu.gtceu:gtceu-${minecraft_version}:${gtceu_maven_version}:slim") { transitive = false }
+    modImplementation("brachy.modularui:modularui-mc${minecraft_version}:${modularui_version}") { transitive = false }
     modImplementation("com.tterrag.registrate:Registrate:${registrate_version}")
-    modImplementation("dev.toma.configuration:configuration-forge-${minecraft_version}:${configuration_version}")
+    modImplementation("dev.toma.configuration:configuration-${minecraft_version}:${configuration_version}-forge")
+
+    modRuntimeOnly("io.github.llamalad7:mixinextras-forge:${mixinextras_version}")
 
     // lombok
     compileOnly 'org.projectlombok:lombok:1.18.24'

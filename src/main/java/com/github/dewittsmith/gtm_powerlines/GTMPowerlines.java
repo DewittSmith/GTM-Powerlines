@@ -1,7 +1,6 @@
 package com.github.dewittsmith.gtm_powerlines;
 
 import com.gregtechceu.gtceu.api.GTCEuAPI;
-import com.gregtechceu.gtceu.api.data.chemical.material.event.MaterialRegistryEvent;
 import com.gregtechceu.gtceu.api.machine.MachineDefinition;
 import com.gregtechceu.gtceu.api.registry.registrate.GTRegistrate;
 import com.gregtechceu.gtceu.common.data.GTCreativeModeTabs;
@@ -44,21 +43,14 @@ public class GTMPowerlines {
         GTMPowerlinesConfig.init();
 
         modEventBus.addListener((FMLCommonSetupEvent e) -> e.enqueueWork(Net::init));
-        modEventBus.addListener(this::addMaterialRegistries);
 
         modEventBus.addGenericListener(MachineDefinition.class, this::registerMachines);
 
         MinecraftForge.EVENT_BUS.register(this);
-
-        POWERLINE_REGISTRATE.registerRegistrate();
     }
 
     public static ResourceLocation id(String path) {
         return ResourceLocation.fromNamespaceAndPath(MOD_ID, path);
-    }
-
-    private void addMaterialRegistries(MaterialRegistryEvent event) {
-        GTCEuAPI.materialManager.createRegistry(GTMPowerlines.MOD_ID);
     }
 
     private void registerMachines(GTCEuAPI.RegisterEvent<ResourceLocation, MachineDefinition> event) {

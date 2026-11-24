@@ -65,9 +65,28 @@ jobs:
         env:
           REPO_URL: https://github.com/${{ github.repository }}
         run: |
-          # every non-merge commit since the previous build (release or dev) of this Minecraft/GTCEu pair, oldest first
-          PREV=$(git describe --tags --abbrev=0 --match "vmc${{ steps.meta.outputs.mc }}-gt${{ steps.meta.outputs.gt }}-*" HEAD 2>/dev/null || true)
-          COMMITS=$(git log --reverse --no-merges --format="- %s ([%h]($REPO_URL/commit/%H))" "${PREV:+$PREV..}HEAD")
+          PREV=$(git describe --tags --first-parent --abbrev=0 --match "vmc${{ steps.meta.outputs.mc }}-gt${{ steps.meta.outputs.gt }}-*" HEAD 2>/dev/null || true)
+          if [[ -z "$PREV" ]]; then
+            DISTANCE=""
+            while IFS= read -r REF; do
+              [[ "$REF" == "refs/remotes/origin/$GITHUB_REF_NAME" ]] && continue
+              BASE=$(git merge-base HEAD "$REF" || true)
+              [[ -z "$BASE" || "$BASE" == "$(git rev-parse HEAD)" ]] && continue
+              COUNT=$(git rev-list --count "$BASE..HEAD")
+              if [[ -z "$DISTANCE" || "$COUNT" -lt "$DISTANCE" ]]; then
+                PREV="$BASE"
+                DISTANCE="$COUNT"
+              fi
+            done < <(git for-each-ref --format='%(refname)' refs/remotes/origin/develop/ refs/remotes/origin/release/)
+          fi
+          if [[ -z "$PREV" ]]; then
+            PREV=$(git describe --tags --first-parent --abbrev=0 --match "vmc*-gt*-*" HEAD^ 2>/dev/null || true)
+          fi
+          if [[ -n "$PREV" ]]; then
+            COMMITS=$(git log --reverse --no-merges --format="- %s ([%h]($REPO_URL/commit/%H))" "$PREV..HEAD")
+          else
+            COMMITS=$(git log -1 --format="- %s ([%h]($REPO_URL/commit/%H))" HEAD)
+          fi
           [[ -z "$COMMITS" ]] && COMMITS="- No changes"
           echo "$COMMITS"
 
