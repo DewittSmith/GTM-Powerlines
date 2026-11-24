@@ -3,7 +3,7 @@ package com.github.dewittsmith.gtm_powerlines.wire;
 import com.gregtechceu.gtceu.api.blockentity.IPaintable;
 import com.gregtechceu.gtceu.api.item.ComponentItem;
 import com.gregtechceu.gtceu.common.data.GTItems;
-import com.gregtechceu.gtceu.common.item.ColorSprayBehaviour;
+import com.gregtechceu.gtceu.common.item.behavior.ColorSprayBehaviour;
 import com.gregtechceu.gtceu.data.recipe.CustomTags;
 
 import net.minecraft.world.InteractionHand;
